@@ -294,3 +294,33 @@ apt install -y rename
 ```
 rename 原字符串 目标字符串 文件(列表)
 ```
+
+## 系统
+
+- ### 防火墙
+- ***Centos***
+查看防火墙状态
+```
+systemctl status firewalld
+```
+开启防火墙
+```
+systemctl start firewalld
+```
+临时关闭命令
+```
+systemctl stop firewalld
+```
+永久关闭命令
+```
+systemctl disable firewalld
+```
+- ***Ubuntu***
+打开防火墙
+```
+sudo ufw enable
+```
+关闭防火墙
+```
+sudo ufw disable
+```
