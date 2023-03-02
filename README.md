@@ -324,3 +324,12 @@ sudo ufw enable
 ```
 sudo ufw disable
 ```
+
+- ### iptables
+开放所有端口
+```
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -F
+```
