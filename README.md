@@ -20,6 +20,16 @@ yum install -y curl wget 2> /dev/null
 apt install -y curl wget
 ```
 
+## 安装ca-certificates
+### Centos
+```
+yum install -y ca-certificates
+```
+### Ubuntu
+```
+apt install -y ca-certificates
+```
+
 ## 管理BBR加速
 首次使用
 ```
@@ -49,6 +59,15 @@ yum install -y screen
 ### Ubuntu
 ```
 apt install -y screen
+```
+使用方法
+```
+screen #创建一个新的窗口
+screen -ls #列出所有窗口
+screen -wipe #删除Dead窗口
+screen -r 123 #回到窗口123
+screen -d 123 #分离123 窗口
+screen -S 123 -X quit #杀死窗口123
 ```
 
 ## 安装nano编辑器
@@ -111,10 +130,40 @@ un7zip 使用方法
 7z x '压缩文件路径' -r -o/'需要保存到的路径'
 ```
 
-### 管
-
+## 常用应用
+### Aria2
+为了确保能正常使用，请先安装基础组件wget、curl、ca-certificates
 ```
-
+yum install -y wget curl ca-certificates #Centos
+apt install -y wget curl ca-certificates #Ubuntu
 ```
-
+下载脚本
+```
+wget -N git.io/aria2.sh && chmod +x aria2.sh
+```
+运行脚本
+```
+./aria2.sh
+```
+修改配置文件
+```
+nano /root/.aria2c/aria2.conf
+```
+配置完成下载后自动上传
+找到“下载完成后执行的命令”，把clean.sh替换为upload.sh
+```
+on-download-complete=/root/.aria2c/upload.sh
+```
+修改附加脚本配置
+```
+nano /root/.aria2c/script.conf
+```
+修改完成后重启Aria2
+```
+service aria2 restart
+```
+检查配置是否成功
+```
+/root/.aria2c/upload.sh
+```
 
