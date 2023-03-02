@@ -265,4 +265,24 @@ nano  /etc/XrayR/config.yml
 xrayr
 ```
 
-- ### 
+- ### 一键WARP脚本
+```
+wget -N https://cdn.jsdelivr.net/gh/fscarmen/warp/menu.sh && bash menu.sh
+```
+WARP菜单
+```
+bash menu.sh
+```
+
+- ### Prename
+安装Prename
+```
+yum install -y epel-release
+yum install -y prename
+```
+使用方法
+```
+prename -v 's/原字符串表达式1/目标字符串表达式2/' 文件(列表)
+```
+
+- ### Rename
