@@ -91,6 +91,7 @@ apt install -y unzip
 
 -  ### 安装unrar
 ***Centos***
+
 下载rar安装包
 ```
 wget http://www.rarlab.com/rar/rarlinux-x64-621.tar.gz --no-check-certificate
