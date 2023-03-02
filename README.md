@@ -275,7 +275,7 @@ bash menu.sh
 ```
 
 - ### Prename
-安装Prename
+***Centos***
 ```
 yum install -y epel-release
 yum install -y prename
@@ -286,3 +286,11 @@ prename -v 's/原字符串表达式1/目标字符串表达式2/' 文件(列表)
 ```
 
 - ### Rename
+---Ubuntu***
+```
+apt install -y rename
+```
+使用方法
+```
+rename 原字符串 目标字符串 文件(列表)
+```
