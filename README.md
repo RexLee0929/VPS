@@ -60,8 +60,15 @@ yum -y install unzip
 ```
 
 ```
-
-
+Ubuntu安装
+```
+apt-get install unrar
+apt-get install rar
+```
+使用方法
+```
+unrar x '文件目路径.rar' '保存的路径'
+```
 ### 安装7z
 
 ```
@@ -70,7 +77,7 @@ yum -y install p7zip p7zip-plugins
 ```
 使用方法
 ```
-7z x 压缩文件地址 -r -o/需要保存到的文件地址
+7z x 压缩文件路径 -r -o/需要保存到的路径
 ```
 
 ### 管
