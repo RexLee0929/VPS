@@ -177,7 +177,8 @@ curl https://rclone.org/install.sh | sudo bash
 ```
 rclone config
 ```
-
+配置参考以下
+```
 [root@centos-s-1vcpu-2gb-amd-sfo3-01 ~]# rclone config
 No remotes found, make a new one?
 n) New remote
@@ -389,4 +390,4 @@ e) Edit this remote
 d) Delete this remote
 y/e/d> #回车
 
-
+```
