@@ -150,7 +150,8 @@ wget -N git.io/aria2.sh && chmod +x aria2.sh
 nano /root/.aria2c/aria2.conf
 ```
 配置完成下载后自动上传
-找到“下载完成后执行的命令”，把clean.sh替换为upload.sh
+
+找到“**下载完成后执行的命令**”，把**clean**.sh替换为**upload**.sh
 ```
 on-download-complete=/root/.aria2c/upload.sh
 ```
