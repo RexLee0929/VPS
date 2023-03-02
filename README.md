@@ -11,21 +11,20 @@ sudo service sshd restart
 ```
 
 ## 安装curl和weget
-### Centos
+***Centos***
 ```
 yum install -y curl wget 2> /dev/null
 ```
-### Ubuntu
+***Ubuntu***
 ```
 apt install -y curl wget
 ```
 
 ## 安装ca-certificates
-### Centos
+***Centos***
 ```
 yum install -y ca-certificates
 ```
-### Ubuntu
 ```
 apt install -y ca-certificates
 ```
@@ -52,11 +51,11 @@ curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -
 ```
 
 ## 安装screen
-### Centos
+***Centos***
 ```
 yum install -y screen
 ```
-### Ubuntu
+***Ubuntu***
 ```
 apt install -y screen
 ```
@@ -71,27 +70,27 @@ screen -S 123 -X quit #杀死窗口123
 ```
 
 ## 安装nano编辑器
-### Centos
+***Centos***
 ```
 yum install -y nano
 ```
-### Ubuntu
+***Ubuntu***
 ```
 apt install -y nano
 ```
 
 ## 安装unzip
-### Centos
+***Centos***
 ```
 yum install -y unzip
 ```
-### Ubuntu
+***Ubuntu***
 ```
 apt install -y unzip
 ```
 
 ## 安装unrar
-### Centos安装
+***Centos***
 下载rar安装包
 ```
 wget http://www.rarlab.com/rar/rarlinux-x64-621.tar.gz --no-check-certificate
@@ -105,7 +104,7 @@ tar zxvf rarlinux-x64-621.tar.gz -C /usr/local
 ln -s /usr/local/rar/rar /usr/local/bin/rar
 ln -s /usr/local/rar/unrar /usr/local/bin/unrar
 ```
-### Ubuntu安装
+***Ubuntu***
 ```
 apt-get install -y unrar
 apt-get install -y rar
@@ -120,7 +119,7 @@ unrar --help
 unrar x '文件目路径.rar' '保存的路径'
 ```
 ## 安装7zip
-### Centos安装方法
+***Centos***
 ```
 yum install -y epel-release
 yum install -y p7zip p7zip-plugins
