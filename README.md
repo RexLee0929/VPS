@@ -1,8 +1,8 @@
 # VPS 自用常用脚本
 
-## 开机必装
+## 基础
 
-## 创建root用户密码
+### 创建root用户密码
 ```
 echo root:'密码' |sudo chpasswd root
 sudo sed -i 's/^.*PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;
@@ -10,7 +10,7 @@ sudo sed -i 's/^.*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ss
 sudo service sshd restart
 ```
 
-## 安装curl和weget
+### 安装curl和weget
 ***Centos***
 ```
 yum install -y curl wget 2> /dev/null
@@ -20,7 +20,7 @@ yum install -y curl wget 2> /dev/null
 apt install -y curl wget
 ```
 
-## 安装ca-certificates
+### 安装ca-certificates
 ***Centos***
 ```
 yum install -y ca-certificates
@@ -29,7 +29,7 @@ yum install -y ca-certificates
 apt install -y ca-certificates
 ```
 
-## 管理BBR加速
+### 管理BBR加速
 首次使用
 ```
 wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
@@ -39,7 +39,7 @@ wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-
 ./tcp.sh
 ```
 
-## 安装哪吒面板
+### 安装哪吒面板
 
 首次使用
 ```
@@ -50,7 +50,7 @@ curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -
 ./nezha.sh
 ```
 
-## 安装screen
+### 安装screen
 ***Centos***
 ```
 yum install -y screen
@@ -69,7 +69,7 @@ screen -d 123 #分离123 窗口
 screen -S 123 -X quit #杀死窗口123
 ```
 
-## 安装nano编辑器
+### 安装nano编辑器
 ***Centos***
 ```
 yum install -y nano
@@ -79,7 +79,7 @@ yum install -y nano
 apt install -y nano
 ```
 
-## 安装unzip
+### 安装unzip
 ***Centos***
 ```
 yum install -y unzip
@@ -89,7 +89,7 @@ yum install -y unzip
 apt install -y unzip
 ```
 
-## 安装unrar
+### 安装unrar
 ***Centos***
 下载rar安装包
 ```
@@ -118,7 +118,7 @@ unrar --help
 ```
 unrar x '文件目路径.rar' '保存的路径'
 ```
-## 安装7zip
+### 安装7zip
 ***Centos***
 ```
 yum install -y epel-release
