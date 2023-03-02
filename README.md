@@ -178,10 +178,9 @@ curl https://rclone.org/install.sh | sudo bash
 rclone config
 ```
 
-Rclone 配置参考以下
-```
+Rclone 配置参考
 
-```
+[参考配置](https://github.com/Rex0929/VPS/blob/main/Rclone.md)
 
 - ### 使用Rclone将文件上传至网盘
 
