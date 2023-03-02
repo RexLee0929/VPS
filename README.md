@@ -2,6 +2,15 @@
 
 ## 开机必装
 
+### 创建root用户密码
+
+```
+echo root:'密码' |sudo chpasswd root
+sudo sed -i 's/^.*PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;
+sudo sed -i 's/^.*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
+sudo service sshd restart
+```
+
 ### 安装curl和weget
 
 ```
