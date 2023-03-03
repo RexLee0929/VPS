@@ -295,6 +295,21 @@ apt install -y rename
 rename 原字符串 目标字符串 文件(列表)
 ```
 
+- ### BestTrace
+下载脚本
+```
+wget https://cdn.ipip.net/17mon/besttrace4linux.zip
+mkdir besttrace
+unzip besttrace4linux.zip -d ./besttrace
+cd besttrace
+chmod 755 besttrace
+```
+运行脚本
+```
+./besttrace/besttrace -q 1 'Your=IP'
+```
+
+
 ## 系统
 
 - ### 防火墙
