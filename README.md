@@ -286,7 +286,7 @@ prename -v 's/原字符串表达式1/目标字符串表达式2/' 文件(列表)
 ```
 
 - ### Rename
----Ubuntu***
+***Ubuntu***
 ```
 apt install -y rename
 ```
@@ -309,11 +309,18 @@ chmod 755 besttrace
 ./besttrace/besttrace -q 1 'Your=IP'
 ```
 
+- ### SpeedTest CLI
+***Centos***
+```
+
+```
+
 
 ## 系统
 
 - ### 防火墙
-- ***Centos***
+***Centos***
+
 查看防火墙状态
 ```
 systemctl status firewalld
@@ -330,7 +337,8 @@ systemctl stop firewalld
 ```
 systemctl disable firewalld
 ```
-- ***Ubuntu***
+***Ubuntu***
+
 打开防火墙
 ```
 sudo ufw enable
@@ -341,6 +349,7 @@ sudo ufw disable
 ```
 
 - ### iptables
+
 开放所有端口
 ```
 iptables -P INPUT ACCEPT
