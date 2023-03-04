@@ -242,9 +242,9 @@ service aria2 restart
 
 Aria2 配置参考
 
-[Aria2.conf](https://github.com/Rex0929/VPS/blob/main/Rclone.md](https://github.com/Rex0929/VPS/blob/main/aria2.conf)
+[Aria2.conf](https://github.com/Rex0929/VPS/blob/main/aria2.conf)
 
-[Script.conf](https://github.com/Rex0929/VPS/blob/main/Rclone.md](https://github.com/Rex0929/VPS/blob/main/script.conf)
+[Script.conf](https://github.com/Rex0929/VPS/blob/main/script.conf)
 
 -  ### Rclone
 
