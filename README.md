@@ -185,6 +185,14 @@ apt install -y p7zip-full p7zip-rar
 7z x '压缩文件路径' -r -o/'需要保存到的路径'
 ```
 
+- ### 更改时区
+
+更改到上海
+
+```
+timedatectl set-timezone 'Asia/Shanghai'
+```
+
 ## 常用应用
 
 -  ### Aria2
