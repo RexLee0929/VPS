@@ -127,13 +127,13 @@ apt install -y unzip
 下载rar安装包
 
 ```
-wget http://www.rarlab.com/rar/rarlinux-x64-621.tar.gz --no-check-certificate
+wget https://www.rarlab.com/rar/rarlinux-x64-6.0.2.tar.gz --no-check-certificate
 ```
 
 解压压缩包到/usr/local下
 
 ```
-tar zxvf rarlinux-x64-621.tar.gz -C /usr/local
+tar zxvf rarlinux-x64-6.0.2.tar.gz -C /usr/local
 ```
 
 将 rar 和 unrar 命令链接到/usr/local/bin目录下
