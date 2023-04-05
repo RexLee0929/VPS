@@ -166,7 +166,7 @@ version recommended):
 Then paste the result.
 Enter a value.
 config_token> {"XXX省略"} #粘贴你的token
-```
+
 Option config_type.
 Type of connection
 Choose a number from below, or type in an existing string value.
@@ -211,3 +211,5 @@ y) Yes this is OK (default)
 e) Edit this remote
 d) Delete this remote
 y/e/d> #回车
+
+```
