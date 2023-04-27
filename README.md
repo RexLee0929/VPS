@@ -13,7 +13,7 @@ sudo service sshd restart
 
 -  ### 安装curl和weget
 
-***Centos***
+***CentOS***
 
 ```
 yum install -y curl wget 2> /dev/null
@@ -27,7 +27,7 @@ apt install -y curl wget
 
 -  ### 安装ca-certificates
 
-***Centos***
+***CentOS***
 
 ```
 yum install -y ca-certificates
@@ -69,7 +69,7 @@ curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -
 
 -  ### 安装screen
 
-***Centos***
+***CentOS***
 
 ```
 yum install -y screen
@@ -94,7 +94,7 @@ screen -S 123 -X quit #杀死窗口123
 
 -  ### 安装nano编辑器
 
-***Centos***
+***CentOS***
 
 ```
 yum install -y nano
@@ -108,7 +108,7 @@ apt install -y nano
 
 -  ### 安装unzip
 
-***Centos***
+***CentOS***
 
 ```
 yum install -y unzip
@@ -122,7 +122,7 @@ apt install -y unzip
 
 -  ### 安装unrar
 
-***Centos***
+***CentOS***
 
 下载rar安装包
 
@@ -165,7 +165,7 @@ unrar x '文件目路径.rar' '保存的路径'
 
 -  ### 安装7zip
 
-***Centos***
+***CentOS***
 
 ```
 yum install -y epel-release
@@ -354,7 +354,7 @@ bash install.sh --uninstall
 bash <(curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh)
 ```
 
-编辑soga配置文件
+编辑 `soga` 配置文件
 
 ```
 nano  /etc/soga/soga.conf
@@ -374,7 +374,7 @@ soga
 bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
 ```
 
-编辑XrayR配置文件
+编辑 `XrayR` 配置文件
 
 ```
 nano  /etc/XrayR/config.yml
@@ -400,7 +400,7 @@ bash menu.sh
 
 - ### Prename
 
-***Centos***
+***CentOS***
 
 ```
 yum install -y epel-release
@@ -447,7 +447,7 @@ chmod 755 besttrace
 
 - ### SpeedTest CLI
 
-***Centos***
+***CentOS***
 
 安装脚本
 
@@ -480,7 +480,7 @@ speedtest -h
 
 - ### 防火墙
 
-***Centos***
+***CentOS***
 
 查看防火墙状态
 
@@ -529,4 +529,25 @@ iptables -P INPUT ACCEPT
 iptables -P FORWARD ACCEPT
 iptables -P OUTPUT ACCEPT
 iptables -F
+```
+
+### BuyVM
+
+- ### IPV6
+
+***CentOS***
+
+```
+cd /etc/sysconfig/network-scripts
+```
+修改 `ifcfg-eth0` 文件
+
+[参考配置](https://github.com/Rex0929/VPS/blob/main/ipv6)
+
+编辑 `/etc/resolv.conf` 文件
+
+添加
+```
+nameserver 2001:4860:4860::8888
+nameserver 2001:4860:4860::8844
 ```
