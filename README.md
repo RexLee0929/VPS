@@ -661,11 +661,22 @@ sudo locale-gen
 sudo update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 ```
 
-
-
 ***CentOS***
 
+修改文件`/etc/locale.conf`为
 
+```
+LANG="en_US.UTF-8"
+LC_ALL="en_US.UTF-8"
+LANG="zh_CN.UTF-8"
+LC_ALL="zh_CN.UTF-8"
+```
+
+执行
+
+```
+source /etc/locale.conf
+```
 
 
 ***Ubuntu***
