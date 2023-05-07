@@ -663,6 +663,18 @@ sudo update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
 ***CentOS***
 
+安装中文字体库
+
+```
+yum install -y fontconfig
+```
+
+执行以下命令，更新字体缓存
+
+```
+fc-cache -fv
+```
+
 修改文件`/etc/locale.conf`为
 
 ```
@@ -678,6 +690,11 @@ LC_ALL="zh_CN.UTF-8"
 source /etc/locale.conf
 ```
 
+重启
+
+```
+reboot
+```
 
 ***Ubuntu***
 
