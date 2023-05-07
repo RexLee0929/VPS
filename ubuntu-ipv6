@@ -1,0 +1,10 @@
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+      dhcp6: true
+      gateway4: 107.1 # IPv4网关
+      gateway6: 2605:64 # IPv6网关
+      addresses: [107.18/24, '2605:6400:30:ebd9:/48'] # 分别为IPv4地址、IPv6地址、IPv6 Bitmask
+
