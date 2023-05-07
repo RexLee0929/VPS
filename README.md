@@ -546,17 +546,17 @@ cd /etc/sysconfig/network-scripts
 
 编辑 `/etc/resolv.conf` 文件
 
-重启网络
-
-```
-service network restart
-```
-
 添加
 
 ```
 nameserver 2001:4860:4860::8888
 nameserver 2001:4860:4860::8844
+```
+
+重启网络
+
+```
+service network restart
 ```
 
 ***Ubuntu***
