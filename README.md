@@ -547,7 +547,61 @@ cd /etc/sysconfig/network-scripts
 编辑 `/etc/resolv.conf` 文件
 
 添加
+
 ```
 nameserver 2001:4860:4860::8888
 nameserver 2001:4860:4860::8844
 ```
+
+- ### 挂载硬盘
+
+查看硬盘盘序列号:
+
+```
+ls /dev/disk/by-id/
+```
+
+格式化硬盘
+
+```
+mkfs.ext4 -F /dev/disk/by-id/scsi-0BUYVM_SLAB_VOLUME-16092
+```
+
+创建挂载目录
+
+```
+mkdir -p /DISK
+```
+
+挂载硬盘到 `DISK` 目录：
+
+```
+mount -o discard,defaults /dev/disk/by-id/scsi-0BUYVM_SLAB_VOLUME-16092 /DISK
+```
+
+查看挂载结果
+
+```
+df -h
+```
+
+给予文件夹读写权限
+
+```
+chmod -R 777 /DISK/
+```
+
+设置开机自动挂载硬盘
+
+***CentOS***
+
+```
+echo "/dev/disk/by-id/scsi-0BUYVM_SLAB_VOLUME-16092 /DISK ext4 defaults 0 0" >> /etc/fstab
+```
+
+***Ubuntu***
+
+```
+echo '/dev/disk/by-id/scsi-0BUYVM_SLAB_VOLUME-16092 /DISK ext4 defaults,nofail,discard 0 0' | sudo tee -a /etc/fstab
+```
+
