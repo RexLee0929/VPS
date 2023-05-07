@@ -546,6 +546,12 @@ cd /etc/sysconfig/network-scripts
 
 编辑 `/etc/resolv.conf` 文件
 
+重启网络
+
+```
+service network restart
+```
+
 添加
 
 ```
@@ -563,6 +569,17 @@ cd /etc/netplan
 
 [参考配置](https://github.com/Rex0929/VPS/blob/main/ubuntu-ipv6)
 
+检查配置文件
+
+```
+sudo netplan try
+```
+
+应用更改
+
+```
+sudo netplan apply
+```
 
 
 - ### 挂载硬盘
