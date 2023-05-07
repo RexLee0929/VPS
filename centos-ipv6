@@ -18,7 +18,7 @@ NETBOOT="yes"
 PROXY_METHOD="none"
 
 IPV6ADDR="你的ipv6地址/48"
-IPV6_DEFAULTGW=你的ipv4网关
+IPV6_DEFAULTGW=你的ipv6网关
 ZONE="public"
 
 NM_CONTROLLED=no
