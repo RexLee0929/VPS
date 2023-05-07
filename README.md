@@ -92,6 +92,12 @@ screen -d 123 #分离123 窗口
 screen -S 123 -X quit #杀死窗口123
 ```
 
+删除所有 screen
+
+```
+screen -ls | grep -o '[0-9]*\.' | while read line; do screen -S "${line}" -X quit; done
+```
+
 -  ### 安装nano编辑器
 
 ***CentOS***
@@ -118,6 +124,18 @@ yum install -y unzip
 
 ```
 apt install -y unzip
+```
+
+压缩子目录
+
+```
+find /DISK/* -mindepth 1 -type d -print0 | while read -d '' -r dir; do zip -r "${dir}.zip" "${dir}" ; done
+```
+
+压缩子目录的子目录
+
+```
+for dir in /DISK/6/*; do find "$dir" -mindepth 1 -type d -print0 | while read -d '' -r subdir; do zip -r "${subdir}.zip" "${subdir}"; done; done
 ```
 
 -  ### 安装unrar
