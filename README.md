@@ -634,3 +634,44 @@ echo "/dev/disk/by-id/scsi-0BUYVM_SLAB_VOLUME-16092 /DISK ext4 defaults 0 0" >> 
 echo '/dev/disk/by-id/scsi-0BUYVM_SLAB_VOLUME-16092 /DISK ext4 defaults,nofail,discard 0 0' | sudo tee -a /etc/fstab
 ```
 
+### 修改系统编码
+
+修改  `/etc/locale.gen`文件
+
+```
+nano /etc/locale.gen
+```
+
+找到以下两行，并将其前面的注释'#'去掉。
+
+```
+en_US.UTF-8 UTF-8
+zh_CN.UTF-8 UTF-8
+```
+
+运行以下命令生成新的系统编码。
+
+```
+sudo locale-gen
+```
+
+运行以下命令更新系统编码设置
+
+```
+sudo update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+```
+
+
+***CentOS***
+
+```
+sudo dpkg-reconfigure locales
+```
+
+***Ubuntu***
+
+```
+sudo dpkg-reconfigure locales
+```
+
+把要启用的语言使用 'Space' 键选中 'Enter' 键确认
