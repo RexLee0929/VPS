@@ -203,6 +203,12 @@ apt install -y p7zip-full p7zip-rar
 7z x '压缩文件路径' -r -o/'需要保存到的路径'
 ```
 
+解压目录下所有.7z 密码为`password`
+
+```
+find . -name "*.7z" | while read filename; do 7z x -p'password' "$filename" -o"$(dirname "$filename")" ; done
+```
+
 - ### 更改时区
 
 更改到上海
