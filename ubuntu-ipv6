@@ -4,5 +4,7 @@ network:
     eth0:
       dhcp4: true
       dhcp6: true
-      addresses: [107.18/24, '2605:6400:30:ebd9:/48'] # 分别为IPv4地址、IPv6地址、IPv6 Bitmask
+      gateway4: 107.189.4.1 # IPv4网关
+      gateway6: 2605:6400:30::1 # IPv6网关
+      addresses: [107.189.4.113/24,2605:6400:30:ebd9:c5e3:27c9:b187:ef61/48] # 分别为IPv4地址、IPv6地址、IPv6 Bitmask
 
