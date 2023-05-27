@@ -25,7 +25,7 @@ def rename_files(dir_path, is_preview):
     重命名指定目录下的所有文件
     """
     # 创建日志文件
-    log_path = '/root/renametest.log' if is_preview else '/root/rename.log'
+    log_path = '/DISK/renametest.log' if is_preview else '/DISK/rename.log'
     with open(log_path, 'w', encoding='utf-8') as f:
         # 遍历指定目录下的所有文件
         for root, dirs, files in os.walk(dir_path):
@@ -34,6 +34,8 @@ def rename_files(dir_path, is_preview):
                 abs_file_path = os.path.join(root, file)
                 # 获取文件名和拓展名
                 filename, ext = os.path.splitext(file)
+                # 将拓展名转换为小写
+                ext = ext.lower()
                 # 对文件名进行清洗
                 new_filename = clean_filename(filename)
                 # 如果文件名被修改，才进行重命名操作
