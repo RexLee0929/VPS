@@ -566,7 +566,7 @@ cd /etc/sysconfig/network-scripts
 ```
 修改 `ifcfg-eth0` 文件
 
-[参考配置](https://github.com/Rex0929/VPS/blob/main/centos-ipv6)
+[参考配置](https://github.com/Rex0929/VPS/blob/main/centos7-ipv6)
 
 编辑 `/etc/resolv.conf` 文件
 
@@ -591,7 +591,7 @@ cd /etc/netplan
 
 修改 `01-netcfg.yaml` 文件
 
-[参考配置](https://github.com/Rex0929/VPS/blob/main/ubuntu-ipv6)
+[参考配置](https://github.com/Rex0929/VPS/blob/main/ubuntu20-ipv6)
 
 检查配置文件
 
