@@ -2,7 +2,7 @@
 
 ## 基础
 
--  ### 创建root用户密码
+### 创建root用户密码
 
 ```
 echo root:'密码' |sudo chpasswd root
@@ -11,7 +11,7 @@ sudo sed -i 's/^.*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ss
 sudo service sshd restart
 ```
 
--  ### 安装curl和weget
+### 安装curl和weget
 
 ***CentOS***
 
@@ -25,7 +25,7 @@ yum install -y curl wget
 apt install -y curl wget
 ```
 
--  ### 安装ca-certificates
+### 安装ca-certificates
 
 ***CentOS***
 
@@ -39,7 +39,7 @@ yum install -y ca-certificates
 apt install -y ca-certificates
 ```
 
--  ### 管理BBR加速
+### 管理BBR加速
 
 首次使用
 
@@ -53,7 +53,7 @@ wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-
 ./tcp.sh
 ```
 
--  ### 安装哪吒面板
+### 安装哪吒面板
 
 首次使用
 
@@ -67,7 +67,7 @@ curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -
 ./nezha.sh
 ```
 
--  ### 安装screen
+### 安装screen
 
 ***CentOS***
 
@@ -98,7 +98,7 @@ screen -S 123 -X quit #杀死窗口123
 screen -ls | grep -o '[0-9]*\.' | while read line; do screen -S "${line}" -X quit; done
 ```
 
--  ### 安装nano编辑器
+### 安装nano编辑器
 
 ***CentOS***
 
@@ -112,7 +112,7 @@ yum install -y nano
 apt install -y nano
 ```
 
--  ### 安装unzip
+### 安装unzip
 
 ***CentOS***
 
@@ -138,7 +138,7 @@ find /DISK/* -mindepth 1 -type d -print0 | while read -d '' -r dir; do zip -r "$
 for dir in /DISK/6/*; do find "$dir" -mindepth 1 -type d -print0 | while read -d '' -r subdir; do zip -r "${subdir}.zip" "${subdir}"; done; done
 ```
 
--  ### 安装unrar
+### 安装unrar
 
 ***CentOS***
 
@@ -181,7 +181,7 @@ unrar --help
 unrar x '文件目路径.rar' '保存的路径'
 ```
 
--  ### 安装7zip
+### 安装7zip
 
 ***CentOS***
 
@@ -209,7 +209,7 @@ apt install -y p7zip-full p7zip-rar
 find . -name "*.7z" | while read filename; do 7z x -p'password' "$filename" -o"$(dirname "$filename")" ; done
 ```
 
-- ### 更改时区
+### 更改时区
 
 更改到上海
 
@@ -219,7 +219,7 @@ timedatectl set-timezone 'Asia/Shanghai'
 
 ## 常用应用
 
--  ### Aria2
+### Aria2
 
 为了确保能正常使用，请先安装基础组件wget、curl、ca-certificates
 
@@ -278,7 +278,7 @@ Aria2 配置参考
 
 [Script.conf](https://github.com/Rex0929/VPS/blob/main/script.conf)
 
--  ### Rclone
+### Rclone
 
 一键安装Rclone
 
@@ -296,7 +296,7 @@ Rclone 配置参考
 
 [参考配置](https://github.com/Rex0929/VPS/blob/main/Rclone.md)
 
-- ### 使用Rclone将文件上传至网盘
+### 使用Rclone将文件上传至网盘
 
 使用screen后台上传
 
@@ -304,7 +304,7 @@ Rclone 配置参考
 screen rclone move -v /DISK/downloads OneDriveE51:/upload --transfers 2 -P
 ```
 
-- ### SS-GO
+### SS-GO
 
 首次使用
 
@@ -318,13 +318,13 @@ wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBack
 ./ss-go.sh
 ```
 
-- ### 流媒体检测
+### 流媒体检测
 
 ```
 bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh)
 ```
 
-- ### ToolBox
+### ToolBox
 
 首次使用
 
@@ -338,19 +338,19 @@ wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcn
 ./jcnfbox.sh
 ```
 
-- ### 多维度测试VPS
+### 多维度测试VPS
 
 ```
-bash <(wget -qO- --no-check-certificate https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh)
+bash <(wget -qO--no-check-certificate https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh)
 ```
 
-- ### 测试部分游戏延迟
+### 测试部分游戏延迟
 
 ```
 bash <(curl -L -s https://raw.githubusercontent.com/lmc999/GamePing/main/GamePing.sh)
 ```
 
-- ### 安装Socks5代理
+### 安装Socks5代理
 
 下载脚本
 
@@ -370,7 +370,7 @@ bash install.sh  --port=运行端口 --user=用户名 --passwd=密码
 bash install.sh --uninstall
 ```
 
-- ### Soga后端
+### Soga后端
 
 下载脚本
 
@@ -390,7 +390,7 @@ nano  /etc/soga/soga.conf
 soga
 ```
 
-- ### XrayR后端
+### XrayR后端
 
 下载脚本
 
@@ -410,7 +410,7 @@ nano  /etc/XrayR/config.yml
 xrayr
 ```
 
-- ### 一键WARP脚本
+### 一键WARP脚本
 
 ```
 wget -N https://cdn.jsdelivr.net/gh/fscarmen/warp/menu.sh && bash menu.sh
@@ -422,7 +422,7 @@ WARP菜单
 bash menu.sh
 ```
 
-- ### Prename
+### Prename
 
 ***CentOS***
 
@@ -437,7 +437,7 @@ yum install -y prename
 prename -v 's/原字符串表达式1/目标字符串表达式2/' 文件(列表)
 ```
 
-- ### Rename
+### Rename
 
 ***Ubuntu***
 
@@ -451,7 +451,7 @@ apt install -y rename
 rename 原字符串 目标字符串 文件(列表)
 ```
 
-- ### BestTrace
+### BestTrace
 
 下载脚本
 
@@ -469,7 +469,7 @@ chmod 755 besttrace
 ./besttrace/besttrace -q 1 'Your=IP'
 ```
 
-- ### SpeedTest CLI
+### SpeedTest CLI
 
 ***CentOS***
 
@@ -499,10 +499,45 @@ speedtest
 speedtest -h
 ```
 
+### Caddy
+
+***CentOS 8***
+
+```
+dnf install 'dnf-command(copr)'
+dnf copr enable @caddy/caddy
+dnf install caddy
+```
+
+***CentOS 7***
+
+```
+yum install yum-plugin-copr
+yum copr enable @caddy/caddy
+yum install caddy
+```
+
+***Ubuntu***
+
+```
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install caddy
+```
+
+### 极光面板
+
+```
+bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
+```
+
+
 
 ## 系统
 
-- ### 防火墙
+### 防火墙
 
 ***CentOS***
 
@@ -544,7 +579,7 @@ sudo ufw enable
 sudo ufw disable
 ```
 
-- ### iptables
+### iptables
 
 开放所有端口
 
@@ -557,13 +592,14 @@ iptables -F
 
 ### BuyVM
 
-- ### IPV6
+### IPV6
 
 ***CentOS***
 
 ```
 cd /etc/sysconfig/network-scripts
 ```
+
 修改 `ifcfg-eth0` 文件
 
 [参考配置](https://github.com/Rex0929/VPS/blob/main/centos7-ipv6)
@@ -606,7 +642,7 @@ sudo netplan apply
 ```
 
 
-- ### 挂载硬盘
+### 挂载硬盘
 
 查看硬盘盘序列号:
 
