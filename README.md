@@ -16,7 +16,7 @@ sudo service sshd restart
 ***CentOS***
 
 ```
-yum install -y curl wget 2> /dev/null
+yum install -y curl wget
 ```
 
 ***Ubuntu***
