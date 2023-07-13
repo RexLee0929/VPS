@@ -599,7 +599,6 @@ iptables -F
 ```
 cd /etc/sysconfig/network-scripts
 ```
-
 修改 `ifcfg-eth0` 文件
 
 [参考配置](https://github.com/Rex0929/VPS/blob/main/centos7-ipv6)
@@ -763,3 +762,43 @@ sudo dpkg-reconfigure locales
 ```
 
 把要启用的语言使用 'Space' 键选中 'Enter' 键确认
+
+
+
+## Docker
+
+### 启动docker-compose
+
+```
+docker-compose up -d
+```
+
+### 列出所有容器
+
+```
+docker ps -a
+```
+
+### 查看镜像
+
+```
+docker images
+```
+
+### 删除特定的Docker镜像
+
+```
+docker rmi <镜像名称1> <镜像名称2>
+```
+
+### 删除已经停止的容器
+
+```
+docker rm <容器ID>
+```
+
+### 清除容器缓存
+
+```
+docker system prune
+```
