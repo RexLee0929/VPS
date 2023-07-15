@@ -341,7 +341,7 @@ wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcn
 ### 多维度测试VPS
 
 ```
-bash <(wget -qO--no-check-certificate https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh)
+bash <(wget -qO- --no-check-certificate https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh)
 ```
 
 ### 测试部分游戏延迟
