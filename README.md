@@ -590,6 +590,49 @@ iptables -P OUTPUT ACCEPT
 iptables -F
 ```
 
+### Oracle
+
+***CentOS***
+
+删除多余附件
+
+```
+systemctl stop oracle-cloud-agent
+systemctl disable oracle-cloud-agent
+systemctl stop oracle-cloud-agent-updater
+systemctl disable oracle-cloud-agent-updater
+```
+
+停止防火墙并禁止自启动
+
+```
+systemctl stop firewalld.service
+systemctl disable firewalld.service
+```
+
+***Ubuntu***
+
+开放所有端口
+
+```
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -F
+```
+
+关闭防火墙
+
+```
+apt-get purge netfilter-persistent && reboot
+```
+
+强制删除防火墙
+
+```
+rm -rf /etc/iptables && reboot
+```
+
 ### BuyVM
 
 ### IPV6
