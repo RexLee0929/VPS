@@ -669,7 +669,9 @@ cd /etc/netplan
 
 修改 `01-netcfg.yaml` 文件
 
-[参考配置](https://github.com/Rex0929/VPS/blob/main/ubuntu20-ipv6)
+[Ubuntu20参考配置](https://github.com/Rex0929/VPS/blob/main/ubuntu20-ipv6)
+
+[Ubuntu22参考配置](https://github.com/Rex0929/VPS/blob/main/ubuntu22-ipv6)
 
 检查配置文件
 
