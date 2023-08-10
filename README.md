@@ -278,6 +278,31 @@ Aria2 配置参考
 
 [Script.conf](https://github.com/Rex0929/VPS/blob/main/script.conf)
 
+***Ubuntu22***
+
+在该版本下不会开机启动
+
+```
+cat > /etc/systemd/system/aria2.service <<EOF
+[Unit]
+Description=Aria2
+After=network.target
+
+[Service]
+User=root
+LimitNOFILE=51200
+ExecStart=/usr/local/bin/aria2c --conf-path=/root/.aria2c/aria2.conf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+```
+
+然后删除 `/etc/init.d/aria2` 文件避免冲突
+
+
 ### Rclone
 
 一键安装Rclone
