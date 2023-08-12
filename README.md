@@ -334,7 +334,7 @@ screen rclone move -v /DISK/downloads OneDriveE51:/upload --transfers 2 -P
 
 创建systemctl任务
 ```
-cat > /etc/systemd/system/qBittorrent-nox.service <<EOF
+cat > /etc/systemd/system/qbittorrent-nox.service <<EOF
 [Unit]
 Description=qBittorrent-nox
 After=network.target
