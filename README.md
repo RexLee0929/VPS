@@ -328,7 +328,26 @@ Rclone 配置参考
 ```
 screen rclone move -v /DISK/downloads OneDriveE51:/upload --transfers 2 -P
 ```
+### Qbittorrent-nox
 
+***Ubuntu***
+
+创建systemctl任务
+```
+cat > /etc/systemd/system/qBittorrent-nox.service <<EOF
+[Unit]
+Description=qBittorrent-nox
+After=network.target
+[Service]
+User=root
+Type=forking
+RemainAfterExit=yes
+ExecStart=/usr/bin/qbittorrent-nox -d
+[Install]
+WantedBy=multi-user.target
+
+EOF
+```
 ### SS-GO
 
 首次使用
