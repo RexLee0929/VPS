@@ -65,63 +65,87 @@ function set_timezone(){
     green " 4.设置时区为洛杉矶 "
     green " 5.设置时区为伦敦 "
     green " 6.设置时区为巴黎 "
-
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
     yellow " ==================================="
     green " 0. 返回系统设置菜单"
     echo
     read -p " 你的选择是: " menuNumberInput
+
     # 确保用户具有必要的权限
     if [ "$(id -u)" != "0" ]; then
         echo 
-        red " Error: This function needs to be run as root or with sudo. "
+        red " 错误：此功能需要以root或sudo身份运行。"
         return 1
     fi
 
     # 检查timedatectl是否可用
     if ! command -v timedatectl &> /dev/null; then
         echo 
-        red " Error: timedatectl is not available on this system. "
+        red " 错误：此系统不支持timedatectl命令。"
         return 1
     fi
 
     case "$menuNumberInput" in
         1 )
-            # 设置时区为上海
-            timedatectl set-timezone 'Asia/Shanghai'
-            echo 
-            blue " Timezone has been set to Asia/Shanghai "
+            current_timezone=$(timedatectl show --property=Timezone --value)
+            target_timezone='Asia/Shanghai'
+            if [ "$current_timezone" == "$target_timezone" ]; then
+                blue " 时区已经设置为 $target_timezone "
+            else
+                timedatectl set-timezone "$target_timezone"
+                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+            fi
         ;;
         2 )
-            # 设置时区为东京
-            timedatectl set-timezone 'Asia/Tokyo'
-            echo 
-            blue " Timezone has been set to Asia/Tokyo "
+            current_timezone=$(timedatectl show --property=Timezone --value)
+            target_timezone='Asia/Tokyo'
+            if [ "$current_timezone" == "$target_timezone" ]; then
+                blue " 时区已经设置为 $target_timezone "
+            else
+                timedatectl set-timezone "$target_timezone"
+                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+            fi
         ;;
         3 )
-            # 设置时区为纽约
-            timedatectl set-timezone 'America/New_York'
-            echo 
-            blue " Timezone has been set to America/New_York "
+            current_timezone=$(timedatectl show --property=Timezone --value)
+            target_timezone='America/New_York'
+            if [ "$current_timezone" == "$target_timezone" ]; then
+                blue " 时区已经设置为 $target_timezone "
+            else
+                timedatectl set-timezone "$target_timezone"
+                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+            fi
         ;;
         4 )
-            # 设置时区为洛杉矶
-            timedatectl set-timezone 'America/Los_Angeles'
-            echo 
-            blue " Timezone has been set to America/Los_Angeles "
+            current_timezone=$(timedatectl show --property=Timezone --value)
+            target_timezone='America/Los_Angeles'
+            if [ "$current_timezone" == "$target_timezone" ]; then
+                blue " 时区已经设置为 $target_timezone "
+            else
+                timedatectl set-timezone "$target_timezone"
+                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+            fi
         ;;
         5 )
-            # 设置时区为伦敦
-            timedatectl set-timezone 'Europe/London'
-            echo 
-            blue " Timezone has been set to Europe/London "
+            current_timezone=$(timedatectl show --property=Timezone --value)
+            target_timezone='Europe/London'
+            if [ "$current_timezone" == "$target_timezone" ]; then
+                blue " 时区已经设置为 $target_timezone "
+            else
+                timedatectl set-timezone "$target_timezone"
+                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+            fi
         ;;
         6 )
-            # 设置时区为巴黎
-            timedatectl set-timezone 'Europe/Paris'
-            echo 
-            blue " Timezone has been set to Europe/Paris "
+            current_timezone=$(timedatectl show --property=Timezone --value)
+            target_timezone='Europe/Paris'
+            if [ "$current_timezone" == "$target_timezone" ]; then
+                blue " 时区已经设置为 $target_timezone "
+            else
+                timedatectl set-timezone "$target_timezone"
+                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+            fi
         ;;
         0 )
             # 返回系统菜单
@@ -129,8 +153,8 @@ function set_timezone(){
             return 0
         ;;
         * )
-            red " 无效的选择，请重新输入! "
-            red "两秒后重新选择返回"
+            red " 无效的选择，请重新输入！ "
+            red " 两秒后重新选择返回 "
             sleep 2s
             set_timezone
         ;;
@@ -138,7 +162,6 @@ function set_timezone(){
 
     # 按任意键返回菜单
     read -n 1 -s -r -p "按任意键返回菜单..."
-    set_timezone
 }
 ## 设置swap
 function setup_swap() {
@@ -161,13 +184,13 @@ function setup_swap() {
 
     # root权限检查
     if [[ $EUID -ne 0 ]]; then
-        red "错误：此脚本必须以root权限运行！"
+        red "错误：此脚本必须以root权限运行！ "
         exit 1
     fi
 
     # 检测ovz
     if [[ -d "/proc/vz" ]]; then
-        red "您的VPS基于OpenVZ，不支持！"
+        red "您的VPS基于OpenVZ，不支持！ "
         exit 1
     fi
 
@@ -188,7 +211,7 @@ function setup_swap() {
             cat /proc/swaps
             cat /proc/meminfo | grep Swap
         else
-            red "swapfile已存在，swap设置失败，请先删除当前swap后重新设置！"
+            red "swapfile已存在，swap设置失败，请先删除当前swap后重新设置！ "
         fi
     }
 
@@ -203,9 +226,9 @@ function setup_swap() {
             echo "3" > /proc/sys/vm/drop_caches
             swapoff -a
             rm -f /swapfile
-            green "swap已删除！"
+            green "swap已删除！ "
         else
-            red "swapfile未发现，swap删除失败！"
+            red "swapfile未发现，swap删除失败！ "
         fi
     }
 
@@ -220,8 +243,8 @@ function setup_swap() {
             add_swap 4096
             ;;
         4)
-            green "请输入需要添加的swap大小（单位：MB）："
-            read -p "请输入swap数值:" custom_swap_size
+            green " 请输入需要添加的swap大小（单位：MB）："
+            read -p " 请输入swap数值:" custom_swap_size
             add_swap $custom_swap_size
             ;;
         5)
@@ -232,8 +255,8 @@ function setup_swap() {
             system_menu
             ;;
         *)
-            red "请输入正确数字！"
-            red "两秒后自动返回"
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
             sleep 2s
             setup_swap
             ;;
@@ -320,7 +343,7 @@ function preferIPV4() {
             ;;
         *)
             red " 无效的选择，请重新输入! "
-            red "两秒后自动返回"
+            red " 两秒后自动返回 "
             sleep 2s
             preferIPV4
             ;;
@@ -333,39 +356,105 @@ function preferIPV4() {
 
 ## 安装nano
 install_nano() {
-    # 检查操作系统
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        OS=$ID
-    else
-        OS=$(uname -s)
-    fi
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============Nano菜单=============== "
+    green " 1. 安装 Nano "
+    green " 2. 使用 Nano 打开文件 "
+    green " 3. 卸载 Nano "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " ==================================="
+    green " 0. 返回系统设置菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
 
-    blue "检测到您的系统为: $OS"
+    case "$menuNumberInput" in
+        1)
+            if command -v nano &> /dev/null; then
+                red "已经安装过nano了！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_nano
+                return
+            fi
+            
+            if [ -f /etc/os-release ]; then
+                . /etc/os-release
+                OS=$ID
+            else
+                OS=$(uname -s)
+            fi
 
-    case $OS in
-        ubuntu|debian)
-            blue "将为您执行 $OS 下的 nano 安装"
-            sudo apt update
-            sudo apt install -y nano
+            blue "检测到您的系统为: $OS"
+
+            case $OS in
+                ubuntu|debian)
+                    blue "将为您执行 $OS 下的 nano 安装"
+                    sudo apt update
+                    sudo apt install -y nano
+                    ;;
+                centos|redhat)
+                    blue "将为您执行 $OS 下的 nano 安装"
+                    sudo yum install -y nano
+                    ;;
+                arch)
+                    blue "将为您执行 Arch Linux 下的 nano 安装"
+                    sudo pacman -S nano
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    return 1
+                    ;;
+            esac
+            blue "nano 安装完成！ "
             ;;
-        centos|redhat)
-            blue "将为您执行 $OS 下的 nano 安装"
-            sudo yum install -y nano
+        2)
+            if ! command -v nano &> /dev/null; then
+                red "没有安装nano！请先安装。"
+                install_nano
+                return
+            fi
+            read -p "请输入您要使用nano打开的文件路径: " filepath
+            nano $filepath
             ;;
-        arch)
-            blue "将为您执行 Arch Linux 下的 nano 安装"
-            sudo pacman -S nano
+        3)
+            case $OS in
+                ubuntu|debian)
+                    blue "将为您执行 $OS 下的 nano 卸载"
+                    sudo apt remove -y nano
+                    ;;
+                centos|redhat)
+                    blue "将为您执行 $OS 下的 nano 卸载"
+                    sudo yum remove -y nano
+                    ;;
+                arch)
+                    blue "将为您执行 $OS 下的 nano 卸载"
+                    sudo pacman -R nano
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    return 1
+                    ;;
+            esac
+            blue "nano 卸载完成！ "
+            ;;
+        0)
+            # 返回安装包菜单
+            app_menu
             ;;
         *)
-            red "不支持的操作系统！"
-            return 1
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
+            sleep 2s
+            install_nano
             ;;
     esac
-    blue "nano 安装完成！"
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    app_menu
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    install_nano
 }
+
 ## 安装screen
 install_screen() {
     # 检查操作系统
@@ -393,11 +482,11 @@ install_screen() {
             sudo pacman -S screen
             ;;
         *)
-            red "不支持的操作系统！"
+            red "不支持的操作系统！ "
             return 1
             ;;
     esac
-    blue "screen 安装完成！"
+    blue "screen 安装完成！ "
     read -n 1 -s -r -p "按任意键返回主菜单..."
     app_menu
 }
@@ -428,11 +517,11 @@ install_unzip() {
             sudo pacman -S unzip
             ;;
         *)
-            red "不支持的操作系统！"
+            red "不支持的操作系统！ "
             return 1
             ;;
     esac
-    blue "unzip 安装完成！"
+    blue "unzip 安装完成！ "
     read -n 1 -s -r -p "按任意键返回主菜单..."
     app_menu
 }
@@ -463,11 +552,11 @@ install_wget_curl_git() {
             sudo pacman -S wget curl git
             ;;
         *)
-            red "不支持的操作系统！"
+            red "不支持的操作系统！ "
             return 1
             ;;
     esac
-    blue "wget, curl 和 git 安装完成！"
+    blue "wget, curl 和 git 安装完成！ "
     read -n 1 -s -r -p "按任意键返回主菜单..."
     app_menu
 }
@@ -498,11 +587,11 @@ install_ca_certificates() {
             sudo pacman -S ca-certificates
             ;;
         *)
-            red "不支持的操作系统！"
+            red "不支持的操作系统！ "
             return 1
             ;;
     esac
-    blue "ca-certificates 安装完成！"
+    blue "ca-certificates 安装完成！ "
     read -n 1 -s -r -p "按任意键返回主菜单..."
     app_menu
 }
@@ -558,13 +647,13 @@ install_speedtest() {
             fi
             ;;
         *)
-            red "不支持的操作系统！"
+            red "不支持的操作系统！ "
             return 1
             ;;
     esac
 
-    blue "Speedtest CLI 安装完成！"
-    blue "使用 speedtest 命令即可进行测速！"
+    blue "Speedtest CLI 安装完成！ "
+    blue "使用 speedtest 命令即可进行测速！ "
     read -n 1 -s -r -p "按任意键返回主菜单..."
     soft_menu
 }
@@ -625,12 +714,12 @@ install_caddy() {
             ;;
         *)
             echo 
-            red "不支持的操作系统！"
+            red "不支持的操作系统！ "
             return 1
             ;;
     esac
 
-    blue "Caddy 安装完成！"
+    blue "Caddy 安装完成！ "
     read -n 1 -s -r -p "按任意键返回主菜单..."
     soft_menu
 }
@@ -642,7 +731,7 @@ install_aapanel() {
         OS=$ID
     else
         echo 
-        red "无法检测您的操作系统类型！"
+        red "无法检测您的操作系统类型！ "
         return 1
     fi
 
@@ -669,12 +758,12 @@ install_aapanel() {
             bash install.sh aapanel
             ;;
         *)
-            red "不支持的操作系统！"
+            red "不支持的操作系统！ "
             return 1
             ;;
     esac
 
-    blue "aapanel 安装完成！"
+    blue "aapanel 安装完成！ "
     blue "使用 bt 命令查看 aapanel 菜单"
     read -n 1 -s -r -p "按任意键返回主菜单..."
     soft_menu
@@ -688,7 +777,7 @@ install_soga() {
     blue "开始安装 soga..."
     bash <(curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh)
 
-    blue "soga 安装完成！"
+    blue "soga 安装完成！ "
     blue "使用 soga 查看 soga 菜单"
     read -n 1 -s -r -p "按任意键返回主菜单..."
     vpn_menu
@@ -699,7 +788,7 @@ install_XrayR() {
     blue "开始安装 XrayR..."
     bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
 
-    blue "XrayR 安装完成！"
+    blue "XrayR 安装完成！ "
     blue "使用 XrayR update 或 xrayr update 更新"
     blue "使用 XrayR 或 xrayr 查看 XrayR 菜单"
     read -n 1 -s -r -p "按任意键返回主菜单..."
@@ -713,7 +802,7 @@ install_ss_go() {
     chmod +x ss-go.sh
     bash ss-go.sh
 
-    blue "ss-go 安装完成！"
+    blue "ss-go 安装完成！ "
     blue "使用 ./ss-go.sh 查看 ss-go 菜单"
     read -n 1 -s -r -p "按任意键返回主菜单..."
     vpn_menu
@@ -724,7 +813,7 @@ install_aurora_admin_panel() {
     blue "开始安装极光面板"
     bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
 
-    blue "极光面板安装完成！"
+    blue "极光面板安装完成！ "
     read -n 1 -s -r -p "按任意键返回主菜单..."
     vpn_menu
 }
@@ -747,7 +836,7 @@ system_menu() {
     yellow " =================================== "
     green " 0. 返回主菜单"
     echo
-    read -p "请输入数字:" menuNumberInput
+    read -p " 请输入数字:" menuNumberInput
     case "$menuNumberInput" in
         1 )
             setup_bbr
@@ -766,8 +855,8 @@ system_menu() {
     ;;
         * )
             clear
-            red "请输入正确数字 ! "
-            red "两秒后自动返回"
+            red " 请输入正确数字 ! "
+            red " 两秒后自动返回 "
             sleep 2s
             system_menu
         ;;
@@ -790,7 +879,7 @@ app_menu() {
     yellow " ==================================== "
     green " 0. 返回主菜单"
     echo
-    read -p "请输入数字:" menuNumberInput
+    read -p " 请输入数字:" menuNumberInput
     case "$menuNumberInput" in
         1 )
             install_nano
@@ -812,8 +901,8 @@ app_menu() {
     ;;
         * )
             clear
-            red "请输入正确数字 ! "
-            red "两秒后自动返回"
+            red " 请输入正确数字 ! "
+            red " 两秒后自动返回 "
             sleep 2s
             app_menu
         ;;
@@ -835,7 +924,7 @@ soft_menu() {
     yellow " ==================================== "
     green " 0. 返回主菜单"
     echo
-    read -p "请输入数字:" menuNumberInput
+    read -p " 请输入数字:" menuNumberInput
     case "$menuNumberInput" in
         1 )
             install_speedtest
@@ -851,8 +940,8 @@ soft_menu() {
     ;;
         * )
             clear
-            red "请输入正确数字 ! "
-            red "两秒后自动返回"
+            red " 请输入正确数字 ! "
+            red " 两秒后自动返回 "
             sleep 2s
             soft_menu
         ;;
@@ -875,7 +964,7 @@ vpn_menu() {
     yellow " =================================== "
     green " 0. 返回主菜单"
     echo
-    read -p "请输入数字:" menuNumberInput
+    read -p " 请输入数字:" menuNumberInput
     case "$menuNumberInput" in
         1 )
             install_soga
@@ -894,8 +983,8 @@ vpn_menu() {
     ;;
         * )
             clear
-            red "请输入正确数字 ! "
-            red "两秒后自动返回"
+            red " 请输入正确数字 ! "
+            red " 两秒后自动返回 "
             sleep 2s
             vpn_menu
         ;;
@@ -916,7 +1005,7 @@ start_menu() {
     yellow " ==================================== "
     green " 0. 退出脚本"
     echo
-    read -p "请输入数字:" menuNumberInput
+    read -p " 请输入数字:" menuNumberInput
     case "$menuNumberInput" in
         1 )
             system_menu
@@ -935,8 +1024,8 @@ start_menu() {
     ;;
         * )
             clear
-            red "请输入正确数字 ! "
-            red "两秒后自动返回主菜单"
+            red " 请输入正确数字 ! "
+            red " 两秒后自动返回主菜单"
             sleep 2s
             start_menu
         ;;
