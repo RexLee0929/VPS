@@ -51,6 +51,10 @@ function setup_bbr(){
 
     # 可选：执行后删除脚本
     # rm -f tcp.sh
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p "按任意键返回菜单..."
+    system_menu
 }
 ## 设置时区
 function set_timezone(){
@@ -1728,7 +1732,7 @@ function install_aapanel() {
 
 # 科学上网
 ## soga
-function soga_menu() {
+function install_soga() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -1756,17 +1760,18 @@ function soga_menu() {
             ;;
         *)
             red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
             sleep 2
-            soga_menu
+            install_soga
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    soga_menu
+    install_soga
 }
 ## XrayR
-function XrayR_menu() {
+function install_XrayR() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -1794,17 +1799,18 @@ function XrayR_menu() {
             ;;
         *)
             red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
             sleep 2
-            XrayR_menu
+            install_XrayR
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    XrayR_menu
+    install_XrayR
 }
 ## ss-go
-function ss_go_menu() {
+function install_ss_go() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -1828,17 +1834,18 @@ function ss_go_menu() {
             ;;
         *)
             red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
             sleep 2
-            ss_go_menu
+            install_ss_go
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    ss_go_menu
+    install_ss_go
 }
 ## 极光面板
-function aurora_menu() {
+function install_aurora() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -1860,14 +1867,15 @@ function aurora_menu() {
             ;;
         *)
             red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
             sleep 2
-            aurora_menu
+            install_aurora
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    aurora_menu
+    install_aurora
 }
 
 # 菜单
@@ -1993,16 +2001,16 @@ vpn_menu() {
     read -p " 请输入数字:" menuNumberInput
     case "$menuNumberInput" in
         1 )
-            soga_menu
+            install_soga
 	;;
         2 )
-            XrayR_menu
+            install_XrayR
 	;;
         3 )
-            ss_go_menu
+            install_ss_go
 	;;
         4 )
-            aurora_menu
+            install_aurora
     ;;
         0 )
             start_menu
@@ -2019,6 +2027,7 @@ vpn_menu() {
 # 主菜单
 start_menu() {
     clear
+blue " =================================================== "    
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
 	yellow " ==========ToolBox主菜单============ "
@@ -2026,8 +2035,10 @@ start_menu() {
     orange " 2.软件菜单 "
     orange " 3.科学上网菜单 "
     echo
+
+
     orange " 为保证有权限执行,请使用root用户运行 "
-    yellow " ==================================== "
+    yellow " =================================== "
     green " 0. 退出脚本"
     echo
     read -p " 请输入数字:" menuNumberInput
