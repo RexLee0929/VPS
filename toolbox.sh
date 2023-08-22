@@ -91,7 +91,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Asia/Shanghai'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                blue " 时区已经设置为 $target_timezone "
+                green " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -101,7 +101,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Asia/Tokyo'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                blue " 时区已经设置为 $target_timezone "
+                green " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -111,7 +111,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='America/New_York'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                blue " 时区已经设置为 $target_timezone "
+                green " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -121,7 +121,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='America/Los_Angeles'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                blue " 时区已经设置为 $target_timezone "
+                green " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -131,7 +131,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Europe/London'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                blue " 时区已经设置为 $target_timezone "
+                green " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -141,7 +141,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Europe/Paris'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                blue " 时区已经设置为 $target_timezone "
+                green " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -162,6 +162,7 @@ function set_timezone(){
 
     # 按任意键返回菜单
     read -n 1 -s -r -p "按任意键返回菜单..."
+    set_timezone
 }
 ## 设置swap
 function setup_swap() {
@@ -355,7 +356,7 @@ function preferIPV4() {
 # 安装包
 
 ## 安装nano
-install_nano() {
+function install_nano() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -364,16 +365,16 @@ install_nano() {
     green " 2. 使用 Nano 打开文件 "
     green " 3. 卸载 Nano "
     echo
-    orange " 为保证有权限执行,请使用root用户运行 "
+    orange " 为保证有权限执行，请使用root用户运行 "
     yellow " ==================================="
-    green " 0. 返回系统设置菜单 "
+    green " 0. 返回应用程序菜单 "
     echo
     read -p " 你的选择是: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
             if command -v nano &> /dev/null; then
-                red "已经安装过nano了！"
+                blue " 您已经安装过nano了！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_nano
@@ -405,7 +406,10 @@ install_nano() {
                     ;;
                 *)
                     red "不支持的操作系统！ "
-                    return 1
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_nano
+                    return
                     ;;
             esac
             blue "nano 安装完成！ "
@@ -413,13 +417,23 @@ install_nano() {
         2)
             if ! command -v nano &> /dev/null; then
                 red "没有安装nano！请先安装。"
+                red " 两秒后自动返回 "
+                sleep 2
                 install_nano
                 return
             fi
             read -p "请输入您要使用nano打开的文件路径: " filepath
-            nano $filepath
+            nano "$filepath"
             ;;
         3)
+            if [ -z "$OS" ]; then
+                red "无法确定操作系统！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_nano
+                return
+            fi
+            
             case $OS in
                 ubuntu|debian)
                     blue "将为您执行 $OS 下的 nano 卸载"
@@ -435,10 +449,283 @@ install_nano() {
                     ;;
                 *)
                     red "不支持的操作系统！ "
-                    return 1
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_nano
+                    return
                     ;;
             esac
             blue "nano 卸载完成！ "
+            ;;
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+        *)
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
+            sleep 2s
+            install_nano
+            return
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    install_nano
+}
+## 安装screen
+function install_screen() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============Screen菜单=============== "
+    green " 1. 安装 Screen "
+    green " 2. 使用 Screen 创建新会话 "
+    green " 3. 使用 Screen 运行指令 "
+    green " 4. 查看 Screen 会话 "
+    green " 5. 删除 Screen 会话 "
+    green " 6. 删除所有的 screen 会话 "
+    green " 7. 卸载 Screen "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " ==================================="
+    green " 0. 返回系统设置菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
+
+    case "$menuNumberInput" in
+        1)
+            if command -v screen &> /dev/null; then
+                blue " 您已经安装过screen了！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+            
+            if [ -f /etc/os-release ]; then
+                . /etc/os-release
+                OS=$ID
+            else
+                OS=$(uname -s)
+            fi
+
+            blue "检测到您的系统为: $OS"
+
+            case $OS in
+                ubuntu|debian)
+                    blue "将为您执行 $OS 下的 screen 安装"
+                    sudo apt update
+                    sudo apt install -y screen
+                    ;;
+                centos|redhat)
+                    blue "将为您执行 $OS 下的 screen 安装"
+                    sudo yum install -y screen
+                    ;;
+                arch)
+                    blue "将为您执行 Arch Linux 下的 screen 安装"
+                    sudo pacman -S screen
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    return 1
+                    ;;
+            esac
+            blue "screen 安装完成！ "
+            ;;
+        2)
+            if ! command -v screen &> /dev/null; then
+                red "没有安装screen！请先安装。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+            read -p "请输入新会话的名称: " session_name
+            screen -S $session_name
+            ;;
+        3)
+            if ! command -v screen &> /dev/null; then
+                red "没有安装screen！请先安装。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+            read -p "请输入您想在screen会话中执行的命令: " user_command
+            read -p "请输入您希望的screen会话名称: " session_name
+            screen -dmS "$session_name" bash -c "$user_command; exec bash"
+            blue "已在新的screen会话 $session_name 中启动您的命令。"
+            ;; 
+        4)
+            # 检查 screen 命令是否存在
+            if ! command -v screen &> /dev/null; then
+                red "没有安装screen！请先安装。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+
+            # 使用 screen -ls 获取所有的 screen 会话
+            sessions=$(screen -ls | grep "Detached" | awk '{print $1}')
+
+            # 检查是否有可用的会话
+            if [ -z "$sessions" ]; then
+                red "当前没有运行的screen会话。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+
+            echo "当前运行的screen会话："
+            counter=1
+            declare -A session_map
+            while IFS= read -r line; do
+                echo "$counter. $line"
+                session_map[$counter]=$line
+                ((counter++))
+            done <<< "$sessions"
+
+            read -p "请输入编号选择一个会话: " choice
+
+            if [ -n "${session_map[$choice]}" ]; then
+                screen -r "${session_map[$choice]}"
+            else
+                red " 无效的选择。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+            ;;
+        5)
+            # 检查 screen 命令是否存在
+            if ! command -v screen &> /dev/null; then
+                red " 没有安装screen！请先安装。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+
+            # 使用 screen -ls 获取所有的 screen 会话
+            sessions=$(screen -ls | grep "Detached" | awk '{print $1}')
+
+            # 检查是否有可用的会话
+            if [ -z "$sessions" ]; then
+                red "当前没有运行的screen会话。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+
+            echo "当前运行的screen会话："
+            counter=1
+            declare -A session_map
+            while IFS= read -r line; do
+                echo "$counter. $line"
+                session_map[$counter]=$line
+                ((counter++))
+            done <<< "$sessions"
+
+            read -p "请输入编号选择一个会话进行删除: " choice
+
+            if [ -n "${session_map[$choice]}" ]; then
+                screen -X -S "${session_map[$choice]}" quit
+                blue "已删除会话：${session_map[$choice]}"
+                read -p "是否继续删除其他会话？(y/n)默认y: " continue_delete
+                if [ "$continue_delete" == "y" ]; then
+                    # 继续删除
+                    return
+                else
+                    red "您选择拒绝继续删除screen会话。"
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    # 返回 install_screen
+                    install_screen
+                fi
+            else
+                red " 无效的选择。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+            ;;
+        6)
+            # 检查 screen 命令是否存在
+            if ! command -v screen &> /dev/null; then
+                red "没有安装screen！请先安装。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+
+            # 使用 screen -ls 获取所有的 screen 会话
+            sessions=$(screen -ls | grep "Detached" | awk '{print $1}')
+
+            # 检查是否有可用的会话
+            if [ -z "$sessions" ]; then
+                red "当前没有运行的screen会话。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+
+            read -p "确定要删除所有的screen会话吗？(y/n)默认n: " confirm_delete_all
+
+            if [ "$confirm_delete_all" == "y" ]; then
+                while IFS= read -r session; do
+                    screen -X -S "$session" quit
+                done <<< "$sessions"
+                blue "已删除所有的screen会话。"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+            else
+                red "您选择取消删除所有的screen会话。"
+                red " 两秒后自动返回 "
+                sleep 2
+                # 返回 install_screen
+                install_screen
+            fi
+            ;;
+        7)
+            if ! command -v screen &> /dev/null; then
+                red "没有安装screen！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_screen
+                return
+            fi
+            case $OS in
+                ubuntu|debian)
+                    blue "将为您执行 $OS 下的 screen 卸载"
+                    sudo apt remove -y screen
+                    ;;
+                centos|redhat)
+                    blue "将为您执行 $OS 下的 screen 卸载"
+                    sudo yum remove -y screen
+                    ;;
+                arch)
+                    blue "将为您执行 $OS 下的 screen 卸载"
+                    sudo pacman -R screen
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_nano
+                    return 1
+                    ;;
+            esac
+            blue "screen 卸载完成！ "
             ;;
         0)
             # 返回安装包菜单
@@ -448,47 +735,11 @@ install_nano() {
             red " 请输入正确数字！ "
             red " 两秒后自动返回 "
             sleep 2s
-            install_nano
+            install_screen
             ;;
     esac
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_nano
-}
-
-## 安装screen
-install_screen() {
-    # 检查操作系统
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        OS=$ID
-    else
-        OS=$(uname -s)
-    fi
-
-    blue "检测到您的系统为: $OS"
-
-    case $OS in
-        ubuntu|debian)
-            blue "将为您执行 $OS 下的 screen 安装"
-            sudo apt update
-            sudo apt install -y screen
-            ;;
-        centos|redhat)
-            blue "将为您执行 $OS 下的 screen 安装"
-            sudo yum install -y screen
-            ;;
-        arch)
-            blue "将为您执行 Arch Linux 下的 screen 安装"
-            sudo pacman -S screen
-            ;;
-        *)
-            red "不支持的操作系统！ "
-            return 1
-            ;;
-    esac
-    blue "screen 安装完成！ "
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    app_menu
+    install_screen
 }
 ## 安装unzip
 install_unzip() {
