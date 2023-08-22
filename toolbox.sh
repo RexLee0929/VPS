@@ -4,27 +4,26 @@
 ##脚本所用到的颜色
 
 # 颜色函数
-red(){
-    echo -e "\033[31m\033[01m$1\033[0m"
-}
-green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
-}
-yellow(){
-    echo -e "\033[33m\033[01m$1\033[0m"
-}
-blue(){
-    echo -e "\033[34m\033[01m$1\033[0m"
-}
-bold(){
-    echo -e "\033[1m\033[01m$1\033[0m"
-}
-orange(){
-    echo -e "\033[38;5;208m\033[01m$1\033[0m"
-}
+    red(){
+        echo -e "\033[31m\033[01m$1\033[0m"
+    }
+    green(){
+        echo -e "\033[32m\033[01m$1\033[0m"
+    }
+    yellow(){
+        echo -e "\033[33m\033[01m$1\033[0m"
+    }
+    blue(){
+        echo -e "\033[34m\033[01m$1\033[0m"
+    }
+    bold(){
+        echo -e "\033[1m\033[01m$1\033[0m"
+    }
+    orange(){
+        echo -e "\033[38;5;208m\033[01m$1\033[0m"
+    }
 
 # 系统设置
-
 ## BBR加速
 function setup_bbr(){
     # 确保脚本在任何命令失败时停止
@@ -353,9 +352,289 @@ function preferIPV4() {
     preferIPV4
 }
 
-# 安装包
+# 软件
+## wget, curl 和 git
+function install_wget_curl_git() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============工具安装菜单=============== "
+    green " 1. 安装 wget, curl, git "
+    green " 2. 安装 wget "
+    green " 3. 安装 curl "
+    green " 4. 安装 git "
+    green " 5. 卸载 wget, curl, git "
+    green " 6. 卸载 wget "
+    green " 7. 卸载 curl "
+    green " 8. 卸载 git "
+    echo
+    orange " 为保证有权限执行，请使用root用户运行 "
+    yellow " ==================================="
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
 
-## 安装nano
+    # 检查操作系统
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        OS=$(uname -s)
+    fi
+
+    blue "检测到您的系统为: $OS"
+
+    case "$menuNumberInput" in
+        1)
+            if command -v wget &> /dev/null && command -v curl &> /dev/null && command -v git &> /dev/null; then
+                blue "您已经安装过wget, curl 和 git！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_wget_curl_git
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt update
+                    sudo apt install -y wget curl git
+                    ;;
+                centos|redhat)
+                    sudo yum install -y wget curl git
+                    ;;
+                arch)
+                    sudo pacman -S wget curl git
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_wget_curl_git
+                    return
+                    ;;
+            esac
+            blue "wget, curl 和 git 安装完成！ "
+            ;;
+        2)
+            if command -v wget &> /dev/null; then
+                blue "您已经安装过wget！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_wget_curl_git
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt install -y wget
+                    ;;
+                centos|redhat)
+                    sudo yum install -y wget
+                    ;;
+                arch)
+                    sudo pacman -S wget
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_wget_curl_git
+                    return
+                    ;;
+            esac
+            blue "wget 安装完成！"
+            ;;
+        3)
+            if command -v curl &> /dev/null; then
+                blue "您已经安装过curl！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_wget_curl_git
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt install -y curl
+                    ;;
+                centos|redhat)
+                    sudo yum install -y curl
+                    ;;
+                arch)
+                    sudo pacman -S curl
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_wget_curl_git
+                    return
+                    ;;
+            esac
+            blue "curl 安装完成！"
+            ;;
+        4)
+            if command -v git &> /dev/null; then
+                blue "您已经安装过git！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_wget_curl_git
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt install -y git
+                    ;;
+                centos|redhat)
+                    sudo yum install -y git
+                    ;;
+                arch)
+                    sudo pacman -S git
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_wget_curl_git
+                    return
+                    ;;
+            esac
+            blue "git 安装完成！"
+            ;;
+        5)
+            if ! command -v wget &> /dev/null || ! command -v curl &> /dev/null || ! command -v git &> /dev/null; then
+                blue "您没有安装wget, curl 或 git中的至少一个！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_wget_curl_git
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt remove -y wget curl git
+                    ;;
+                centos|redhat)
+                    sudo yum remove -y wget curl git
+                    ;;
+                arch)
+                    sudo pacman -R wget curl git
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_wget_curl_git
+                    return
+                    ;;
+            esac
+            blue "wget, curl 和 git 卸载完成！"
+            ;;
+        6)
+            if ! command -v wget &> /dev/null; then
+                blue "您没有安装wget！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_wget_curl_git
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt remove -y wget
+                    ;;
+                centos|redhat)
+                    sudo yum remove -y wget
+                    ;;
+                arch)
+                    sudo pacman -R wget
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_wget_curl_git
+                    return
+                    ;;
+            esac
+            blue "wget 卸载完成！"
+            ;;
+        7)
+            if ! command -v curl &> /dev/null; then
+                blue "您没有安装curl！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_wget_curl_git
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt remove -y curl
+                    ;;
+                centos|redhat)
+                    sudo yum remove -y curl
+                    ;;
+                arch)
+                    sudo pacman -R curl
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_wget_curl_git
+                    return
+                    ;;
+            esac
+            blue "curl 卸载完成！"
+            ;;
+        8)
+            if ! command -v git &> /dev/null; then
+                blue "您没有安装git！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_wget_curl_git
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt remove -y git
+                    ;;
+                centos|redhat)
+                    sudo yum remove -y git
+                    ;;
+                arch)
+                    sudo pacman -R git
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_wget_curl_git
+                    return
+                    ;;
+            esac
+            blue "git 卸载完成！"
+            ;;
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+        *)
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
+            sleep 2s
+            install_wget_curl_git
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    install_wget_curl_git
+}
+## nano
 function install_nano() {
     clear
     blue " Rex Lee's ToolBox " 
@@ -370,6 +649,13 @@ function install_nano() {
     green " 0. 返回应用程序菜单 "
     echo
     read -p " 你的选择是: " menuNumberInput
+
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        OS=$(uname -s)
+    fi
 
     case "$menuNumberInput" in
         1)
@@ -416,7 +702,7 @@ function install_nano() {
             ;;
         2)
             if ! command -v nano &> /dev/null; then
-                red "没有安装nano！请先安装。"
+                red "您没有安装nano！请先安装。"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_nano
@@ -426,6 +712,14 @@ function install_nano() {
             nano "$filepath"
             ;;
         3)
+            if ! command -v nano &> /dev/null; then
+                red "您没有安装nano！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_nano
+                return
+            fi
+            
             if [ -z "$OS" ]; then
                 red "无法确定操作系统！"
                 red " 两秒后自动返回 "
@@ -474,7 +768,7 @@ function install_nano() {
     read -n 1 -s -r -p " 按任意键返回菜单... "
     install_nano
 }
-## 安装screen
+## screen
 function install_screen() {
     clear
     blue " Rex Lee's ToolBox " 
@@ -493,6 +787,13 @@ function install_screen() {
     green " 0. 返回系统设置菜单 "
     echo
     read -p " 你的选择是: " menuNumberInput
+
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        OS=$(uname -s)
+    fi
 
     case "$menuNumberInput" in
         1)
@@ -529,7 +830,10 @@ function install_screen() {
                     ;;
                 *)
                     red "不支持的操作系统！ "
-                    return 1
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_nano
+                    return
                     ;;
             esac
             blue "screen 安装完成！ "
@@ -698,7 +1002,7 @@ function install_screen() {
             ;;
         7)
             if ! command -v screen &> /dev/null; then
-                red "没有安装screen！"
+                red " 您没有安装screen！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_screen
@@ -722,7 +1026,7 @@ function install_screen() {
                     red " 两秒后自动返回 "
                     sleep 2
                     install_nano
-                    return 1
+                    return
                     ;;
             esac
             blue "screen 卸载完成！ "
@@ -741,8 +1045,26 @@ function install_screen() {
     read -n 1 -s -r -p " 按任意键返回菜单... "
     install_screen
 }
-## 安装unzip
-install_unzip() {
+## unzip
+function install_unzip() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============unzip菜单=============== "
+    green " 1. 安装 unzip "
+    green " 2. 使用 unzip 解压文件 "
+    green " 3. 使用 zip 压缩文件夹 "
+    green " 4. 批量使用 unzip 解压文件 "
+    green " 5. 批量使用 zip 压缩文件夹 "
+    green " 6. 使用 screen 执行 zip 批量解压 "
+    green " 7. 使用 screen 执行 zip 批量压缩 "
+    echo
+    orange " 为保证有权限执行，请使用root用户运行 "
+    yellow " ==================================="
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
+
     # 检查操作系统
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -753,229 +1075,598 @@ install_unzip() {
 
     blue "检测到您的系统为: $OS"
 
-    case $OS in
-        ubuntu|debian)
-            blue "将为您执行 $OS 下的 unzip 安装"
-            sudo apt update
-            sudo apt install -y unzip
-            ;;
-        centos|redhat)
-            blue "将为您执行 $OS 下的 unzip 安装"
-            sudo yum install -y unzip
-            ;;
-        arch)
-            blue "将为您执行 Arch Linux 下的 unzip 安装"
-            sudo pacman -S unzip
-            ;;
-        *)
-            red "不支持的操作系统！ "
-            return 1
-            ;;
-    esac
-    blue "unzip 安装完成！ "
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    app_menu
-}
-## 安装wget, curl 和 git
-install_wget_curl_git() {
-    # 检查操作系统
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        OS=$ID
-    else
-        OS=$(uname -s)
-    fi
+    case "$menuNumberInput" in
+        1)
+            if command -v unzip &> /dev/null; then
+                blue "您已经安装过unzip了！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_unzip
+                return
+            fi
 
-    blue "检测到您的系统为: $OS"
+            case $OS in
+                ubuntu|debian)
+                    blue "将为您执行 $OS 下的 unzip 安装"
+                    sudo apt update
+                    sudo apt install -y unzip
+                    ;;
+                centos|redhat)
+                    blue "将为您执行 $OS 下的 unzip 安装"
+                    sudo yum install -y unzip
+                    ;;
+                arch)
+                    blue "将为您执行 Arch Linux 下的 unzip 安装"
+                    sudo pacman -S unzip
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2s
+                    install_unzip
+                    return
+                    ;;
+            esac
+            blue "unzip 安装完成！ "
+            ;;
 
-    case $OS in
-        ubuntu|debian)
-            blue "将为您执行 $OS 下的 wget, curl 和 git 安装"
-            sudo apt update
-            sudo apt install -y wget curl git
-            ;;
-        centos|redhat)
-            blue "将为您执行 $OS 下的 wget, curl 和 git 安装"
-            sudo yum install -y wget curl git
-            ;;
-        arch)
-            blue "将为您执行 Arch Linux 下的 wget, curl 和 git 安装"
-            sudo pacman -S wget curl git
-            ;;
-        *)
-            red "不支持的操作系统！ "
-            return 1
-            ;;
-    esac
-    blue "wget, curl 和 git 安装完成！ "
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    app_menu
-}
-## 安装ca-certificates
-install_ca_certificates() {
-    # 检查操作系统
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        OS=$ID
-    else
-        OS=$(uname -s)
-    fi
-
-    blue "检测到您的系统为: $OS"
-
-    case $OS in
-        ubuntu|debian)
-            blue "将为您执行 $OS 下的 ca-certificates 安装"
-            sudo apt update
-            sudo apt install -y ca-certificates
-            ;;
-        centos|redhat)
-            blue "将为您执行 $OS 下的 ca-certificates 安装"
-            sudo yum install -y ca-certificates
-            ;;
-        arch)
-            blue "将为您执行 Arch Linux 下的 ca-certificates 安装"
-            sudo pacman -S ca-certificates
-            ;;
-        *)
-            red "不支持的操作系统！ "
-            return 1
-            ;;
-    esac
-    blue "ca-certificates 安装完成！ "
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    app_menu
-}
-
-# 软件包
-
-## 安装SpeedTest CLI
-install_speedtest() {
-    # 检查操作系统
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        OS=$ID
-    else
-        OS=$(uname -s)
-    fi
-
-    blue "检测到您的系统为: $OS"
-
-    case $OS in
-        ubuntu|debian)
-            # Ubuntu/Debian 安装指令
-            blue "将为您执行 Ubuntu/Debian 下的 Speedtest CLI 安装"
-            sudo apt-get install curl
-            curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
-            sudo apt-get install speedtest
-            ;;
-        fedora|centos|redhat)
-            # Fedora/CentOS/RedHat 安装指令
-            blue "将为您执行 Fedora/CentOS/RedHat 下的 Speedtest CLI 安装"
-            curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh | sudo bash
-            sudo yum install speedtest
-            ;;
-        Darwin) # macOS
-            # macOS 安装指令
-            blue "将为您执行 macOS 下的 Speedtest CLI 安装"
-            brew tap teamookla/speedtest
-            brew update
-            brew install speedtest --force
-            ;;
-        FreeBSD)
-            # FreeBSD 安装指令
-            blue "将为您执行 FreeBSD 下的 Speedtest CLI 安装"
-            sudo pkg update && sudo pkg install -g libidn2 ca_root_nss
-            # 这里我们检查FreeBSD的版本并执行相应的安装
-            VERSION=$(uname -r | cut -d'.' -f1)
-            if [[ $VERSION -eq 12 ]]; then
-                sudo pkg add "https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-freebsd12-x86_64.pkg"
-            elif [[ $VERSION -eq 13 ]]; then
-                sudo pkg add "https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-freebsd13-x86_64.pkg"
+        2)
+            if ! command -v unzip &> /dev/null; then
+                red "您没有安装unzip！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_unzip
+                return
+            fi
+            read -p "请输入您要解压的zip文件路径: " zipfile
+            read -p "请输入解压到的路径: " destpath
+            mkdir -p "$destpath"
+            read -p "请输入密码 (如果不想设置密码，请直接按Enter): " password
+            if [ -z "$password" ]; then
+                unzip "$zipfile" -d "$destpath"
             else
-                red "不支持的 FreeBSD 版本!"
-                return 1
+                unzip -P "$password" "$zipfile" -d "$destpath"
             fi
             ;;
+        3)
+            if ! command -v zip &> /dev/null; then
+                red "您没有安装zip！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_unzip
+                return
+            fi
+            read -p "请输入您要压缩的文件夹路径: " folderpath
+            read -p "请输入压缩包的存放路径: " destpath
+            mkdir -p "$destpath"
+            read -p "请输入密码 (如果不想设置密码，请直接按Enter): " password
+            foldername=$(basename "$folderpath")
+            # 更改到文件夹的上级目录
+            cd "$(dirname "$folderpath")"
+            if [ -z "$password" ]; then
+                zip -r "$destpath/$foldername.zip" "$foldername"
+            else
+                zip -r -P "$password" "$destpath/$foldername.zip" "$foldername"
+            fi
+            ;;
+
+        4)
+            if ! command -v unzip &> /dev/null; then
+                red "您没有安装unzip！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_unzip
+                return
+            fi
+            read -p "请输入包含zip文件的目录路径: " dirpath
+            read -p "请输入要解压到的目标路径: " targetpath
+            mkdir -p "$targetpath"
+            read -p "所有文件是否使用相同的密码? (直接按Enter表示'是'，其他表示'否') " same_password
+
+            if [ -z "$same_password" ]; then
+                read -p "请输入统一密码 (如果不想设置密码，请直接按Enter): " unified_password
+                for z in "$dirpath"/*.zip; do
+                    if [ -z "$unified_password" ]; then
+                        unzip "$z" -d "$targetpath"
+                    else
+                        unzip -P "$unified_password" "$z" -d "$targetpath"
+                    fi
+                done
+            else
+                for z in "$dirpath"/*.zip; do
+                    read -p "为 $z 输入密码 (如果不想设置密码，请直接按Enter): " individual_password
+                    if [ -z "$individual_password" ]; then
+                        unzip "$z" -d "$targetpath"
+                    else
+                        unzip -P "$individual_password" "$z" -d "$targetpath"
+                    fi
+                done
+            fi
+            ;;
+
+        5)
+            if ! command -v zip &> /dev/null; then
+                red "您没有安装zip！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_unzip
+                return
+            fi
+
+            read -p "请输入包含文件夹的目录路径: " dirpath
+            read -p "请输入压缩包的存放路径: " destpath
+            mkdir -p "$destpath"
+            read -p "所有文件夹是否使用相同的密码? (直接按Enter表示'是'，其他表示'否') " same_password
+
+            # 进入到dirpath所在的目录
+            pushd "$dirpath" > /dev/null
+
+            if [ -z "$same_password" ]; then
+                read -p "请输入统一密码 (如果不想设置密码，请直接按Enter): " unified_password
+                for dir in *; do
+                    if [ -d "$dir" ]; then
+                        if [ -z "$unified_password" ]; then
+                            zip -r "$destpath/$dir.zip" "$dir"
+                        else
+                            zip -r -P "$unified_password" "$destpath/$dir.zip" "$dir"
+                        fi
+                    fi
+                done
+            else
+                for dir in *; do
+                    if [ -d "$dir" ]; then
+                        read -p "为 $dir 输入密码 (如果不想设置密码，请直接按Enter): " individual_password
+                        if [ -z "$individual_password" ]; then
+                            zip -r "$destpath/$dir.zip" "$dir"
+                        else
+                            zip -r -P "$individual_password" "$destpath/$dir.zip" "$dir"
+                        fi
+                    fi
+                done
+            fi
+
+            # 返回原始目录
+            popd > /dev/null
+            ;;
+
+        6)
+            # 批量解压在screen会话中
+            if ! command -v unzip &> /dev/null || ! command -v screen &> /dev/null; then
+                red "您没有安装unzip或screen！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_unzip
+                return
+            fi
+            read -p "请输入包含zip文件的目录路径: " dirpath
+            read -p "请输入要解压到的目标路径: " targetpath
+            mkdir -p "$targetpath"
+            read -p "所有文件是否使用相同的密码? (直接按Enter表示'是'，其他表示'否') " same_password
+
+            if [ -z "$same_password" ]; then
+                read -p "请输入统一密码 (如果不想设置密码，请直接按Enter): " unified_password
+                if [ -z "$unified_password" ]; then
+                    cmd="for z in $dirpath/*.zip; do unzip \$z -d $targetpath; done"
+                else
+                    cmd="for z in $dirpath/*.zip; do unzip -P '$unified_password' \$z -d $targetpath; done"
+                fi
+                screen -dmS unzip_session bash -c "$cmd"
+            else
+                for z in "$dirpath"/*.zip; do
+                    read -p "为 $z 输入密码 (如果不想设置密码，请直接按Enter): " individual_password
+                    if [ -z "$individual_password" ]; then
+                        cmd="unzip $z -d $targetpath"
+                    else
+                        cmd="unzip -P '$individual_password' $z -d $targetpath"
+                    fi
+                    screen -dmS unzip_session bash -c "$cmd"
+                done
+            fi
+            blue "已在新的screen会话 unzip_session 中启动解压任务。"
+            ;;
+
+        7)
+            # 批量压缩在screen会话中
+            if ! command -v zip &> /dev/null || ! command -v screen &> /dev/null; then
+                red "您没有安装zip或screen！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_unzip
+                return
+            fi
+
+            read -p "请输入包含文件夹的目录路径: " dirpath
+            read -p "请输入压缩包的存放路径: " destpath
+            mkdir -p "$destpath"
+            read -p "所有文件夹是否使用相同的密码? (直接按Enter表示'是'，其他表示'否') " same_password
+
+            pushd "$dirpath" > /dev/null
+
+            if [ -z "$same_password" ]; then
+                read -p "请输入统一密码 (如果不想设置密码，请直接按Enter): " unified_password
+                if [ -z "$unified_password" ]; then
+                    cmd="for d in *; do if [ -d \$d ]; then zip -r $destpath/\$d.zip \$d; fi; done"
+                else
+                    cmd="for d in *; do if [ -d \$d ]; then zip -r -P '$unified_password' $destpath/\$d.zip \$d; fi; done"
+                fi
+                screen -dmS zip_session bash -c "$cmd"
+            else
+                for d in *; do
+                    if [ -d "$d" ]; then
+                        read -p "为 $d 输入密码 (如果不想设置密码，请直接按Enter): " individual_password
+                        if [ -z "$individual_password" ]; then
+                            cmd="zip -r $destpath/$d.zip $d"
+                        else
+                            cmd="zip -r -P '$individual_password' $destpath/$d.zip $d"
+                        fi
+                        screen -dmS zip_session bash -c "$cmd"
+                    fi
+                done
+            fi
+
+            popd > /dev/null
+
+            blue "已在新的screen会话 zip_session 中启动压缩任务。"
+            ;;
+
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+
         *)
-            red "不支持的操作系统！ "
-            return 1
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
+            sleep 2
+            install_unzip
             ;;
     esac
 
-    blue "Speedtest CLI 安装完成！ "
-    blue "使用 speedtest 命令即可进行测速！ "
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    soft_menu
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    install_unzip
 }
-## 安装Caddy
-install_caddy() {
+## ca-certificates
+function install_ca_certificates() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============ca-certificates菜单=============== "
+    green " 1. 安装 ca-certificates "
+    green " 2. 卸载 ca-certificates "
+    echo
+    orange " 为保证有权限执行，请使用root用户运行 "
+    yellow " ==================================="
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
+
     # 检查操作系统
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         OS=$ID
-        VERSION_ID=$VERSION_ID
     else
         OS=$(uname -s)
     fi
 
     blue "检测到您的系统为: $OS"
 
-    case $OS in
-        ubuntu|debian|raspbian)
-            # Debian, Ubuntu, Raspbian 安装指令
-            blue "将为您执行 Debian, Ubuntu, Raspbian 下的 Caddy 安装"
-            sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
-            curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-            curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-            sudo apt update
-            sudo apt install caddy
-            ;;
-        fedora)
-            # Fedora 安装指令
-            blue "将为您执行 Fedora 下的 Caddy 安装"
-            sudo dnf install 'dnf-command(copr)'
-            sudo dnf copr enable @caddy/caddy
-            sudo dnf install caddy
-            ;;
-        centos|redhat)
-            # RHEL/CentOS 安装指令
-            if [[ $VERSION_ID == 8* ]]; then
-                blue "将为您执行 RHEL/CentOS 8 下的 Caddy 安装"
-                sudo dnf install 'dnf-command(copr)'
-                sudo dnf copr enable @caddy/caddy
-                sudo dnf install caddy
-            # RHEL/CentOS 7 安装指令
-            elif [[ $VERSION_ID == 7* ]]; then
-                blue "将为您执行 RHEL/CentOS 7 下的 Caddy 安装"
-                sudo yum install yum-plugin-copr
-                sudo yum copr enable @caddy/caddy
-                sudo yum install caddy
+    case "$menuNumberInput" in
+        1)
+            if command -v update-ca-certificates &> /dev/null; then
+                blue "您已经安装过ca-certificates！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_ca_certificates
+                return
             fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt update
+                    sudo apt install -y ca-certificates
+                    ;;
+                centos|redhat)
+                    sudo yum install -y ca-certificates
+                    ;;
+                arch)
+                    sudo pacman -S ca-certificates
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_ca_certificates
+                    return
+                    ;;
+            esac
+            blue "ca-certificates 安装完成！"
             ;;
-        arch|manjaro|parabola)
-            # Arch Linux, Manjaro, Parabola 安装指令
-            blue "将为您执行 Arch Linux, Manjaro, Parabola 下的 Caddy 安装"
-            sudo pacman -Syu caddy
+        2)
+            if ! command -v update-ca-certificates &> /dev/null; then
+                blue "您没有安装ca-certificates！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_ca_certificates
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    sudo apt remove -y ca-certificates
+                    ;;
+                centos|redhat)
+                    sudo yum remove -y ca-certificates
+                    ;;
+                arch)
+                    sudo pacman -R ca-certificates
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    install_ca_certificates
+                    return
+                    ;;
+            esac
+            blue "ca-certificates 卸载完成！"
             ;;
-        Darwin) # macOS
-            # Homebrew (Mac) 安装指令
-            blue "将为您执行 macOS 下的 Caddy 安装"
-            brew install caddy
+        0)
+            # 返回应用程序菜单
+            app_menu
             ;;
         *)
-            echo 
-            red "不支持的操作系统！ "
-            return 1
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
+            sleep 2
+            install_ca_certificates
             ;;
     esac
 
-    blue "Caddy 安装完成！ "
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    soft_menu
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    install_ca_certificates
 }
-## 安装aapanel
-install_aapanel() {
+## SpeedTest CLI
+function install_speedtest() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============Speedtest CLI菜单=============== "
+    green " 1. 安装 Speedtest CLI "
+    green " 2. 运行 Speedtest "
+    green " 3. 指定ID运行 Speedtest "
+    green " 4. 卸载 Speedtest CLI "
+    echo
+    orange " 为保证有权限执行，请使用root用户运行 "
+    yellow " ==================================="
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
+
+    # 检查操作系统
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        OS=$(uname -s)
+    fi
+
+    blue "检测到您的系统为: $OS"
+
+    case "$menuNumberInput" in
+        1)
+            if command -v speedtest &> /dev/null; then
+                blue "您已经安装过 Speedtest CLI！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_speedtest
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    # Ubuntu/Debian 安装指令
+                    blue "将为您执行 Ubuntu/Debian 下的 Speedtest CLI 安装"
+                    sudo apt-get install curl
+                    curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
+                    sudo apt-get install speedtest
+                    ;;
+                fedora|centos|redhat)
+                    # Fedora/CentOS/RedHat 安装指令
+                    blue "将为您执行 Fedora/CentOS/RedHat 下的 Speedtest CLI 安装"
+                    curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh | sudo bash
+                    sudo yum install speedtest
+                    ;;
+                Darwin) # macOS
+                    # macOS 安装指令
+                    blue "将为您执行 macOS 下的 Speedtest CLI 安装"
+                    brew tap teamookla/speedtest
+                    brew update
+                    brew install speedtest --force
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    return 1
+                    ;;
+            esac
+            blue "Speedtest CLI 安装完成！"
+            ;;
+
+        2)
+            if ! command -v speedtest &> /dev/null; then
+                red "您尚未安装 Speedtest CLI！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_speedtest
+                return
+            fi
+            # 运行 Speedtest
+            speedtest
+            ;;
+
+        3)
+            if ! command -v speedtest &> /dev/null; then
+                red "您尚未安装 Speedtest CLI！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_speedtest
+                return
+            fi
+            # 指定ID运行 Speedtest
+            read -p "请输入您想要指定的Speedtest服务器ID: " server_id
+            speedtest --server-id=$server_id
+            ;;
+
+        4)
+            if ! command -v speedtest &> /dev/null; then
+                red "您尚未安装 Speedtest CLI！"
+                red " 两秒后自动返回 "
+                sleep 2
+                install_speedtest
+                return
+            fi
+            # 卸载 Speedtest CLI
+            case $OS in
+                ubuntu|debian)
+                    sudo apt-get remove --purge speedtest
+                    ;;
+                fedora|centos|redhat)
+                    sudo yum remove speedtest
+                    ;;
+                Darwin) # macOS
+                    brew uninstall speedtest
+                    ;;
+                *)
+                    red "不支持的操作系统！"
+                    return 1
+                    ;;
+            esac
+            blue "Speedtest CLI 卸载完成！"
+            ;;
+
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+        *)
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
+            sleep 2
+            install_speedtest
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    install_speedtest
+}
+## Caddy
+function install_caddy() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============Caddy菜单=============== "
+    green " 1. 安装 Caddy "
+    green " 2. Caddy 重新加载 "
+    green " 3. 查看 Caddy 运行状态 "
+    green " 4. 启动 Caddy "
+    green " 5. 停止 Caddy "
+    green " 6. 重启 Caddy "
+    green " 7. 设置 Caddy 开机启动 "
+    green " 8. 关闭 Caddy 开机启动 "
+    green " 9. 卸载 Caddy "
+    echo
+    orange " 为保证有权限执行，请使用root用户运行 "
+    yellow " ==================================="
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
+
+    # 检查操作系统
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        OS=$(uname -s)
+    fi
+
+    blue "检测到您的系统为: $OS"
+
+    case "$menuNumberInput" in
+        1)
+            install_caddy
+            ;;
+        2)
+            blue "重新加载 Caddy..."
+            sudo systemctl reload caddy
+            ;;
+        3)
+            blue "查看 Caddy 运行状态..."
+            sudo systemctl status caddy
+            ;;
+        4)
+            blue "启动 Caddy..."
+            sudo systemctl start caddy
+            ;;
+        5)
+            blue "停止 Caddy..."
+            sudo systemctl stop caddy
+            ;;
+        6)
+            blue "重启 Caddy..."
+            sudo systemctl restart caddy
+            ;;
+        7)
+            blue "设置 Caddy 开机启动..."
+            sudo systemctl enable caddy
+            ;;
+        8)
+            blue "关闭 Caddy 开机启动..."
+            sudo systemctl disable caddy
+            ;;
+        9)
+            if ! command -v caddy &> /dev/null; then
+                blue "您没有安装Caddy！"
+                red " 两秒后自动返回 "
+                sleep 2
+                caddy_management
+                return
+            fi
+            sudo apt remove -y caddy || sudo yum remove -y caddy || sudo pacman -R caddy
+            blue "Caddy 卸载完成！"
+            ;;
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+        *)
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
+            sleep 2
+            install_caddy
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    install_caddy
+}
+
+## aapanel
+function install_aapanel() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============aapanel菜单=============== "
+    green " 1. 安装 aapanel "
+    echo
+    orange " 为保证有权限执行，请使用root用户运行 "
+    yellow " ==================================="
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
+
     # 检查操作系统
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -988,85 +1679,195 @@ install_aapanel() {
 
     blue "检测到您的系统为: $OS"
 
-    case $OS in
-        centos)
-            # CentOS 安装指令
-            blue "将为您执行 CentOS 下的 aapanel 安装"
-            sudo yum install -y wget
-            wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh
-            bash install.sh aapanel
+    case "$menuNumberInput" in
+        1)
+            case $OS in
+                centos)
+                    # CentOS 安装指令
+                    blue "将为您执行 CentOS 下的 aapanel 安装"
+                    sudo yum install -y wget
+                    wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh
+                    bash install.sh aapanel
+                    ;;
+                ubuntu|deepin)
+                    # Ubuntu/Deepin 安装指令
+                    blue "将为您执行 Ubuntu/Deepin 下的 aapanel 安装"
+                    wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh
+                    sudo bash install.sh aapanel
+                    ;;
+                debian)
+                    # Debian 安装指令
+                    blue "将为您执行 Debian 下的 aapanel 安装"
+                    wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh
+                    bash install.sh aapanel
+                    ;;
+                *)
+                    red "不支持的操作系统！ "
+                    return 1
+                    ;;
+            esac
+            blue "aapanel 安装完成！"
+            blue "使用 bt 命令查看 aapanel 菜单"
             ;;
-        ubuntu|deepin)
-            # Ubuntu/Deepin 安装指令
-            blue "将为您执行 Ubuntu/Deepin 下的 aapanel 安装"
-            wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh
-            sudo bash install.sh aapanel
-            ;;
-        debian)
-            # Debian 安装指令
-            blue "将为您执行 Debian 下的 aapanel 安装"
-            wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh
-            bash install.sh aapanel
+        0)
+            # 返回应用程序菜单
+            app_menu
             ;;
         *)
-            red "不支持的操作系统！ "
-            return 1
+            red " 请输入正确数字！ "
+            red " 两秒后自动返回 "
+            sleep 2
+            install_aapanel
             ;;
     esac
 
-    blue "aapanel 安装完成！ "
-    blue "使用 bt 命令查看 aapanel 菜单"
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    soft_menu
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    install_aapanel
 }
 
 # 科学上网
+## soga
+function soga_menu() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============soga菜单=============== "
+    green " 1. 安装 soga "
+    green " 2. 运行 soga "
+    yellow " ==================================="
+    green " 0. 返回科学上网菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
 
-## 安装soga
-install_soga() {
-    # 安装 soga
-    blue "开始安装 soga..."
-    bash <(curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh)
+    case "$menuNumberInput" in
+        1)
+            blue "开始安装 soga..."
+            bash <(curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh)
+            blue "soga 安装完成！"
+            ;;
+        2)
+            blue "开始运行 soga..."
+            soga
+            blue "soga 运行完成！"
+            ;;
+        0)
+            vpn_menu
+            ;;
+        *)
+            red " 请输入正确数字！ "
+            sleep 2
+            soga_menu
+            ;;
+    esac
 
-    blue "soga 安装完成！ "
-    blue "使用 soga 查看 soga 菜单"
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    vpn_menu
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    soga_menu
 }
-## 安装XrayR
-install_XrayR() {
-    # 安装 XrayR
-    blue "开始安装 XrayR..."
-    bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
+## XrayR
+function XrayR_menu() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============XrayR菜单=============== "
+    green " 1. 安装 XrayR "
+    green " 2. 运行 XrayR "
+    yellow " ==================================="
+    green " 0. 返回科学上网菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
 
-    blue "XrayR 安装完成！ "
-    blue "使用 XrayR update 或 xrayr update 更新"
-    blue "使用 XrayR 或 xrayr 查看 XrayR 菜单"
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    vpn_menu
+    case "$menuNumberInput" in
+        1)
+            blue "开始安装 XrayR..."
+            bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
+            blue "XrayR 安装完成！"
+            ;;
+        2)
+            blue "开始运行 XrayR..."
+            xrayr
+            blue "XrayR 运行完成！"
+            ;;
+        0)
+            vpn_menu
+            ;;
+        *)
+            red " 请输入正确数字！ "
+            sleep 2
+            XrayR_menu
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    XrayR_menu
 }
-## 安装ss-go
-install_ss_go() {
-    # 下载并安装 ss-go
-    blue "开始安装 ss-go..."
-    wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBackup/doubi/master/ss-go.sh
-    chmod +x ss-go.sh
-    bash ss-go.sh
+## ss-go
+function ss_go_menu() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============ss-go菜单=============== "
+    green " 1. 安装 ss-go "
+    yellow " ==================================="
+    green " 0. 返回科学上网菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
 
-    blue "ss-go 安装完成！ "
-    blue "使用 ./ss-go.sh 查看 ss-go 菜单"
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    vpn_menu
+    case "$menuNumberInput" in
+        1)
+            blue "开始安装 ss-go..."
+            wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBackup/doubi/master/ss-go.sh
+            chmod +x ss-go.sh
+            bash ss-go.sh
+            blue "ss-go 安装完成！"
+            ;;
+        0)
+            vpn_menu
+            ;;
+        *)
+            red " 请输入正确数字！ "
+            sleep 2
+            ss_go_menu
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    ss_go_menu
 }
-## 安装极光面板
-install_aurora_admin_panel() {
-    # 安装 Aurora Admin Panel
-    blue "开始安装极光面板"
-    bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
+## 极光面板
+function aurora_menu() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============极光面板菜单=============== "
+    green " 1. 安装极光面板 "
+    yellow " ==================================="
+    green " 0. 返回科学上网菜单 "
+    echo
+    read -p " 你的选择是: " menuNumberInput
 
-    blue "极光面板安装完成！ "
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    vpn_menu
+    case "$menuNumberInput" in
+        1)
+            blue "开始安装极光面板..."
+            bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
+            blue "极光面板安装完成！"
+            ;;
+        0)
+            vpn_menu
+            ;;
+        *)
+            red " 请输入正确数字！ "
+            sleep 2
+            aurora_menu
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    aurora_menu
 }
 
 # 菜单
@@ -1113,17 +1914,21 @@ system_menu() {
         ;;
     esac
 }
-# 安装包菜单
+# 软件菜单
 app_menu() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-	yellow " =========ToolBox软件包菜单========== "
-    green " 1.安装nano "
-    green " 2.安装screen "
-    green " 3.安装unzip "
-    green " 4.安装wget, curl 和 git "
-    green " 5.安装ca-certificates "
+	yellow " =========ToolBox软件菜单========== "
+    green " 1. wget, curl 和 git "
+    green " 2. nano "
+    green " 3. screen "
+    green " 4. unzip "
+    green " 5. ca-certificates "
+    green " 6. SpeedTest CLI "
+    green " 7. Caddy "
+    green " 8. aapanel "
+
 
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -1133,19 +1938,28 @@ app_menu() {
     read -p " 请输入数字:" menuNumberInput
     case "$menuNumberInput" in
         1 )
-            install_nano
+            install_wget_curl_git
 	;;
         2 )
-            install_screen
+            install_nano
 	;;
         3 )
-            install_unzip
+            install_screen
 	;;
         4 )
-            install_wget_curl_git
+            install_unzip
     ;;
         5 )
             install_ca_certificates
+    ;;
+        6 )
+            install_speedtest
+    ;;
+        7 )
+            install_caddy
+    ;;
+        8 )
+            install_aapanel
     ;;
         0 )
             start_menu
@@ -1156,45 +1970,6 @@ app_menu() {
             red " 两秒后自动返回 "
             sleep 2s
             app_menu
-        ;;
-    esac
-}
-# 软件菜单
-soft_menu() {
-    clear
-    blue " Rex Lee's ToolBox " 
-    blue " GitHub: https://github.com/RexLee0929 "
-	yellow " =========ToolBox软件菜单============ "
-    green " 1.安装SpeedTest CLI "
-    green " 2.安装Caddy "
-    green " 3.安装aapanel "
-
-
-    echo
-    orange " 为保证有权限执行,请使用root用户运行 "
-    yellow " ==================================== "
-    green " 0. 返回主菜单"
-    echo
-    read -p " 请输入数字:" menuNumberInput
-    case "$menuNumberInput" in
-        1 )
-            install_speedtest
-	;;
-        2 )
-            install_caddy
-	;;
-        3 )
-            install_aapanel
-	;;
-        0 )
-            start_menu
-    ;;
-        * )
-            clear
-            red " 请输入正确数字 ! "
-            red " 两秒后自动返回 "
-            sleep 2s
-            soft_menu
         ;;
     esac
 }
@@ -1218,16 +1993,16 @@ vpn_menu() {
     read -p " 请输入数字:" menuNumberInput
     case "$menuNumberInput" in
         1 )
-            install_soga
+            soga_menu
 	;;
         2 )
-            install_XrayR
+            XrayR_menu
 	;;
         3 )
-            install_ss_go
+            ss_go_menu
 	;;
         4 )
-            install_aurora_admin_panel
+            aurora_menu
     ;;
         0 )
             start_menu
@@ -1248,9 +2023,8 @@ start_menu() {
     blue " GitHub: https://github.com/RexLee0929 "
 	yellow " ==========ToolBox主菜单============ "
 	orange " 1.系统设置菜单 "
-    orange " 2.安装包菜单 "
-    orange " 3.软件菜单 "
-    orange " 4.科学上网菜单 "
+    orange " 2.软件菜单 "
+    orange " 3.科学上网菜单 "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
     yellow " ==================================== "
@@ -1265,9 +2039,6 @@ start_menu() {
             app_menu
 	;;
         3 )
-            soft_menu
-	;;
-        4 )
             vpn_menu
     ;;
         0 )
