@@ -16,11 +16,15 @@
     blue(){
         echo -e "\033[34m\033[01m$1\033[0m"
     }
-    bold(){
-        echo -e "\033[1m\033[01m$1\033[0m"
-    }
     orange(){
         echo -e "\033[38;5;208m\033[01m$1\033[0m"
+    }
+    purple(){
+        echo -e "\033[35m\033[01m$1\033[0m"
+    }
+
+    black(){
+        echo -e "\033[30m\033[01m$1\033[0m"
     }
 
 # 系统设置
@@ -391,7 +395,7 @@ function install_wget_curl_git() {
     case "$menuNumberInput" in
         1)
             if command -v wget &> /dev/null && command -v curl &> /dev/null && command -v git &> /dev/null; then
-                blue "您已经安装过wget, curl 和 git！"
+                purple "您已经安装过wget, curl 和 git！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -421,7 +425,7 @@ function install_wget_curl_git() {
             ;;
         2)
             if command -v wget &> /dev/null; then
-                blue "您已经安装过wget！"
+                purple "您已经安装过wget！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -450,7 +454,7 @@ function install_wget_curl_git() {
             ;;
         3)
             if command -v curl &> /dev/null; then
-                blue "您已经安装过curl！"
+                purple "您已经安装过curl！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -479,7 +483,7 @@ function install_wget_curl_git() {
             ;;
         4)
             if command -v git &> /dev/null; then
-                blue "您已经安装过git！"
+                purple "您已经安装过git！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -664,7 +668,7 @@ function install_nano() {
     case "$menuNumberInput" in
         1)
             if command -v nano &> /dev/null; then
-                blue " 您已经安装过nano了！"
+                purple " 您已经安装过nano了！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_nano
@@ -802,7 +806,7 @@ function install_screen() {
     case "$menuNumberInput" in
         1)
             if command -v screen &> /dev/null; then
-                blue " 您已经安装过screen了！"
+                purple " 您已经安装过screen了！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_screen
@@ -1082,7 +1086,7 @@ function install_unzip() {
     case "$menuNumberInput" in
         1)
             if command -v unzip &> /dev/null; then
-                blue "您已经安装过unzip了！"
+                purple "您已经安装过unzip了！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_unzip
@@ -1358,7 +1362,7 @@ function install_ca_certificates() {
     case "$menuNumberInput" in
         1)
             if command -v update-ca-certificates &> /dev/null; then
-                blue "您已经安装过ca-certificates！"
+                purple "您已经安装过ca-certificates！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_ca_certificates
@@ -1461,7 +1465,7 @@ function install_speedtest() {
     case "$menuNumberInput" in
         1)
             if command -v speedtest &> /dev/null; then
-                blue "您已经安装过 Speedtest CLI！"
+                purple "您已经安装过 Speedtest CLI！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_speedtest
