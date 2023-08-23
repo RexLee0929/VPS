@@ -16,11 +16,15 @@
     blue(){
         echo -e "\033[34m\033[01m$1\033[0m"
     }
-    bold(){
-        echo -e "\033[1m\033[01m$1\033[0m"
-    }
     orange(){
         echo -e "\033[38;5;208m\033[01m$1\033[0m"
+    }
+    purple(){
+        echo -e "\033[38;5;5m$1\033[0m"
+    }
+
+    black(){
+        echo -e "\033[38;5;0m$1\033[0m"
     }
 
 # 系统设置
@@ -94,7 +98,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Asia/Shanghai'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                green " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -104,7 +108,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Asia/Tokyo'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                green " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -114,7 +118,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='America/New_York'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                green " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -124,7 +128,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='America/Los_Angeles'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                green " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -134,7 +138,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Europe/London'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                green " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -144,7 +148,7 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Europe/Paris'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                green " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了"
             else
                 timedatectl set-timezone "$target_timezone"
                 blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
@@ -290,29 +294,29 @@ function preferIPV4() {
         1)
             # 检查是否已经设置了 IPv4 优先
             if grep -qE "^[^#]*precedence ::ffff:0:0/96  100" /etc/gai.conf; then
-                blue "您已经设置过优先使用 IPv4 了"
+                purple "您已经设置过优先使用 IPv4 了"
             else
                 if grep -qE "^[^#]*label 2002::/16   2" /etc/gai.conf; then
-                    blue "您已经设置过了 IPv6 优先, 本次清除了 IPv6 优先的设置"
+                    purple "您已经设置过了 IPv6 优先, 本次清除了 IPv6 优先的设置"
                     sed -i '/label 2002::\/16   2/d' /etc/gai.conf
                 fi
                 # 设置 IPv4 优先
                 echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
-                blue "已经成功设置为 IPv4 优先"
+                purple "已经成功设置为 IPv4 优先"
             fi
             ;;
         2)
             # 检查是否已经设置了 IPv6 优先
             if grep -qE "^[^#]*label 2002::/16   2" /etc/gai.conf; then
-                blue "您已经设置过优先使用 IPv6 了"
+                purple "您已经设置过优先使用 IPv6 了"
             else
                 if grep -qE "^[^#]*precedence ::ffff:0:0/96  100" /etc/gai.conf; then
-                    blue "您已经设置过了 IPv4 优先, 本次清除了 IPv4 优先的设置"
+                    purple "您已经设置过了 IPv4 优先, 本次清除了 IPv4 优先的设置"
                     sed -i '/precedence ::ffff:0:0\/96  100/d' /etc/gai.conf
                 fi
                 # 设置 IPv6 优先
                 echo "label 2002::/16   2" >> /etc/gai.conf
-                blue "已经成功设置为 IPv6 优先"
+                purple "已经成功设置为 IPv6 优先"
             fi
             ;;
         3)
@@ -367,10 +371,10 @@ function install_wget_curl_git() {
     green " 2. 安装 wget "
     green " 3. 安装 curl "
     green " 4. 安装 git "
-    green " 5. 卸载 wget, curl, git "
-    green " 6. 卸载 wget "
-    green " 7. 卸载 curl "
-    green " 8. 卸载 git "
+    black " 5. 卸载 wget, curl, git "
+    black " 6. 卸载 wget "
+    black " 7. 卸载 curl "
+    black " 8. 卸载 git "
     echo
     orange " 为保证有权限执行，请使用root用户运行 "
     yellow " ==================================="
@@ -391,7 +395,7 @@ function install_wget_curl_git() {
     case "$menuNumberInput" in
         1)
             if command -v wget &> /dev/null && command -v curl &> /dev/null && command -v git &> /dev/null; then
-                blue "您已经安装过wget, curl 和 git！"
+                purple "您已经安装过wget, curl 和 git！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -421,7 +425,7 @@ function install_wget_curl_git() {
             ;;
         2)
             if command -v wget &> /dev/null; then
-                blue "您已经安装过wget！"
+                purple "您已经安装过wget！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -450,7 +454,7 @@ function install_wget_curl_git() {
             ;;
         3)
             if command -v curl &> /dev/null; then
-                blue "您已经安装过curl！"
+                purple "您已经安装过curl！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -479,7 +483,7 @@ function install_wget_curl_git() {
             ;;
         4)
             if command -v git &> /dev/null; then
-                blue "您已经安装过git！"
+                purple "您已经安装过git！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -533,7 +537,7 @@ function install_wget_curl_git() {
                     return
                     ;;
             esac
-            blue "wget, curl 和 git 卸载完成！"
+            black "wget, curl 和 git 卸载完成！"
             ;;
         6)
             if ! command -v wget &> /dev/null; then
@@ -562,7 +566,7 @@ function install_wget_curl_git() {
                     return
                     ;;
             esac
-            blue "wget 卸载完成！"
+            black "wget 卸载完成！"
             ;;
         7)
             if ! command -v curl &> /dev/null; then
@@ -591,7 +595,7 @@ function install_wget_curl_git() {
                     return
                     ;;
             esac
-            blue "curl 卸载完成！"
+            black "curl 卸载完成！"
             ;;
         8)
             if ! command -v git &> /dev/null; then
@@ -620,7 +624,7 @@ function install_wget_curl_git() {
                     return
                     ;;
             esac
-            blue "git 卸载完成！"
+            black "git 卸载完成！"
             ;;
         0)
             # 返回应用程序菜单
@@ -646,7 +650,7 @@ function install_nano() {
     yellow " ============Nano菜单=============== "
     green " 1. 安装 Nano "
     green " 2. 使用 Nano 打开文件 "
-    green " 3. 卸载 Nano "
+    black " 3. 卸载 Nano "
     echo
     orange " 为保证有权限执行，请使用root用户运行 "
     yellow " ==================================="
@@ -664,7 +668,7 @@ function install_nano() {
     case "$menuNumberInput" in
         1)
             if command -v nano &> /dev/null; then
-                blue " 您已经安装过nano了！"
+                purple " 您已经安装过nano了！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_nano
@@ -734,15 +738,15 @@ function install_nano() {
             
             case $OS in
                 ubuntu|debian)
-                    blue "将为您执行 $OS 下的 nano 卸载"
+                    black "将为您执行 $OS 下的 nano 卸载"
                     sudo apt remove -y nano
                     ;;
                 centos|redhat)
-                    blue "将为您执行 $OS 下的 nano 卸载"
+                    black "将为您执行 $OS 下的 nano 卸载"
                     sudo yum remove -y nano
                     ;;
                 arch)
-                    blue "将为您执行 $OS 下的 nano 卸载"
+                    black "将为您执行 $OS 下的 nano 卸载"
                     sudo pacman -R nano
                     ;;
                 *)
@@ -753,7 +757,7 @@ function install_nano() {
                     return
                     ;;
             esac
-            blue "nano 卸载完成！ "
+            black "nano 卸载完成！ "
             ;;
         0)
             # 返回应用程序菜单
@@ -784,7 +788,7 @@ function install_screen() {
     green " 4. 查看 Screen 会话 "
     green " 5. 删除 Screen 会话 "
     green " 6. 删除所有的 screen 会话 "
-    green " 7. 卸载 Screen "
+    black " 7. 卸载 Screen "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
     yellow " ==================================="
@@ -802,7 +806,7 @@ function install_screen() {
     case "$menuNumberInput" in
         1)
             if command -v screen &> /dev/null; then
-                blue " 您已经安装过screen了！"
+                purple " 您已经安装过screen了！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_screen
@@ -1014,15 +1018,15 @@ function install_screen() {
             fi
             case $OS in
                 ubuntu|debian)
-                    blue "将为您执行 $OS 下的 screen 卸载"
+                    black "将为您执行 $OS 下的 screen 卸载"
                     sudo apt remove -y screen
                     ;;
                 centos|redhat)
-                    blue "将为您执行 $OS 下的 screen 卸载"
+                    black "将为您执行 $OS 下的 screen 卸载"
                     sudo yum remove -y screen
                     ;;
                 arch)
-                    blue "将为您执行 $OS 下的 screen 卸载"
+                    black "将为您执行 $OS 下的 screen 卸载"
                     sudo pacman -R screen
                     ;;
                 *)
@@ -1033,7 +1037,7 @@ function install_screen() {
                     return
                     ;;
             esac
-            blue "screen 卸载完成！ "
+            black "screen 卸载完成！ "
             ;;
         0)
             # 返回安装包菜单
@@ -1082,7 +1086,7 @@ function install_unzip() {
     case "$menuNumberInput" in
         1)
             if command -v unzip &> /dev/null; then
-                blue "您已经安装过unzip了！"
+                purple "您已经安装过unzip了！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_unzip
@@ -1337,7 +1341,7 @@ function install_ca_certificates() {
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============ca-certificates菜单=============== "
     green " 1. 安装 ca-certificates "
-    green " 2. 卸载 ca-certificates "
+    black " 2. 卸载 ca-certificates "
     echo
     orange " 为保证有权限执行，请使用root用户运行 "
     yellow " ==================================="
@@ -1358,7 +1362,7 @@ function install_ca_certificates() {
     case "$menuNumberInput" in
         1)
             if command -v update-ca-certificates &> /dev/null; then
-                blue "您已经安装过ca-certificates！"
+                purple "您已经安装过ca-certificates！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_ca_certificates
@@ -1413,7 +1417,7 @@ function install_ca_certificates() {
                     return
                     ;;
             esac
-            blue "ca-certificates 卸载完成！"
+            black "ca-certificates 卸载完成！"
             ;;
         0)
             # 返回应用程序菜单
@@ -1440,7 +1444,7 @@ function install_speedtest() {
     green " 1. 安装 Speedtest CLI "
     green " 2. 运行 Speedtest "
     green " 3. 指定ID运行 Speedtest "
-    green " 4. 卸载 Speedtest CLI "
+    black " 4. 卸载 Speedtest CLI "
     echo
     orange " 为保证有权限执行，请使用root用户运行 "
     yellow " ==================================="
@@ -1461,7 +1465,7 @@ function install_speedtest() {
     case "$menuNumberInput" in
         1)
             if command -v speedtest &> /dev/null; then
-                blue "您已经安装过 Speedtest CLI！"
+                purple "您已经安装过 Speedtest CLI！"
                 red " 两秒后自动返回 "
                 sleep 2
                 install_speedtest
@@ -1546,7 +1550,7 @@ function install_speedtest() {
                     return 1
                     ;;
             esac
-            blue "Speedtest CLI 卸载完成！"
+            black "Speedtest CLI 卸载完成！"
             ;;
 
         0)
@@ -1579,7 +1583,7 @@ function install_caddy() {
     green " 6. 重启 Caddy "
     green " 7. 设置 Caddy 开机启动 "
     green " 8. 关闭 Caddy 开机启动 "
-    green " 9. 卸载 Caddy "
+    black " 9. 卸载 Caddy "
     echo
     orange " 为保证有权限执行，请使用root用户运行 "
     yellow " ==================================="
@@ -1638,7 +1642,7 @@ function install_caddy() {
                 return
             fi
             sudo apt remove -y caddy || sudo yum remove -y caddy || sudo pacman -R caddy
-            blue "Caddy 卸载完成！"
+            black "Caddy 卸载完成！"
             ;;
         0)
             # 返回应用程序菜单
