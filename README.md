@@ -1,4 +1,50 @@
-# VPS 自用常用脚本
+# Rex Lee's ToolBox 
+
+
+
+## 现已支持
+![image](https://github.com/RexLee0929/VPS/assets/62170324/8e23c288-5a75-4337-b39f-c3b6b0c1dd5e)
+
+![image](https://github.com/RexLee0929/VPS/assets/62170324/8d92227f-c02a-4fb2-88e4-b9ba7fa853d6)
+
+![image](https://github.com/RexLee0929/VPS/assets/62170324/68539c5b-a62f-47c7-a8d4-7b46a88d403f)
+
+## 即将支持
+
+Ubuntu 使用 netplan 配置ipv6
+
+融合怪脚本
+
+哪吒面板多插
+
+rar
+
+7z
+
+renamer
+
+aria2
+
+挂载硬盘 
+
+docker 
+
+....
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## 基础
 
