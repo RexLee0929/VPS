@@ -73,7 +73,7 @@ function set_timezone(){
     yellow " ==================================="
     green " 0. 返回系统设置菜单"
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     # 确保用户具有必要的权限
     if [ "$(id -u)" != "0" ]; then
@@ -184,7 +184,7 @@ function setup_swap() {
     yellow " ==================================="
     green " 0. 返回系统设置菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     # root权限检查
     if [[ $EUID -ne 0 ]]; then
@@ -362,7 +362,7 @@ function install_wget_curl_git() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-    yellow " ============工具安装菜单=============== "
+    yellow " ============工具菜单============== "
     green " 1. 安装 wget, curl, git "
     green " 2. 安装 wget "
     green " 3. 安装 curl "
@@ -376,7 +376,7 @@ function install_wget_curl_git() {
     yellow " ==================================="
     green " 0. 返回应用程序菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     # 检查操作系统
     if [ -f /etc/os-release ]; then
@@ -652,7 +652,7 @@ function install_nano() {
     yellow " ==================================="
     green " 0. 返回应用程序菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -790,7 +790,7 @@ function install_screen() {
     yellow " ==================================="
     green " 0. 返回系统设置菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -1067,7 +1067,7 @@ function install_unzip() {
     yellow " ==================================="
     green " 0. 返回应用程序菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     # 检查操作系统
     if [ -f /etc/os-release ]; then
@@ -1343,7 +1343,7 @@ function install_ca_certificates() {
     yellow " ==================================="
     green " 0. 返回应用程序菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     # 检查操作系统
     if [ -f /etc/os-release ]; then
@@ -1446,7 +1446,7 @@ function install_speedtest() {
     yellow " ==================================="
     green " 0. 返回应用程序菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     # 检查操作系统
     if [ -f /etc/os-release ]; then
@@ -1585,7 +1585,7 @@ function install_caddy() {
     yellow " ==================================="
     green " 0. 返回应用程序菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     # 检查操作系统
     if [ -f /etc/os-release ]; then
@@ -1669,7 +1669,7 @@ function install_aapanel() {
     yellow " ==================================="
     green " 0. 返回应用程序菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     # 检查操作系统
     if [ -f /etc/os-release ]; then
@@ -1742,7 +1742,7 @@ function install_soga() {
     yellow " ==================================="
     green " 0. 返回科学上网菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
@@ -1781,7 +1781,7 @@ function install_XrayR() {
     yellow " ==================================="
     green " 0. 返回科学上网菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
@@ -1819,7 +1819,7 @@ function install_ss_go() {
     yellow " ==================================="
     green " 0. 返回科学上网菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
@@ -1854,7 +1854,7 @@ function install_aurora() {
     yellow " ==================================="
     green " 0. 返回科学上网菜单 "
     echo
-    read -p " 你的选择是: " menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
@@ -1880,12 +1880,12 @@ function install_aurora() {
 
 # 菜单
 
-# 系统设置菜单
+# 系统菜单
 system_menu() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-	yellow " =======ToolBox系统设置菜单========== "
+	yellow " =========ToolBox系统菜单============ "
     green " 1.BBR加速 "
     green " 2.设置时区 "
     green " 3.设置swap "
@@ -2027,11 +2027,10 @@ vpn_menu() {
 # 主菜单
 start_menu() {
     clear
-blue " =================================================== "    
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
 	yellow " ==========ToolBox主菜单============ "
-	orange " 1.系统设置菜单 "
+	orange " 1.系统菜单 "
     orange " 2.软件菜单 "
     orange " 3.科学上网菜单 "
     echo
