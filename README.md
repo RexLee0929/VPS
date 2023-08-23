@@ -11,48 +11,6 @@ sudo sed -i 's/^.*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ss
 sudo service sshd restart
 ```
 
-### 安装curl和weget
-
-***CentOS***
-
-```
-yum install -y curl wget
-```
-
-***Ubuntu***
-
-```
-apt install -y curl wget
-```
-
-### 安装ca-certificates
-
-***CentOS***
-
-```
-yum install -y ca-certificates
-```
-
-***Ubuntu***
-
-```
-apt install -y ca-certificates
-```
-
-### 管理BBR加速
-
-首次使用
-
-```
-wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
-```
-
-后续使用
-
-```
-./tcp.sh
-```
-
 ### 安装哪吒面板
 
 首次使用
@@ -65,77 +23,6 @@ curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -
 
 ```
 ./nezha.sh
-```
-
-### 安装screen
-
-***CentOS***
-
-```
-yum install -y screen
-```
-
-***Ubuntu***
-
-```
-apt install -y screen
-```
-
-使用方法
-
-```
-screen #创建一个新的窗口
-screen -ls #列出所有窗口
-screen -wipe #删除Dead窗口
-screen -r 123 #回到窗口123
-screen -d 123 #分离123 窗口
-screen -S 123 -X quit #杀死窗口123
-```
-
-删除所有 screen
-
-```
-screen -ls | grep -o '[0-9]*\.' | while read line; do screen -S "${line}" -X quit; done
-```
-
-### 安装nano编辑器
-
-***CentOS***
-
-```
-yum install -y nano
-```
-
-***Ubuntu***
-
-```
-apt install -y nano
-```
-
-### 安装unzip
-
-***CentOS***
-
-```
-yum install -y unzip
-```
-
-***Ubuntu***
-
-```
-apt install -y unzip
-```
-
-压缩子目录
-
-```
-find /DISK/* -mindepth 1 -type d -print0 | while read -d '' -r dir; do zip -r "${dir}.zip" "${dir}" ; done
-```
-
-压缩子目录的子目录
-
-```
-for dir in /DISK/6/*; do find "$dir" -mindepth 1 -type d -print0 | while read -d '' -r subdir; do zip -r "${subdir}.zip" "${subdir}"; done; done
 ```
 
 ### 安装unrar
@@ -207,14 +94,6 @@ apt install -y p7zip-full p7zip-rar
 
 ```
 find . -name "*.7z" | while read filename; do 7z x -p'password' "$filename" -o"$(dirname "$filename")" ; done
-```
-
-### 更改时区
-
-更改到上海
-
-```
-timedatectl set-timezone 'Asia/Shanghai'
 ```
 
 ## 常用应用
@@ -348,38 +227,11 @@ WantedBy=multi-user.target
 
 EOF
 ```
-### SS-GO
-
-首次使用
-
-```
-wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBackup/doubi/master/ss-go.sh && chmod +x ss-go.sh && bash ss-go.sh
-```
-
-后续使用
-
-```
-./ss-go.sh
-```
 
 ### 流媒体检测
 
 ```
 bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh)
-```
-
-### ToolBox
-
-首次使用
-
-```
-wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
-```
-
-后续使用
-
-```
-./jcnfbox.sh
 ```
 
 ### 多维度测试VPS
@@ -412,46 +264,6 @@ bash install.sh  --port=运行端口 --user=用户名 --passwd=密码
 
 ```
 bash install.sh --uninstall
-```
-
-### Soga后端
-
-下载脚本
-
-```
-bash <(curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh)
-```
-
-编辑 `soga` 配置文件
-
-```
-nano  /etc/soga/soga.conf
-```
-
-后续运行
-
-```
-soga
-```
-
-### XrayR后端
-
-下载脚本
-
-```
-bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
-```
-
-编辑 `XrayR` 配置文件
-
-```
-nano  /etc/XrayR/config.yml
-```
-
-后续运行
-
-```
-xrayr
 ```
 
 ### 一键WARP脚本
@@ -512,72 +324,6 @@ chmod 755 besttrace
 ```
 ./besttrace/besttrace -q 1 'Your=IP'
 ```
-
-### SpeedTest CLI
-
-***CentOS***
-
-安装脚本
-
-```
-curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh | sudo bash
-yum install -y speedtest
-```
-
-***Ubuntu***
-
-```
-curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh | sudo bash
-apt install -y speedtest
-```
-
-使用方法
-
-```
-speedtest
-```
-
-查看帮助
-
-```
-speedtest -h
-```
-
-### Caddy
-
-***CentOS 8***
-
-```
-dnf install 'dnf-command(copr)'
-dnf copr enable @caddy/caddy
-dnf install caddy
-```
-
-***CentOS 7***
-
-```
-yum install yum-plugin-copr
-yum copr enable @caddy/caddy
-yum install caddy
-```
-
-***Ubuntu***
-
-```
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt update
-sudo apt install caddy
-```
-
-### 极光面板
-
-```
-bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
-```
-
-
 
 ## 系统
 
