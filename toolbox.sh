@@ -29,7 +29,7 @@
 
 # 系统设置
 ## BBR加速
-function setup_bbr(){
+function bbr_management(){
     # 确保脚本在任何命令失败时停止
     set -e
     
@@ -43,7 +43,7 @@ function setup_bbr(){
     # 使用wget下载脚本
     if ! wget -4 -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh"; then
         echo 
-        red " Error: Failed to download the script. Contact Rex to update the script URL. "
+        red " Error: Failed to download the script. Contact Rex to update the script URL "
         return 1
     fi
     
@@ -53,43 +53,43 @@ function setup_bbr(){
     # 执行脚本
     ./tcp.sh
 
-    # 可选：执行后删除脚本
+    # 可选: 执行后删除脚本
     # rm -f tcp.sh
 
     # 按任意键返回菜单
-    read -n 1 -s -r -p "按任意键返回菜单..."
+    read -n 1 -s -r -p " 按任意键返回菜单... "
     system_menu
 }
 ## 设置时区
-function set_timezone(){
+function swap_management(){
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
 	yellow " ============设置时区=============== "
-    green " 1.设置时区为上海 "
-    green " 2.设置时区为东京 "
-    green " 3.设置时区为纽约 "
-    green " 4.设置时区为洛杉矶 "
-    green " 5.设置时区为伦敦 "
-    green " 6.设置时区为巴黎 "
+    green " 1. 设置时区为上海 "
+    green " 2. 设置时区为东京 "
+    green " 3. 设置时区为纽约 "
+    green " 4. 设置时区为洛杉矶 "
+    green " 5. 设置时区为伦敦 "
+    green " 6. 设置时区为巴黎 "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
-    yellow " ==================================="
-    green " 0. 返回系统设置菜单"
+    yellow " =================================== "
+    green " 0. 返回系统设置菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
 
     # 确保用户具有必要的权限
     if [ "$(id -u)" != "0" ]; then
         echo 
-        red " 错误：此功能需要以root或sudo身份运行。"
+        red " 错误: 此功能需要以 root 或 sudo 身份运行. "
         return 1
     fi
 
     # 检查timedatectl是否可用
     if ! command -v timedatectl &> /dev/null; then
         echo 
-        red " 错误：此系统不支持timedatectl命令。"
+        red " 错误: 此系统不支持 timedatectl 命令. "
         return 1
     fi
 
@@ -98,60 +98,60 @@ function set_timezone(){
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Asia/Shanghai'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                purple " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了 "
             else
                 timedatectl set-timezone "$target_timezone"
-                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+                blue " 当前时区为 $current_timezone. 已将时区设置为 $target_timezone "
             fi
         ;;
         2 )
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Asia/Tokyo'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                purple " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了 "
             else
                 timedatectl set-timezone "$target_timezone"
-                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+                blue " 当前时区为 $current_timezone. 已将时区设置为 $target_timezone "
             fi
         ;;
         3 )
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='America/New_York'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                purple " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了 "
             else
                 timedatectl set-timezone "$target_timezone"
-                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+                blue " 当前时区为 $current_timezone. 已将时区设置为 $target_timezone "
             fi
         ;;
         4 )
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='America/Los_Angeles'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                purple " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了 "
             else
                 timedatectl set-timezone "$target_timezone"
-                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+                blue " 当前时区为 $current_timezone. 已将时区设置为 $target_timezone "
             fi
         ;;
         5 )
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Europe/London'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                purple " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了 "
             else
                 timedatectl set-timezone "$target_timezone"
-                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+                blue " 当前时区为 $current_timezone. 已将时区设置为 $target_timezone "
             fi
         ;;
         6 )
             current_timezone=$(timedatectl show --property=Timezone --value)
             target_timezone='Europe/Paris'
             if [ "$current_timezone" == "$target_timezone" ]; then
-                purple " 您已经设置过时区为 $target_timezone 了"
+                purple " 您已经设置过时区为 $target_timezone 了 "
             else
                 timedatectl set-timezone "$target_timezone"
-                blue " 当前时区为 $current_timezone。已将时区设置为 $target_timezone "
+                blue " 当前时区为 $current_timezone. 已将时区设置为 $target_timezone "
             fi
         ;;
         0 )
@@ -160,45 +160,45 @@ function set_timezone(){
             return 0
         ;;
         * )
-            red " 无效的选择，请重新输入！ "
+            red " 无效的选择,请重新输入 "
             red " 两秒后重新选择返回 "
             sleep 2s
-            set_timezone
+            swap_management
         ;;
     esac
 
     # 按任意键返回菜单
-    read -n 1 -s -r -p "按任意键返回菜单..."
-    set_timezone
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    swap_management
 }
 ## 设置swap
-function setup_swap() {
+function swap_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
     blue " 代码参考: https://github.com/spiritLHLS "
     yellow " ============设置swap=============== "
-    green " 1.设置swap为1G "
-    green " 2.设置swap为2G "
-    green " 3.设置swap为4G "
-    green " 4.自定义swap大小 "
-    green " 5.删除swap "
+    green " 1. 设置swap为1G "
+    green " 2. 设置swap为2G "
+    green " 3. 设置swap为4G "
+    green " 4. 自定义swap大小 "
+    green " 5. 删除swap "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
-    yellow " ==================================="
+    yellow " =================================== "
     green " 0. 返回系统设置菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
 
     # root权限检查
     if [[ $EUID -ne 0 ]]; then
-        red "错误：此脚本必须以root权限运行！ "
+        red " 错误: 此脚本必须以 root 权限运行 "
         exit 1
     fi
 
     # 检测ovz
     if [[ -d "/proc/vz" ]]; then
-        red "您的VPS基于OpenVZ，不支持！ "
+        red " 您的 VPS 基于 OpenVZ,不支持 "
         exit 1
     fi
 
@@ -209,17 +209,17 @@ function setup_swap() {
 
         # 如果不存在将为其创建swap
         if [ $? -ne 0 ]; then
-            green "swapfile未发现，正在为其创建swapfile"
+            green " swapfile 未发现,正在为其创建 swapfile "
             fallocate -l ${swapsize}M /swapfile
             chmod 600 /swapfile
             mkswap /swapfile
             swapon /swapfile
             echo '/swapfile none swap defaults 0 0' >> /etc/fstab
-            green "swap创建成功，并查看信息："
+            green " swap 创建成功,并查看信息: "
             cat /proc/swaps
             cat /proc/meminfo | grep Swap
         else
-            red "swapfile已存在，swap设置失败，请先删除当前swap后重新设置！ "
+            red " swapfile 已存在, swap 设置失败,请先删除当前 swap 后重新设置 "
         fi
     }
 
@@ -229,14 +229,14 @@ function setup_swap() {
 
         # 如果存在就将其移除
         if [ $? -eq 0 ]; then
-            green "swapfile已发现，正在将其移除..."
+            green " swapfile已发现,正在将其移除... "
             sed -i '/swapfile/d' /etc/fstab
             echo "3" > /proc/sys/vm/drop_caches
             swapoff -a
             rm -f /swapfile
-            green "swap已删除！ "
+            green " swap 已删除 "
         else
-            red "swapfile未发现，swap删除失败！ "
+            red " swapfile 未发现, swap 删除失败 "
         fi
     }
 
@@ -251,8 +251,8 @@ function setup_swap() {
             add_swap 4096
             ;;
         4)
-            green " 请输入需要添加的swap大小（单位：MB）："
-            read -p " 请输入swap数值:" custom_swap_size
+            green " 请输入需要添加的 swap 大小(单位: MB): "
+            read -p " 请输入 swap 数值: " custom_swap_size
             add_swap $custom_swap_size
             ;;
         5)
@@ -263,17 +263,17 @@ function setup_swap() {
             system_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2s
-            setup_swap
+            swap_management
             ;;
     esac
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    setup_swap
+    swap_management
 }
 ## IPv4/IPv6优先级调整
-function preferIPV4() {
+function network_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -289,34 +289,34 @@ function preferIPV4() {
     yellow " ==================================== "
     green " 0. 返回系统设置菜单 "
     echo
-    read -p "您的选择是: " isPreferIPv4Input
-    case $isPreferIPv4Input in
+    read -p " 您的选择是: " isnetwork_managementInput
+    case $isnetwork_managementInput in
         1)
             # 检查是否已经设置了 IPv4 优先
             if grep -qE "^[^#]*precedence ::ffff:0:0/96  100" /etc/gai.conf; then
-                purple "您已经设置过优先使用 IPv4 了"
+                purple " 您已经设置过优先使用 IPv4 了 "
             else
                 if grep -qE "^[^#]*label 2002::/16   2" /etc/gai.conf; then
-                    purple "您已经设置过了 IPv6 优先, 本次清除了 IPv6 优先的设置"
+                    purple " 您已经设置过了 IPv6 优先, 本次清除了 IPv6 优先的设置 "
                     sed -i '/label 2002::\/16   2/d' /etc/gai.conf
                 fi
                 # 设置 IPv4 优先
                 echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
-                purple "已经成功设置为 IPv4 优先"
+                purple " 已经成功设置为 IPv4 优先 "
             fi
             ;;
         2)
             # 检查是否已经设置了 IPv6 优先
             if grep -qE "^[^#]*label 2002::/16   2" /etc/gai.conf; then
-                purple "您已经设置过优先使用 IPv6 了"
+                purple " 您已经设置过优先使用 IPv6 了 "
             else
                 if grep -qE "^[^#]*precedence ::ffff:0:0/96  100" /etc/gai.conf; then
-                    purple "您已经设置过了 IPv4 优先, 本次清除了 IPv4 优先的设置"
+                    purple " 您已经设置过了 IPv4 优先, 本次清除了 IPv4 优先的设置 "
                     sed -i '/precedence ::ffff:0:0\/96  100/d' /etc/gai.conf
                 fi
                 # 设置 IPv6 优先
                 echo "label 2002::/16   2" >> /etc/gai.conf
-                purple "已经成功设置为 IPv6 优先"
+                purple " 已经成功设置为 IPv6 优先 "
             fi
             ;;
         3)
@@ -338,9 +338,9 @@ function preferIPV4() {
             echo
             curl ip.p3terx.com
             echo
-            green "上面信息显示："
-            green "如果是IPv4地址->则VPS服务器已设置为优先使用 IPv4"
-            green "如果是IPv6地址->则VPS服务器已设置为优先使用 IPv6 "
+            green " 上面信息显示: "
+            green " 如果是IPv4地址->则VPS服务器已设置为优先使用 IPv4 "
+            green " 如果是IPv6地址->则VPS服务器已设置为优先使用 IPv6 "
             green " ===================================== "
             echo
             ;;
@@ -350,14 +350,14 @@ function preferIPV4() {
             return 0
             ;;
         *)
-            red " 无效的选择，请重新输入! "
+            red " 无效的选择,请重新输入 "
             red " 两秒后自动返回 "
             sleep 2s
-            preferIPV4
+            network_management
             ;;
     esac
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    preferIPV4
+    network_management
 }
 
 # 软件
@@ -366,7 +366,7 @@ function install_wget_curl_git() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-    yellow " ============工具菜单============== "
+    yellow " =============工具菜单=============== "
     green " 1. 安装 wget, curl, git "
     green " 2. 安装 wget "
     green " 3. 安装 curl "
@@ -376,8 +376,8 @@ function install_wget_curl_git() {
     black " 7. 卸载 curl "
     black " 8. 卸载 git "
     echo
-    orange " 为保证有权限执行，请使用root用户运行 "
-    yellow " ==================================="
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
     green " 0. 返回应用程序菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
@@ -390,12 +390,12 @@ function install_wget_curl_git() {
         OS=$(uname -s)
     fi
 
-    blue "检测到您的系统为: $OS"
+    blue " 检测到您的系统为: $OS "
 
     case "$menuNumberInput" in
         1)
             if command -v wget &> /dev/null && command -v curl &> /dev/null && command -v git &> /dev/null; then
-                purple "您已经安装过wget, curl 和 git！"
+                purple " 您已经安装过 wget, curl 和 git 了 "
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -414,18 +414,18 @@ function install_wget_curl_git() {
                     sudo pacman -S wget curl git
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
                     install_wget_curl_git
                     return
                     ;;
             esac
-            blue "wget, curl 和 git 安装完成！ "
+            blue " wget, curl 和 git 安装完成 "
             ;;
         2)
             if command -v wget &> /dev/null; then
-                purple "您已经安装过wget！"
+                purple " 您已经安装过 wget "
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -443,18 +443,18 @@ function install_wget_curl_git() {
                     sudo pacman -S wget
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
                     install_wget_curl_git
                     return
                     ;;
             esac
-            blue "wget 安装完成！"
+            blue " wget 安装完成 "
             ;;
         3)
             if command -v curl &> /dev/null; then
-                purple "您已经安装过curl！"
+                purple " 您已经安装过 curl "
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -472,18 +472,18 @@ function install_wget_curl_git() {
                     sudo pacman -S curl
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
                     install_wget_curl_git
                     return
                     ;;
             esac
-            blue "curl 安装完成！"
+            blue "curl 安装完成 "
             ;;
         4)
             if command -v git &> /dev/null; then
-                purple "您已经安装过git！"
+                purple " 您已经安装过git "
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -501,18 +501,18 @@ function install_wget_curl_git() {
                     sudo pacman -S git
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
                     install_wget_curl_git
                     return
                     ;;
             esac
-            blue "git 安装完成！"
+            blue " git 安装完成 "
             ;;
         5)
             if ! command -v wget &> /dev/null || ! command -v curl &> /dev/null || ! command -v git &> /dev/null; then
-                blue "您没有安装wget, curl 或 git中的至少一个！"
+                blue " 您没有安装 wget, curl 或 git 中的至少一个 "
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -530,18 +530,18 @@ function install_wget_curl_git() {
                     sudo pacman -R wget curl git
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
                     install_wget_curl_git
                     return
                     ;;
             esac
-            black "wget, curl 和 git 卸载完成！"
+            black " wget, curl 和 git 卸载完成 "
             ;;
         6)
             if ! command -v wget &> /dev/null; then
-                blue "您没有安装wget！"
+                blue " 您没有安装 wget "
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -559,18 +559,18 @@ function install_wget_curl_git() {
                     sudo pacman -R wget
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
                     install_wget_curl_git
                     return
                     ;;
             esac
-            black "wget 卸载完成！"
+            black " wget 卸载完成 "
             ;;
         7)
             if ! command -v curl &> /dev/null; then
-                blue "您没有安装curl！"
+                blue " 您没有安装 curl "
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -588,18 +588,18 @@ function install_wget_curl_git() {
                     sudo pacman -R curl
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
                     install_wget_curl_git
                     return
                     ;;
             esac
-            black "curl 卸载完成！"
+            black " curl 卸载完成 "
             ;;
         8)
             if ! command -v git &> /dev/null; then
-                blue "您没有安装git！"
+                blue " 您没有安装 git "
                 red " 两秒后自动返回 "
                 sleep 2
                 install_wget_curl_git
@@ -617,21 +617,21 @@ function install_wget_curl_git() {
                     sudo pacman -R git
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
                     install_wget_curl_git
                     return
                     ;;
             esac
-            black "git 卸载完成！"
+            black " git 卸载完成 "
             ;;
         0)
             # 返回应用程序菜单
             app_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2s
             install_wget_curl_git
@@ -643,7 +643,7 @@ function install_wget_curl_git() {
     install_wget_curl_git
 }
 ## nano
-function install_nano() {
+function nano_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -652,8 +652,8 @@ function install_nano() {
     green " 2. 使用 Nano 打开文件 "
     black " 3. 卸载 Nano "
     echo
-    orange " 为保证有权限执行，请使用root用户运行 "
-    yellow " ==================================="
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
     green " 0. 返回应用程序菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
@@ -668,10 +668,10 @@ function install_nano() {
     case "$menuNumberInput" in
         1)
             if command -v nano &> /dev/null; then
-                purple " 您已经安装过nano了！"
+                purple " 您已经安装过nano了 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_nano
+                nano_management
                 return
             fi
             
@@ -682,102 +682,102 @@ function install_nano() {
                 OS=$(uname -s)
             fi
 
-            blue "检测到您的系统为: $OS"
+            blue " 检测到您的系统为: $OS "
 
             case $OS in
                 ubuntu|debian)
-                    blue "将为您执行 $OS 下的 nano 安装"
+                    blue " 将为您执行 $OS 下的 nano 安装 "
                     sudo apt update
                     sudo apt install -y nano
                     ;;
                 centos|redhat)
-                    blue "将为您执行 $OS 下的 nano 安装"
+                    blue " 将为您执行 $OS 下的 nano 安装 "
                     sudo yum install -y nano
                     ;;
                 arch)
-                    blue "将为您执行 Arch Linux 下的 nano 安装"
+                    blue " 将为您执行 $OS 下的 nano 安装 "
                     sudo pacman -S nano
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
-                    install_nano
+                    nano_management
                     return
                     ;;
             esac
-            blue "nano 安装完成！ "
+            blue " nano 安装完成 "
             ;;
         2)
             if ! command -v nano &> /dev/null; then
-                red "您没有安装nano！请先安装。"
+                red " 您没有安装 nano 请先安装. "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_nano
+                nano_management
                 return
             fi
-            read -p "请输入您要使用nano打开的文件路径: " filepath
+            read -p " 请输入您要使用 nano 打开的文件路径: " filepath
             nano "$filepath"
             ;;
         3)
             if ! command -v nano &> /dev/null; then
-                red "您没有安装nano！"
+                red " 您没有安装 nano "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_nano
+                nano_management
                 return
             fi
             
-            if [ -z "$OS" ]; then
-                red "无法确定操作系统！"
+            if [ -z "$OS " ]; then
+                red " 无法确定操作系统 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_nano
+                nano_management
                 return
             fi
             
             case $OS in
                 ubuntu|debian)
-                    black "将为您执行 $OS 下的 nano 卸载"
+                    black " 将为您执行 $OS 下的 nano 卸载 "
                     sudo apt remove -y nano
                     ;;
                 centos|redhat)
-                    black "将为您执行 $OS 下的 nano 卸载"
+                    black " 将为您执行 $OS 下的 nano 卸载 "
                     sudo yum remove -y nano
                     ;;
                 arch)
-                    black "将为您执行 $OS 下的 nano 卸载"
+                    black " 将为您执行 $OS 下的 nano 卸载 "
                     sudo pacman -R nano
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
-                    install_nano
+                    nano_management
                     return
                     ;;
             esac
-            black "nano 卸载完成！ "
+            black " nano 卸载完成 "
             ;;
         0)
             # 返回应用程序菜单
             app_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2s
-            install_nano
+            nano_management
             return
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_nano
+    nano_management
 }
 ## screen
-function install_screen() {
+function screen_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -791,7 +791,7 @@ function install_screen() {
     black " 7. 卸载 Screen "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
-    yellow " ==================================="
+    yellow " =================================== "
     green " 0. 返回系统设置菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
@@ -806,10 +806,10 @@ function install_screen() {
     case "$menuNumberInput" in
         1)
             if command -v screen &> /dev/null; then
-                purple " 您已经安装过screen了！"
+                purple " 您已经安装过 screen 了 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
             
@@ -820,63 +820,63 @@ function install_screen() {
                 OS=$(uname -s)
             fi
 
-            blue "检测到您的系统为: $OS"
+            blue " 检测到您的系统为: $OS "
 
             case $OS in
                 ubuntu|debian)
-                    blue "将为您执行 $OS 下的 screen 安装"
+                    blue " 将为您执行 $OS 下的 screen 安装 "
                     sudo apt update
                     sudo apt install -y screen
                     ;;
                 centos|redhat)
-                    blue "将为您执行 $OS 下的 screen 安装"
+                    blue " 将为您执行 $OS 下的 screen 安装 "
                     sudo yum install -y screen
                     ;;
                 arch)
-                    blue "将为您执行 Arch Linux 下的 screen 安装"
+                    blue " 将为您执行 Arch Linux 下的 screen 安装 "
                     sudo pacman -S screen
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
-                    install_nano
+                    nano_management
                     return
                     ;;
             esac
-            blue "screen 安装完成！ "
+            blue " screen 安装完成 "
             ;;
         2)
             if ! command -v screen &> /dev/null; then
-                red "没有安装screen！请先安装。"
+                red " 没有安装 screen 请先安装 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
-            read -p "请输入新会话的名称: " session_name
+            read -p " 请输入新会话的名称: " session_name
             screen -S $session_name
             ;;
         3)
             if ! command -v screen &> /dev/null; then
-                red "没有安装screen！请先安装。"
+                red " 没有安装 screen 请先安装 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
-            read -p "请输入您想在screen会话中执行的命令: " user_command
-            read -p "请输入您希望的screen会话名称: " session_name
+            read -p " 请输入您想在 screen 会话中执行的命令: " user_command
+            read -p " 请输入您希望的 screen 会话名称: " session_name
             screen -dmS "$session_name" bash -c "$user_command; exec bash"
-            blue "已在新的screen会话 $session_name 中启动您的命令。"
+            blue " 已在新的screen会话 $session_name 中启动您的命令 "
             ;; 
         4)
             # 检查 screen 命令是否存在
             if ! command -v screen &> /dev/null; then
-                red "没有安装screen！请先安装。"
+                red " 没有安装 screen 请先安装 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
 
@@ -885,14 +885,14 @@ function install_screen() {
 
             # 检查是否有可用的会话
             if [ -z "$sessions" ]; then
-                red "当前没有运行的screen会话。"
+                red " 当前没有运行的screen会话 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
 
-            echo "当前运行的screen会话："
+            echo " 当前运行的 screen 会话: "
             counter=1
             declare -A session_map
             while IFS= read -r line; do
@@ -901,25 +901,25 @@ function install_screen() {
                 ((counter++))
             done <<< "$sessions"
 
-            read -p "请输入编号选择一个会话: " choice
+            read -p " 请输入编号选择一个会话: " choice
 
             if [ -n "${session_map[$choice]}" ]; then
                 screen -r "${session_map[$choice]}"
             else
-                red " 无效的选择。"
+                red " 无效的选择 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
             ;;
         5)
             # 检查 screen 命令是否存在
             if ! command -v screen &> /dev/null; then
-                red " 没有安装screen！请先安装。"
+                red " 没有安装 screen 请先安装 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
 
@@ -928,14 +928,14 @@ function install_screen() {
 
             # 检查是否有可用的会话
             if [ -z "$sessions" ]; then
-                red "当前没有运行的screen会话。"
+                red " 当前没有运行的 screen 会话 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
 
-            echo "当前运行的screen会话："
+            echo " 当前运行的 screen 会话: "
             counter=1
             declare -A session_map
             while IFS= read -r line; do
@@ -944,37 +944,37 @@ function install_screen() {
                 ((counter++))
             done <<< "$sessions"
 
-            read -p "请输入编号选择一个会话进行删除: " choice
+            read -p " 请输入编号选择一个会话进行删除: " choice
 
             if [ -n "${session_map[$choice]}" ]; then
                 screen -X -S "${session_map[$choice]}" quit
-                blue "已删除会话：${session_map[$choice]}"
-                read -p "是否继续删除其他会话？(y/n)默认y: " continue_delete
+                blue " 已删除会话: ${session_map[$choice]} "
+                read -p " 是否继续删除其他会话? (y/n)默认y: " continue_delete
                 if [ "$continue_delete" == "y" ]; then
                     # 继续删除
                     return
                 else
-                    red "您选择拒绝继续删除screen会话。"
+                    red " 您选择拒绝继续删除 screen 会话 "
                     red " 两秒后自动返回 "
                     sleep 2
-                    # 返回 install_screen
-                    install_screen
+                    # 返回 screen_management
+                    screen_management
                 fi
             else
-                red " 无效的选择。"
+                red " 无效的选择 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
             ;;
         6)
             # 检查 screen 命令是否存在
             if ! command -v screen &> /dev/null; then
-                red "没有安装screen！请先安装。"
+                red " 没有安装 screen 请先安装 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
 
@@ -983,78 +983,78 @@ function install_screen() {
 
             # 检查是否有可用的会话
             if [ -z "$sessions" ]; then
-                red "当前没有运行的screen会话。"
+                red " 当前没有运行的 screen 会话 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
 
-            read -p "确定要删除所有的screen会话吗？(y/n)默认n: " confirm_delete_all
+            read -p " 确定要删除所有的 screen 会话吗？(y/n)默认n: " confirm_delete_all
 
             if [ "$confirm_delete_all" == "y" ]; then
                 while IFS= read -r session; do
                     screen -X -S "$session" quit
                 done <<< "$sessions"
-                blue "已删除所有的screen会话。"
+                blue " 已删除所有的 screen 会话 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
             else
-                red "您选择取消删除所有的screen会话。"
+                red " 您选择取消删除所有的 screen 会话 "
                 red " 两秒后自动返回 "
                 sleep 2
-                # 返回 install_screen
-                install_screen
+                # 返回 screen_management
+                screen_management
             fi
             ;;
         7)
             if ! command -v screen &> /dev/null; then
-                red " 您没有安装screen！"
+                red " 您没有安装 screen "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_screen
+                screen_management
                 return
             fi
             case $OS in
                 ubuntu|debian)
-                    black "将为您执行 $OS 下的 screen 卸载"
+                    black " 将为您执行 $OS 下的 screen 卸载 "
                     sudo apt remove -y screen
                     ;;
                 centos|redhat)
-                    black "将为您执行 $OS 下的 screen 卸载"
+                    black " 将为您执行 $OS 下的 screen 卸载 "
                     sudo yum remove -y screen
                     ;;
                 arch)
-                    black "将为您执行 $OS 下的 screen 卸载"
+                    black " 将为您执行 $OS 下的 screen 卸载 "
                     sudo pacman -R screen
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
-                    install_nano
+                    nano_management
                     return
                     ;;
             esac
-            black "screen 卸载完成！ "
+            black " screen 卸载完成 "
             ;;
         0)
             # 返回安装包菜单
             app_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2s
-            install_screen
+            screen_management
             ;;
     esac
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_screen
+    screen_management
 }
 ## unzip
-function install_unzip() {
+function unzip_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -1067,8 +1067,8 @@ function install_unzip() {
     green " 6. 使用 screen 执行 zip 批量解压 "
     green " 7. 使用 screen 执行 zip 批量压缩 "
     echo
-    orange " 为保证有权限执行，请使用root用户运行 "
-    yellow " ==================================="
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
     green " 0. 返回应用程序菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
@@ -1081,55 +1081,55 @@ function install_unzip() {
         OS=$(uname -s)
     fi
 
-    blue "检测到您的系统为: $OS"
+    blue " 检测到您的系统为: $OS "
 
     case "$menuNumberInput" in
         1)
             if command -v unzip &> /dev/null; then
-                purple "您已经安装过unzip了！"
+                purple " 您已经安装过 unzip 了 "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_unzip
+                unzip_management
                 return
             fi
 
             case $OS in
                 ubuntu|debian)
-                    blue "将为您执行 $OS 下的 unzip 安装"
+                    blue " 将为您执行 $OS 下的 unzip 安装 "
                     sudo apt update
                     sudo apt install -y unzip
                     ;;
                 centos|redhat)
-                    blue "将为您执行 $OS 下的 unzip 安装"
+                    blue " 将为您执行 $OS 下的 unzip 安装 "
                     sudo yum install -y unzip
                     ;;
                 arch)
-                    blue "将为您执行 Arch Linux 下的 unzip 安装"
+                    blue " 将为您执行 $OS 下的 unzip 安装 "
                     sudo pacman -S unzip
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2s
-                    install_unzip
+                    unzip_management
                     return
                     ;;
             esac
-            blue "unzip 安装完成！ "
+            blue " unzip 安装完成 "
             ;;
 
         2)
             if ! command -v unzip &> /dev/null; then
-                red "您没有安装unzip！"
+                red " 您没有安装 unzip "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_unzip
+                unzip_management
                 return
             fi
-            read -p "请输入您要解压的zip文件路径: " zipfile
-            read -p "请输入解压到的路径: " destpath
+            read -p " 请输入您要解压的zip文件路径: " zipfile
+            read -p " 请输入解压到的路径: " destpath
             mkdir -p "$destpath"
-            read -p "请输入密码 (如果不想设置密码，请直接按Enter): " password
+            read -p " 请输入密码 (如果不想设置密码,请直接按 Enter ): " password
             if [ -z "$password" ]; then
                 unzip "$zipfile" -d "$destpath"
             else
@@ -1138,16 +1138,16 @@ function install_unzip() {
             ;;
         3)
             if ! command -v zip &> /dev/null; then
-                red "您没有安装zip！"
+                red " 您没有安装 zip "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_unzip
+                unzip_management
                 return
             fi
-            read -p "请输入您要压缩的文件夹路径: " folderpath
-            read -p "请输入压缩包的存放路径: " destpath
+            read -p " 请输入您要压缩的文件夹路径: " folderpath
+            read -p " 请输入压缩包的存放路径: " destpath
             mkdir -p "$destpath"
-            read -p "请输入密码 (如果不想设置密码，请直接按Enter): " password
+            read -p " 请输入密码 (如果不想设置密码,请直接按 Enter ): " password
             foldername=$(basename "$folderpath")
             # 更改到文件夹的上级目录
             cd "$(dirname "$folderpath")"
@@ -1160,19 +1160,19 @@ function install_unzip() {
 
         4)
             if ! command -v unzip &> /dev/null; then
-                red "您没有安装unzip！"
+                red " 您没有安装 unzip "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_unzip
+                unzip_management
                 return
             fi
-            read -p "请输入包含zip文件的目录路径: " dirpath
-            read -p "请输入要解压到的目标路径: " targetpath
+            read -p " 请输入包含zip文件的目录路径: " dirpath
+            read -p " 请输入要解压到的目标路径: " targetpath
             mkdir -p "$targetpath"
-            read -p "所有文件是否使用相同的密码? (直接按Enter表示'是'，其他表示'否') " same_password
+            read -p " 所有文件是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
 
             if [ -z "$same_password" ]; then
-                read -p "请输入统一密码 (如果不想设置密码，请直接按Enter): " unified_password
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
                 for z in "$dirpath"/*.zip; do
                     if [ -z "$unified_password" ]; then
                         unzip "$z" -d "$targetpath"
@@ -1182,7 +1182,7 @@ function install_unzip() {
                 done
             else
                 for z in "$dirpath"/*.zip; do
-                    read -p "为 $z 输入密码 (如果不想设置密码，请直接按Enter): " individual_password
+                    read -p " 为 $z 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
                     if [ -z "$individual_password" ]; then
                         unzip "$z" -d "$targetpath"
                     else
@@ -1194,23 +1194,23 @@ function install_unzip() {
 
         5)
             if ! command -v zip &> /dev/null; then
-                red "您没有安装zip！"
+                red " 您没有安装 zip "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_unzip
+                unzip_management
                 return
             fi
 
-            read -p "请输入包含文件夹的目录路径: " dirpath
-            read -p "请输入压缩包的存放路径: " destpath
+            read -p " 请输入包含文件夹的目录路径: " dirpath
+            read -p " 请输入压缩包的存放路径: " destpath
             mkdir -p "$destpath"
-            read -p "所有文件夹是否使用相同的密码? (直接按Enter表示'是'，其他表示'否') " same_password
+            read -p " 所有文件夹是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
 
             # 进入到dirpath所在的目录
             pushd "$dirpath" > /dev/null
 
             if [ -z "$same_password" ]; then
-                read -p "请输入统一密码 (如果不想设置密码，请直接按Enter): " unified_password
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
                 for dir in *; do
                     if [ -d "$dir" ]; then
                         if [ -z "$unified_password" ]; then
@@ -1223,7 +1223,7 @@ function install_unzip() {
             else
                 for dir in *; do
                     if [ -d "$dir" ]; then
-                        read -p "为 $dir 输入密码 (如果不想设置密码，请直接按Enter): " individual_password
+                        read -p " 为 $dir 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
                         if [ -z "$individual_password" ]; then
                             zip -r "$destpath/$dir.zip" "$dir"
                         else
@@ -1240,72 +1240,72 @@ function install_unzip() {
         6)
             # 批量解压在screen会话中
             if ! command -v unzip &> /dev/null || ! command -v screen &> /dev/null; then
-                red "您没有安装unzip或screen！"
+                red " 您没有安装 unzip 或 screen "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_unzip
+                unzip_management
                 return
             fi
-            read -p "请输入包含zip文件的目录路径: " dirpath
-            read -p "请输入要解压到的目标路径: " targetpath
+            read -p " 请输入包含 zip 文件的目录路径: " dirpath
+            read -p " 请输入要解压到的目标路径: " targetpath
             mkdir -p "$targetpath"
-            read -p "所有文件是否使用相同的密码? (直接按Enter表示'是'，其他表示'否') " same_password
+            read -p " 所有文件是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
 
             if [ -z "$same_password" ]; then
-                read -p "请输入统一密码 (如果不想设置密码，请直接按Enter): " unified_password
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
                 if [ -z "$unified_password" ]; then
-                    cmd="for z in $dirpath/*.zip; do unzip \$z -d $targetpath; done"
+                    cmd= "for z in $dirpath/*.zip; do unzip \$z -d $targetpath; done"
                 else
-                    cmd="for z in $dirpath/*.zip; do unzip -P '$unified_password' \$z -d $targetpath; done"
+                    cmd= "for z in $dirpath/*.zip; do unzip -P '$unified_password' \$z -d $targetpath; done"
                 fi
                 screen -dmS unzip_session bash -c "$cmd"
             else
                 for z in "$dirpath"/*.zip; do
-                    read -p "为 $z 输入密码 (如果不想设置密码，请直接按Enter): " individual_password
+                    read -p " 为 $z 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
                     if [ -z "$individual_password" ]; then
-                        cmd="unzip $z -d $targetpath"
+                        cmd= "unzip $z -d $targetpath"
                     else
-                        cmd="unzip -P '$individual_password' $z -d $targetpath"
+                        cmd= "unzip -P '$individual_password' $z -d $targetpath"
                     fi
                     screen -dmS unzip_session bash -c "$cmd"
                 done
             fi
-            blue "已在新的screen会话 unzip_session 中启动解压任务。"
+            blue " 已在新的 screen 会话 unzip_session 中启动解压任务 "
             ;;
 
         7)
             # 批量压缩在screen会话中
             if ! command -v zip &> /dev/null || ! command -v screen &> /dev/null; then
-                red "您没有安装zip或screen！"
+                red " 您没有安装 zip 或 screen "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_unzip
+                unzip_management
                 return
             fi
 
-            read -p "请输入包含文件夹的目录路径: " dirpath
-            read -p "请输入压缩包的存放路径: " destpath
+            read -p " 请输入包含文件夹的目录路径: " dirpath
+            read -p " 请输入压缩包的存放路径: " destpath
             mkdir -p "$destpath"
-            read -p "所有文件夹是否使用相同的密码? (直接按Enter表示'是'，其他表示'否') " same_password
+            read -p " 所有文件夹是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
 
             pushd "$dirpath" > /dev/null
 
             if [ -z "$same_password" ]; then
-                read -p "请输入统一密码 (如果不想设置密码，请直接按Enter): " unified_password
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
                 if [ -z "$unified_password" ]; then
-                    cmd="for d in *; do if [ -d \$d ]; then zip -r $destpath/\$d.zip \$d; fi; done"
+                    cmd= "for d in *; do if [ -d \$d ]; then zip -r $destpath/\$d.zip \$d; fi; done"
                 else
-                    cmd="for d in *; do if [ -d \$d ]; then zip -r -P '$unified_password' $destpath/\$d.zip \$d; fi; done"
+                    cmd= "for d in *; do if [ -d \$d ]; then zip -r -P '$unified_password' $destpath/\$d.zip \$d; fi; done"
                 fi
                 screen -dmS zip_session bash -c "$cmd"
             else
                 for d in *; do
                     if [ -d "$d" ]; then
-                        read -p "为 $d 输入密码 (如果不想设置密码，请直接按Enter): " individual_password
+                        read -p " 为 $d 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
                         if [ -z "$individual_password" ]; then
-                            cmd="zip -r $destpath/$d.zip $d"
+                            cmd= "zip -r $destpath/$d.zip $d"
                         else
-                            cmd="zip -r -P '$individual_password' $destpath/$d.zip $d"
+                            cmd= "zip -r -P '$individual_password' $destpath/$d.zip $d"
                         fi
                         screen -dmS zip_session bash -c "$cmd"
                     fi
@@ -1314,7 +1314,7 @@ function install_unzip() {
 
             popd > /dev/null
 
-            blue "已在新的screen会话 zip_session 中启动压缩任务。"
+            blue " 已在新的 screen 会话 zip_session 中启动压缩任务 "
             ;;
 
         0)
@@ -1323,19 +1323,19 @@ function install_unzip() {
             ;;
 
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_unzip
+            unzip_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_unzip
+    unzip_management
 }
 ## ca-certificates
-function install_ca_certificates() {
+function ca_certificates_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -1343,8 +1343,8 @@ function install_ca_certificates() {
     green " 1. 安装 ca-certificates "
     black " 2. 卸载 ca-certificates "
     echo
-    orange " 为保证有权限执行，请使用root用户运行 "
-    yellow " ==================================="
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
     green " 0. 返回应用程序菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
@@ -1357,15 +1357,15 @@ function install_ca_certificates() {
         OS=$(uname -s)
     fi
 
-    blue "检测到您的系统为: $OS"
+    blue " 检测到您的系统为: $OS "
 
     case "$menuNumberInput" in
         1)
             if command -v update-ca-certificates &> /dev/null; then
-                purple "您已经安装过ca-certificates！"
+                purple " 您已经安装过 ca-certificates "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_ca_certificates
+                ca_certificates_management
                 return
             fi
 
@@ -1381,21 +1381,21 @@ function install_ca_certificates() {
                     sudo pacman -S ca-certificates
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
-                    install_ca_certificates
+                    ca_certificates_management
                     return
                     ;;
             esac
-            blue "ca-certificates 安装完成！"
+            blue " ca-certificates 安装完成 "
             ;;
         2)
             if ! command -v update-ca-certificates &> /dev/null; then
-                blue "您没有安装ca-certificates！"
+                blue " 您没有安装 ca-certificates "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_ca_certificates
+                ca_certificates_management
                 return
             fi
 
@@ -1410,44 +1410,44 @@ function install_ca_certificates() {
                     sudo pacman -R ca-certificates
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     red " 两秒后自动返回 "
                     sleep 2
-                    install_ca_certificates
+                    ca_certificates_management
                     return
                     ;;
             esac
-            black "ca-certificates 卸载完成！"
+            black " ca-certificates 卸载完成 "
             ;;
         0)
             # 返回应用程序菜单
             app_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_ca_certificates
+            ca_certificates_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_ca_certificates
+    ca_certificates_management
 }
 ## SpeedTest CLI
-function install_speedtest() {
+function speedtest_cli_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============Speedtest CLI菜单=============== "
     green " 1. 安装 Speedtest CLI "
-    green " 2. 运行 Speedtest "
-    green " 3. 指定ID运行 Speedtest "
+    green " 2. 运行 Speedtest CLI "
+    green " 3. 指定节点运行 Speedtest CLI "
     black " 4. 卸载 Speedtest CLI "
     echo
-    orange " 为保证有权限执行，请使用root用户运行 "
-    yellow " ==================================="
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
     green " 0. 返回应用程序菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
@@ -1460,53 +1460,53 @@ function install_speedtest() {
         OS=$(uname -s)
     fi
 
-    blue "检测到您的系统为: $OS"
+    blue " 检测到您的系统为: $OS "
 
     case "$menuNumberInput" in
         1)
             if command -v speedtest &> /dev/null; then
-                purple "您已经安装过 Speedtest CLI！"
+                purple " 您已经安装过 Speedtest CLI "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_speedtest
+                speedtest_cli_management
                 return
             fi
 
             case $OS in
                 ubuntu|debian)
                     # Ubuntu/Debian 安装指令
-                    blue "将为您执行 Ubuntu/Debian 下的 Speedtest CLI 安装"
+                    blue " 将为您执行 Ubuntu/Debian 下的 Speedtest CLI 安装 "
                     sudo apt-get install curl
                     curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
                     sudo apt-get install speedtest
                     ;;
                 fedora|centos|redhat)
                     # Fedora/CentOS/RedHat 安装指令
-                    blue "将为您执行 Fedora/CentOS/RedHat 下的 Speedtest CLI 安装"
+                    blue " 将为您执行 Fedora/CentOS/RedHat 下的 Speedtest CLI 安装 "
                     curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh | sudo bash
                     sudo yum install speedtest
                     ;;
                 Darwin) # macOS
                     # macOS 安装指令
-                    blue "将为您执行 macOS 下的 Speedtest CLI 安装"
+                    blue " 将为您执行 MacOS 下的 Speedtest CLI 安装 "
                     brew tap teamookla/speedtest
                     brew update
                     brew install speedtest --force
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     return 1
                     ;;
             esac
-            blue "Speedtest CLI 安装完成！"
+            blue " Speedtest CLI 安装完成 "
             ;;
 
         2)
             if ! command -v speedtest &> /dev/null; then
-                red "您尚未安装 Speedtest CLI！"
+                red " 您尚未安装 Speedtest CLI "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_speedtest
+                speedtest_cli_management
                 return
             fi
             # 运行 Speedtest
@@ -1515,23 +1515,23 @@ function install_speedtest() {
 
         3)
             if ! command -v speedtest &> /dev/null; then
-                red "您尚未安装 Speedtest CLI！"
+                red " 您尚未安装 Speedtest CLI "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_speedtest
+                speedtest_cli_management
                 return
             fi
             # 指定ID运行 Speedtest
-            read -p "请输入您想要指定的Speedtest服务器ID: " server_id
+            read -p " 请输入您想要指定的Speedtest服务器ID: " server_id
             speedtest --server-id=$server_id
             ;;
 
         4)
             if ! command -v speedtest &> /dev/null; then
-                red "您尚未安装 Speedtest CLI！"
+                red " 您尚未安装 Speedtest CLI "
                 red " 两秒后自动返回 "
                 sleep 2
-                install_speedtest
+                speedtest_cli_management
                 return
             fi
             # 卸载 Speedtest CLI
@@ -1546,11 +1546,11 @@ function install_speedtest() {
                     brew uninstall speedtest
                     ;;
                 *)
-                    red "不支持的操作系统！"
+                    red " 不支持的操作系统 "
                     return 1
                     ;;
             esac
-            black "Speedtest CLI 卸载完成！"
+            black " Speedtest CLI 卸载完成 "
             ;;
 
         0)
@@ -1558,19 +1558,19 @@ function install_speedtest() {
             app_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_speedtest
+            speedtest_cli_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_speedtest
+    speedtest_cli_management
 }
 ## Caddy
-function install_caddy() {
+function caddy_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -1585,8 +1585,8 @@ function install_caddy() {
     green " 8. 关闭 Caddy 开机启动 "
     black " 9. 卸载 Caddy "
     echo
-    orange " 为保证有权限执行，请使用root用户运行 "
-    yellow " ==================================="
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
     green " 0. 返回应用程序菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
@@ -1599,78 +1599,78 @@ function install_caddy() {
         OS=$(uname -s)
     fi
 
-    blue "检测到您的系统为: $OS"
+    blue " 检测到您的系统为: $OS "
 
     case "$menuNumberInput" in
         1)
-            install_caddy
+            caddy_management
             ;;
         2)
-            blue "重新加载 Caddy..."
+            blue " 重新加载 Caddy "
             sudo systemctl reload caddy
             ;;
         3)
-            blue "查看 Caddy 运行状态..."
+            blue " 查看 Caddy 运行状态 "
             sudo systemctl status caddy
             ;;
         4)
-            blue "启动 Caddy..."
+            blue " 启动 Caddy "
             sudo systemctl start caddy
             ;;
         5)
-            blue "停止 Caddy..."
+            blue " 停止 Caddy "
             sudo systemctl stop caddy
             ;;
         6)
-            blue "重启 Caddy..."
+            blue " 重启 Caddy "
             sudo systemctl restart caddy
             ;;
         7)
-            blue "设置 Caddy 开机启动..."
+            blue " 设置 Caddy 开机启动 "
             sudo systemctl enable caddy
             ;;
         8)
-            blue "关闭 Caddy 开机启动..."
+            blue " 关闭 Caddy 开机启动 "
             sudo systemctl disable caddy
             ;;
         9)
             if ! command -v caddy &> /dev/null; then
-                blue "您没有安装Caddy！"
+                blue " 您没有安装 Caddy "
                 red " 两秒后自动返回 "
                 sleep 2
                 caddy_management
                 return
             fi
             sudo apt remove -y caddy || sudo yum remove -y caddy || sudo pacman -R caddy
-            black "Caddy 卸载完成！"
+            black " Caddy 卸载完成 "
             ;;
         0)
             # 返回应用程序菜单
             app_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_caddy
+            caddy_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_caddy
+    caddy_management
 }
 
 ## aapanel
-function install_aapanel() {
+function aapanel_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============aapanel菜单=============== "
     green " 1. 安装 aapanel "
     echo
-    orange " 为保证有权限执行，请使用root用户运行 "
-    yellow " ==================================="
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
     green " 0. 返回应用程序菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
@@ -1681,205 +1681,205 @@ function install_aapanel() {
         OS=$ID
     else
         echo 
-        red "无法检测您的操作系统类型！ "
+        red " 无法检测您的操作系统类型 "
         return 1
     fi
 
-    blue "检测到您的系统为: $OS"
+    blue " 检测到您的系统为: $OS "
 
     case "$menuNumberInput" in
         1)
             case $OS in
                 centos)
                     # CentOS 安装指令
-                    blue "将为您执行 CentOS 下的 aapanel 安装"
+                    blue " 将为您执行 CentOS 下的 aapanel 安装 "
                     sudo yum install -y wget
                     wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh
                     bash install.sh aapanel
                     ;;
                 ubuntu|deepin)
                     # Ubuntu/Deepin 安装指令
-                    blue "将为您执行 Ubuntu/Deepin 下的 aapanel 安装"
+                    blue " 将为您执行 Ubuntu/Deepin 下的 aapanel 安装 "
                     wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh
                     sudo bash install.sh aapanel
                     ;;
                 debian)
                     # Debian 安装指令
-                    blue "将为您执行 Debian 下的 aapanel 安装"
+                    blue " 将为您执行 Debian 下的 aapanel 安装 "
                     wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh
                     bash install.sh aapanel
                     ;;
                 *)
-                    red "不支持的操作系统！ "
+                    red " 不支持的操作系统 "
                     return 1
                     ;;
             esac
-            blue "aapanel 安装完成！"
-            blue "使用 bt 命令查看 aapanel 菜单"
+            blue " aapanel 安装完成 "
+            blue " 使用 bt 命令查看 aapanel 菜单"
             ;;
         0)
             # 返回应用程序菜单
             app_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_aapanel
+            aapanel_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_aapanel
+    aapanel_management
 }
 
 # 科学上网
 ## soga
-function install_soga() {
+function soga_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============soga菜单=============== "
     green " 1. 安装 soga "
     green " 2. 运行 soga "
-    yellow " ==================================="
+    yellow " =================================== "
     green " 0. 返回科学上网菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
-            blue "开始安装 soga..."
+            blue " 开始安装 soga "
             bash <(curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh)
-            blue "soga 安装完成！"
+            blue " soga 安装完成 "
             ;;
         2)
-            blue "开始运行 soga..."
+            blue " 开始运行 soga "
             soga
-            blue "soga 运行完成！"
+            blue " soga 运行完成 "
             ;;
         0)
             vpn_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_soga
+            soga_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_soga
+    soga_management
 }
 ## XrayR
-function install_XrayR() {
+function XrayR_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============XrayR菜单=============== "
     green " 1. 安装 XrayR "
     green " 2. 运行 XrayR "
-    yellow " ==================================="
+    yellow " =================================== "
     green " 0. 返回科学上网菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
-            blue "开始安装 XrayR..."
+            blue " 开始安装 XrayR "
             bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
-            blue "XrayR 安装完成！"
+            blue " XrayR 安装完成 "
             ;;
         2)
-            blue "开始运行 XrayR..."
+            blue "开始运行 XrayR "
             xrayr
-            blue "XrayR 运行完成！"
+            blue " XrayR 运行完成 "
             ;;
         0)
             vpn_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_XrayR
+            XrayR_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_XrayR
+    XrayR_management
 }
 ## ss-go
-function install_ss_go() {
+function ss_go_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============ss-go菜单=============== "
     green " 1. 安装 ss-go "
-    yellow " ==================================="
+    yellow " =================================== "
     green " 0. 返回科学上网菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
-            blue "开始安装 ss-go..."
+            blue " 开始安装 ss-go "
             wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBackup/doubi/master/ss-go.sh
             chmod +x ss-go.sh
             bash ss-go.sh
-            blue "ss-go 安装完成！"
+            blue " ss-go 安装完成 "
             ;;
         0)
             vpn_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_ss_go
+            ss_go_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_ss_go
+    ss_go_management
 }
 ## 极光面板
-function install_aurora() {
+function aurora_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-    yellow " ============极光面板菜单=============== "
+    yellow " ============极光面板菜单============ "
     green " 1. 安装极光面板 "
-    yellow " ==================================="
+    yellow " =================================== "
     green " 0. 返回科学上网菜单 "
     echo
     read -p " 请输入数字: " menuNumberInput
 
     case "$menuNumberInput" in
         1)
-            blue "开始安装极光面板..."
+            blue " 开始安装极光面板 "
             bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
-            blue "极光面板安装完成！"
+            blue " 极光面板安装完成 "
             ;;
         0)
             vpn_menu
             ;;
         *)
-            red " 请输入正确数字！ "
+            red " 请输入正确数字 "
             red " 两秒后自动返回 "
             sleep 2
-            install_aurora
+            aurora_management
             ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    install_aurora
+    aurora_management
 }
 
 # 菜单
@@ -1900,26 +1900,26 @@ system_menu() {
     yellow " =================================== "
     green " 0. 返回主菜单"
     echo
-    read -p " 请输入数字:" menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
     case "$menuNumberInput" in
         1 )
-            setup_bbr
+            bbr_management
 	;;
         2 )
-            set_timezone
+            swap_management
 	;;
         3 )
-            setup_swap
+            swap_management
 	;;
         4 )
-            preferIPV4
+            network_management
     ;;
         0 )
             start_menu
     ;;
         * )
             clear
-            red " 请输入正确数字 ! "
+            red " 请输入正确数字  "
             red " 两秒后自动返回 "
             sleep 2s
             system_menu
@@ -1947,38 +1947,38 @@ app_menu() {
     yellow " ==================================== "
     green " 0. 返回主菜单"
     echo
-    read -p " 请输入数字:" menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
     case "$menuNumberInput" in
         1 )
             install_wget_curl_git
 	;;
         2 )
-            install_nano
+            nano_management
 	;;
         3 )
-            install_screen
+            screen_management
 	;;
         4 )
-            install_unzip
+            unzip_management
     ;;
         5 )
-            install_ca_certificates
+            ca_certificates_management
     ;;
         6 )
-            install_speedtest
+            speedtest_cli_management
     ;;
         7 )
-            install_caddy
+            caddy_management
     ;;
         8 )
-            install_aapanel
+            aapanel_management
     ;;
         0 )
             start_menu
     ;;
         * )
             clear
-            red " 请输入正确数字 ! "
+            red " 请输入正确数字  "
             red " 两秒后自动返回 "
             sleep 2s
             app_menu
@@ -2002,26 +2002,26 @@ vpn_menu() {
     yellow " =================================== "
     green " 0. 返回主菜单"
     echo
-    read -p " 请输入数字:" menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
     case "$menuNumberInput" in
         1 )
-            install_soga
+            soga_management
 	;;
         2 )
-            install_XrayR
+            XrayR_management
 	;;
         3 )
-            install_ss_go
+            ss_go_management
 	;;
         4 )
-            install_aurora
+            aurora_management
     ;;
         0 )
             start_menu
     ;;
         * )
             clear
-            red " 请输入正确数字 ! "
+            red " 请输入正确数字  "
             red " 两秒后自动返回 "
             sleep 2s
             vpn_menu
@@ -2044,7 +2044,7 @@ start_menu() {
     yellow " =================================== "
     green " 0. 退出脚本"
     echo
-    read -p " 请输入数字:" menuNumberInput
+    read -p " 请输入数字: " menuNumberInput
     case "$menuNumberInput" in
         1 )
             system_menu
@@ -2060,7 +2060,7 @@ start_menu() {
     ;;
         * )
             clear
-            red " 请输入正确数字 ! "
+            red " 请输入正确数字  "
             red " 两秒后自动返回主菜单"
             sleep 2s
             start_menu
