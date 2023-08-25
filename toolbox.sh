@@ -61,7 +61,7 @@ function bbr_management(){
     system_menu
 }
 ## 设置时区
-function swap_management(){
+function Timezone_management(){
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
@@ -163,13 +163,13 @@ function swap_management(){
             red " 无效的选择,请重新输入 "
             red " 两秒后重新选择返回 "
             sleep 2s
-            swap_management
+            Timezone_management
         ;;
     esac
 
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    swap_management
+    Timezone_management
 }
 ## 设置swap
 function swap_management() {
@@ -2117,7 +2117,7 @@ system_menu() {
             bbr_management
 	;;
         2 )
-            swap_management
+            Timezone_management
 	;;
         3 )
             swap_management
