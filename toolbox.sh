@@ -359,7 +359,22 @@ function network_management() {
     read -n 1 -s -r -p " 按任意键返回菜单... "
     network_management
 }
+## 配置IPv6
+function ipv6_management() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " =============工具菜单=============== "
+    green " 1. 配置 IPv6 "
+    green " 2. 删除 IPv6 配置 "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
 
+}
 # 软件
 ## wget, curl 和 git
 function install_wget_curl_git() {
@@ -1576,14 +1591,15 @@ function caddy_management() {
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============Caddy菜单=============== "
     green " 1. 安装 Caddy "
-    green " 2. Caddy 重新加载 "
-    green " 3. 查看 Caddy 运行状态 "
-    green " 4. 启动 Caddy "
-    green " 5. 停止 Caddy "
-    green " 6. 重启 Caddy "
-    green " 7. 设置 Caddy 开机启动 "
-    green " 8. 关闭 Caddy 开机启动 "
-    black " 9. 卸载 Caddy "
+    green " 2. 管理 Caddy 配置文件 "
+    green " 3. Caddy 重新加载 "
+    green " 4. 查看 Caddy 运行状态 "
+    green " 5. 启动 Caddy "
+    green " 6. 停止 Caddy "
+    green " 7. 重启 Caddy "
+    green " 8. 设置 Caddy 开机启动 "
+    green " 9. 关闭 Caddy 开机启动 "
+    black " 10. 卸载 Caddy "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
     yellow " =================================== "
@@ -1603,37 +1619,75 @@ function caddy_management() {
 
     case "$menuNumberInput" in
         1)
-            caddy_management
+            if command -v caddy &> /dev/null; then
+                purple " 您已经安装过 Caddy "
+                red " 两秒后自动返回 "
+                sleep 2
+                caddy_management
+                return
+            fi
+            case $OS in
+                ubuntu|debian|raspbian)
+                    blue " 将为您执行 Debian, Ubuntu, Raspbian 下的 Caddy 安装 "
+                    sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+                    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+                    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+                    sudo apt update
+                    sudo apt install caddy
+                    ;;
+                fedora)
+                    blue " 将为您执行 Fedora 下的 Caddy 安装 "
+                    sudo dnf install 'dnf-command(copr)'
+                    sudo dnf copr enable @caddy/caddy
+                    sudo dnf install caddy
+                    ;;
+                centos|redhat)
+                    if [[ $VERSION_ID == 8* ]]; then
+                        blue " 将为您执行 RHEL/CentOS 8 下的 Caddy 安装 "
+                        sudo dnf install 'dnf-command(copr)'
+                        sudo dnf copr enable @caddy/caddy
+                        sudo dnf install caddy
+                    elif [[ $VERSION_ID == 7* ]]; then
+                        blue " 将为您执行 RHEL/CentOS 7 下的 Caddy 安装 "
+                        sudo yum install yum-plugin-copr
+                        sudo yum copr enable @caddy/caddy
+                        sudo yum install caddy
+                    fi
+                    ;;
+            esac
             ;;
         2)
+            caddy_config_management
+            ;;
+        3)
             blue " 重新加载 Caddy "
             sudo systemctl reload caddy
             ;;
-        3)
+        4)
             blue " 查看 Caddy 运行状态 "
             sudo systemctl status caddy
             ;;
-        4)
+        5)
             blue " 启动 Caddy "
             sudo systemctl start caddy
             ;;
-        5)
+        6)
             blue " 停止 Caddy "
             sudo systemctl stop caddy
             ;;
-        6)
+        7)
             blue " 重启 Caddy "
             sudo systemctl restart caddy
             ;;
-        7)
+        8)
             blue " 设置 Caddy 开机启动 "
             sudo systemctl enable caddy
             ;;
-        8)
+        9)
             blue " 关闭 Caddy 开机启动 "
             sudo systemctl disable caddy
             ;;
-        9)
+        10)
             if ! command -v caddy &> /dev/null; then
                 blue " 您没有安装 Caddy "
                 red " 两秒后自动返回 "
@@ -1660,7 +1714,164 @@ function caddy_management() {
     read -n 1 -s -r -p " 按任意键返回菜单... "
     caddy_management
 }
+## Caddy 配置显示
+function display_caddy_config() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ==========Caddy当前配置============= "
 
+    # 表头
+    local header="┌────────┬──────────────────────────┬──────────────┬──────────┬────────┐"
+    local title="│  序号  │           站点           │   监听地址   │ 监听端口 │  TLS   │"
+    local divider="├────────┼──────────────────────────┼──────────────┼──────────┼────────┤"
+    local footer="└────────┴──────────────────────────┴──────────────┴──────────┴────────┘"
+
+    echo "$header"
+    echo "$title"
+    echo "$divider"
+
+    # 使用awk解析并格式化输出
+    awk -v divider="$divider" -v footer="$footer" '
+        BEGIN {
+            count = 0; stackIdx = 0; lastLine = 0;
+            delete siteStartLines;
+            delete siteEndLines;
+        }
+        
+        /^[^ ]+ {/ {  # When we see a site start
+            if (lastLine) {
+                print divider;
+            }
+            count++;
+            site = $1;
+            siteStartLines[count] = NR;
+            stack[stackIdx++] = count;
+            getline;
+            split($2, array, ":");
+            listen_address = array[1];
+            listen_port = array[2];
+            if (listen_address == "" || listen_port == "") {
+                listen_address = "unknown";
+                listen_port = "unknown";
+            }
+            getline; 
+            if ($1 == "tls") { tls = "已启用" } else { tls = "未启用" }
+            printf "│ %-6s │ %-24s │ %-12s │ %-8s │ %-6s │\n", count, site, listen_address, listen_port, tls;
+            lastLine = 1;
+        }
+
+        /}/ {  # When we see a closing brace
+            siteEndLines[stack[--stackIdx]] = NR;
+        }
+
+        END {
+            print footer;
+            for (i in siteStartLines) {
+                printf "siteStartLines[%d]=%d; siteEndLines[%d]=%d\n", i, siteStartLines[i], i, siteEndLines[i] > "/dev/stderr";
+            }
+        }
+    ' /etc/caddy/Caddyfile 2> /tmp/lineNumbers.tmp
+
+    # 从临时文件中读取行号并保存到关联数组中
+    while IFS="=;" read -r key value; do
+        eval "$key=$value"
+    done < /tmp/lineNumbers.tmp
+
+    # 删除临时文件
+    rm -f /tmp/lineNumbers.tmp
+}
+## Caddy 配置管理
+function caddy_config_management() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ========Caddy配置管理菜单=========== "
+    green " 1. 查看当前配置 "
+    green " 2. 添加配置 "
+    green " 3. 删减配置 "
+    yellow " ==================================="
+    green " 0. 返回Caddy主菜单 "
+    echo
+    read -p " 请输入数字: " configMenuInput
+
+    case "$configMenuInput" in
+        1)
+            display_caddy_config
+            ;;
+        2)
+            blue " 添加配置 "
+            # 提示用户输入站点
+            read -p " 请输入站点 (例如: nmsl.baidu.com): " siteName
+            # 提示用户输入监听地址，并为其设置一个默认值
+            read -p " 请输入监听地址 (默认: localhost): " listenAddress
+            listenAddress=${listenAddress:-localhost}
+            # 提示用户输入监听端口
+            read -p " 请输入监听端口 (例如: 7800): " listenPort
+            # 提示用户选择是否启用tls
+            read -p " 是否启用 TLS (y/n): " enableTls
+
+            # 根据用户的输入构建配置段
+            if [[ "$enableTls" == "y" || "$enableTls" == "Y" ]]; then
+                configToAdd=$(echo -e "\n$siteName {\n    reverse_proxy $listenAddress:$listenPort\n    tls {\n        on_demand\n    }\n}")
+            else
+                configToAdd=$(echo -e "\n$siteName {\n    reverse_proxy $listenAddress:$listenPort\n}")
+            fi
+
+            # 将构建的配置段追加到配置文件的末尾
+            echo "$configToAdd" >> /etc/caddy/Caddyfile
+
+            # 输出提示信息
+            green " 配置添加完成,请重新运行 caddy 使配置生效 "
+            ;;
+
+        3)
+            clear
+            # 显示配置列表
+            display_caddy_config
+
+            # 提示用户输入要删除的配置的序号
+            read -p " 请输入需要删除的配置的序号: " deleteIndex
+
+            # 检查输入的序号是否有效
+            if [[ ! ${siteStartLines[$deleteIndex]} || ! ${siteEndLines[$deleteIndex]} ]]; then
+                red " 输入的序号无效。"
+                read -n 1 -s -r -p " 按任意键返回配置管理菜单... "
+                caddy_config_management
+            fi
+
+            # 确认删除
+            read -p " 请确认是否删除配置 (y/n，默认为n): " confirmDelete
+            if [[ "$confirmDelete" == "y" || "$confirmDelete" == "Y" ]]; then
+                # 获取要删除的配置段的开始和结束行号
+                local startLine=${siteStartLines[$deleteIndex]}
+                local endLine=${siteEndLines[$deleteIndex]}
+                
+                # 使用sed删除指定行
+                awk -v start="$startLine" -v end="$endLine" 'NR < start || NR > end + 1' /etc/caddy/Caddyfile > /tmp/Caddyfile.tmp && mv /tmp/Caddyfile.tmp /etc/caddy/Caddyfile
+
+                green " 配置已删除。"
+            else
+                red " 操作已取消。"
+            fi
+
+            ;;
+        0)
+            caddy_management
+            ;;
+        *)
+            red " 请输入正确数字 "
+            red " 两秒后自动返回 "
+            sleep 2
+            caddy_config_management
+            ;;
+    esac
+
+    # 按任意键返回配置管理菜单
+    read -n 1 -s -r -p " 按任意键返回配置管理菜单... "
+    caddy_config_management
+}
+declare -A siteStartLines siteEndLines  # 声明两个关联数组来保存站点的开始和结束行号
 ## aapanel
 function aapanel_management() {
     clear
@@ -1854,7 +2065,7 @@ function aurora_management() {
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============极光面板菜单============ "
-    green " 1. 安装极光面板 "
+    green " 1. 打开极光面板菜单 "
     yellow " =================================== "
     green " 0. 返回科学上网菜单 "
     echo
@@ -1862,9 +2073,9 @@ function aurora_management() {
 
     case "$menuNumberInput" in
         1)
-            blue " 开始安装极光面板 "
+            blue " 开始打开极光面板 "
             bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
-            blue " 极光面板安装完成 "
+            blue " 极光面板打开完成 "
             ;;
         0)
             vpn_menu
