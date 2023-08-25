@@ -31,6 +31,8 @@ aria2
 
 docker 
 
+魔方源问题 sed -i 's/bullseye\/updates/bullseye-security/g' /etc/apt/sources.list
+
 ....
 
 
