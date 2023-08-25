@@ -1841,7 +1841,6 @@ function display_caddy_config() {
     # 删除临时文件
     rm -f /tmp/lineNumbers.tmp
 }
-
 declare -A siteStartLines siteEndLines  # 声明两个关联数组来保存站点的开始和结束行号
 ## aapanel
 function aapanel_management() {
@@ -1930,6 +1929,7 @@ function nezha_agent_management() {
     green " 7. 重启 Nezha Agent "
     green " 8. 设置 Nezha Agent 开机启动 "
     green " 9. 关闭 Nezha Agent 开机启动 "
+    green " 10. 删除 Nezha Agent 配置 "
 
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -1962,13 +1962,13 @@ function nezha_agent_management() {
         4)
             clear
             display_nezha_config
-            echo "创建 Nezha Agent 服务配置"
+            echo " 创建 Nezha Agent 服务配置 "
             
             # 询问用户输入新的配置名称、Panel IP、端口和密钥
-            read -p "请输入新的配置名称（*）: " config_name
-            read -p "请输入Panel IP: " panel_ip
-            read -p "请输入端口: " port
-            read -p "请输入密钥: " key
+            read -p " 请输入新的配置名称: " config_name
+            read -p " 请输入Panel IP: " panel_ip
+            read -p " 请输入端口: " port
+            read -p " 请输入密钥: " key
 
             # 创建服务文件路径
             local service_file_path="/etc/systemd/system/nezha-agent_${config_name}.service"
@@ -1979,52 +1979,102 @@ function nezha_agent_management() {
             # 将服务内容写入文件
             echo -e "$service_content" > "$service_file_path"
 
-            echo "服务配置文件已创建: $service_file_path"
-            echo "请使用 systemctl 命令启动和管理服务。"
+            echo " 服务配置文件已创建: $service_file_path "
+            echo " 请使用 systemctl 命令启动和管理服务。 "
             ;;
         5)
             clear
             display_nezha_config
-            read -p "请输入要启动的 Nezha Agent 序号: " index
-            local serviceName=${services[$index]}
-            systemctl start "$serviceName"
-            echo "Nezha Agent ${index} 已启动。"
+            read -p " 请输入要启动的 Nezha Agent 序号 (输入0返回): " index
+            if [ "$index" -eq 0 ]; then
+                nezha_agent_management
+            elif [ -z "${services[$index]}" ]; then
+                red " 无效的序号，返回菜单。 "
+                sleep 2
+                nezha_agent_management
+            else
+                local serviceName=${services[$index]}
+                systemctl start "$serviceName"
+                echo " Nezha Agent ${index} 已启动。 "
+            fi
             ;;
 
         6)
             clear
             display_nezha_config
-            read -p "请输入要停止的 Nezha Agent 序号: " index
-            local serviceName=${services[$index]}
-            systemctl stop "$serviceName"
-            echo "Nezha Agent ${index} 已停止。"
+            read -p " 请输入要停止的 Nezha Agent 序号 (输入0返回):  " index
+            if [ "$index" -eq 0 ]; then
+                nezha_agent_management
+            elif [ -z "${services[$index]}" ]; then
+                red " 无效的序号，返回菜单。 "
+                sleep 2
+                nezha_agent_management
+            else
+                local serviceName=${services[$index]}
+                systemctl stop "$serviceName"
+                echo " Nezha Agent ${index} 已停止。 "
+            fi
             ;;
 
         7)
             clear
             display_nezha_config
-            read -p "请输入要重启的 Nezha Agent 序号: " index
-            local serviceName=${services[$index]}
-            systemctl restart "$serviceName"
-            echo "Nezha Agent ${index} 已重启。"
+            read -p " 请输入要重启的 Nezha Agent 序号 (输入0返回): " index
+            if [ "$index" -eq 0 ]; then
+                nezha_agent_management
+            elif [ -z "${services[$index]}" ]; then
+                red " 无效的序号，返回菜单。 "
+                sleep 2
+                nezha_agent_management
+            else
+                local serviceName=${services[$index]}
+                systemctl restart "$serviceName"
+                echo " Nezha Agent ${index} 已重启。 "
+            fi
             ;;
 
         8)
             clear
             display_nezha_config
-            read -p "请输入要设置开机启动的 Nezha Agent 序号: " index
-            local serviceName=${services[$index]}
-            systemctl enable "$serviceName"
-            echo "Nezha Agent ${index} 已设置开机启动。"
+            read -p " 请输入要设置开机启动的 Nezha Agent 序号 (输入0返回):  " index
+            if [ "$index" -eq 0 ]; then
+                nezha_agent_management
+            elif [ -z "${services[$index]}" ]; then
+                red " 无效的序号，返回菜单。 "
+                sleep 2
+                nezha_agent_management
+            else
+                local serviceName=${services[$index]}
+                systemctl enable "$serviceName"
+                echo " Nezha Agent ${index} 已设置开机启动。 "
+            fi
             ;;
 
         9)
             clear
             display_nezha_config
-            read -p "请输入要关闭开机启动的 Nezha Agent 序号: " index
+            read -p " 请输入要关闭开机启动的 Nezha Agent 序号 (输入0返回):  " index
+            if [ "$index" -eq 0 ]; then
+                nezha_agent_management
+            elif [ -z "${services[$index]}" ]; then
+                red " 无效的序号，返回菜单。 "
+                sleep 2
+                nezha_agent_management
+            else
+                local serviceName=${services[$index]}
+                systemctl disable "$serviceName"
+                echo " Nezha Agent ${index} 已关闭开机启动。 "
+            fi
+            ;;
+        10)
+            clear
+            display_nezha_config
+            read -p " 请输入要删除的 Nezha Agent 序号:  " index
             local serviceName=${services[$index]}
+            systemctl stop "$serviceName"
             systemctl disable "$serviceName"
-            echo "Nezha Agent ${index} 已关闭开机启动。"
+            rm -f "/etc/systemd/system/${serviceName}.service"
+            echo " Nezha Agent ${index} 已删除。 "
             ;;
         0)
             # 返回应用程序菜单
