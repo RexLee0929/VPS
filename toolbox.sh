@@ -27,6 +27,7 @@
         echo -e "\033[38;5;0m$1\033[0m"
     }
 
+
 # 系统设置
 ## BBR加速
 function bbr_management(){
@@ -1591,15 +1592,17 @@ function caddy_management() {
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============Caddy菜单=============== "
     green " 1. 安装 Caddy "
-    green " 2. 管理 Caddy 配置文件 "
-    green " 3. Caddy 重新加载 "
-    green " 4. 查看 Caddy 运行状态 "
-    green " 5. 启动 Caddy "
-    green " 6. 停止 Caddy "
-    green " 7. 重启 Caddy "
-    green " 8. 设置 Caddy 开机启动 "
-    green " 9. 关闭 Caddy 开机启动 "
-    black " 10. 卸载 Caddy "
+    green " 2. 查看 Caddy 配置文件 "
+    green " 3. 添加 Caddy 配置 "
+    green " 4. 删除 Caddy 配置 "
+    green " 5. Caddy 重新加载 "
+    green " 6. 查看 Caddy 运行状态 "
+    green " 7. 启动 Caddy "
+    green " 8. 停止 Caddy "
+    green " 9. 重启 Caddy "
+    green " 10. 设置 Caddy 开机启动 "
+    green " 11. 关闭 Caddy 开机启动 "
+    black " 12. 卸载 Caddy "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
     yellow " =================================== "
@@ -1657,37 +1660,94 @@ function caddy_management() {
             esac
             ;;
         2)
-            caddy_config_management
+            display_caddy_config
             ;;
         3)
+            blue " 添加配置 "
+            # 提示用户输入站点
+            read -p " 请输入站点 (例如: nmsl.baidu.com): " siteName
+            # 提示用户输入监听地址，并为其设置一个默认值
+            read -p " 请输入监听地址 (默认: localhost): " listenAddress
+            listenAddress=${listenAddress:-localhost}
+            # 提示用户输入监听端口
+            read -p " 请输入监听端口 (例如: 7800): " listenPort
+            # 提示用户选择是否启用tls
+            read -p " 是否启用 TLS (y/n): " enableTls
+
+            # 根据用户的输入构建配置段
+            if [[ "$enableTls" == "y" || "$enableTls" == "Y" ]]; then
+                configToAdd=$(echo -e "\n$siteName {\n    reverse_proxy $listenAddress:$listenPort\n    tls {\n        on_demand\n    }\n}")
+            else
+                configToAdd=$(echo -e "\n$siteName {\n    reverse_proxy $listenAddress:$listenPort\n}")
+            fi
+
+            # 将构建的配置段追加到配置文件的末尾
+            echo "$configToAdd" >> /etc/caddy/Caddyfile
+
+            # 输出提示信息
+            green " 配置添加完成,请重新运行 caddy 使配置生效 "
+            ;;
+
+        4)
+            clear
+            # 显示配置列表
+            display_caddy_config
+
+            # 提示用户输入要删除的配置的序号
+            read -p " 请输入需要删除的配置的序号: " deleteIndex
+
+            # 检查输入的序号是否有效
+            if [[ ! ${siteStartLines[$deleteIndex]} || ! ${siteEndLines[$deleteIndex]} ]]; then
+                red " 输入的序号无效。"
+                read -n 1 -s -r -p " 按任意键返回配置管理菜单... "
+                caddy_management
+            fi
+
+            # 确认删除
+            read -p " 请确认是否删除配置 (y/n，默认为n): " confirmDelete
+            if [[ "$confirmDelete" == "y" || "$confirmDelete" == "Y" ]]; then
+                # 获取要删除的配置段的开始和结束行号
+                local startLine=${siteStartLines[$deleteIndex]}
+                local endLine=${siteEndLines[$deleteIndex]}
+                
+                # 使用sed删除指定行
+                awk -v start="$startLine" -v end="$endLine" 'NR < start || NR > end + 1' /etc/caddy/Caddyfile > /tmp/Caddyfile.tmp && mv /tmp/Caddyfile.tmp /etc/caddy/Caddyfile
+
+                green " 配置已删除。"
+            else
+                red " 操作已取消。"
+            fi
+
+            ;;
+        5)
             blue " 重新加载 Caddy "
             sudo systemctl reload caddy
             ;;
-        4)
+        6)
             blue " 查看 Caddy 运行状态 "
             sudo systemctl status caddy
             ;;
-        5)
+        7)
             blue " 启动 Caddy "
             sudo systemctl start caddy
             ;;
-        6)
+        8)
             blue " 停止 Caddy "
             sudo systemctl stop caddy
             ;;
-        7)
+        9)
             blue " 重启 Caddy "
             sudo systemctl restart caddy
             ;;
-        8)
+        10)
             blue " 设置 Caddy 开机启动 "
             sudo systemctl enable caddy
             ;;
-        9)
+        11)
             blue " 关闭 Caddy 开机启动 "
             sudo systemctl disable caddy
             ;;
-        10)
+        12)
             if ! command -v caddy &> /dev/null; then
                 blue " 您没有安装 Caddy "
                 red " 两秒后自动返回 "
@@ -1781,103 +1841,14 @@ function display_caddy_config() {
     # 删除临时文件
     rm -f /tmp/lineNumbers.tmp
 }
-## Caddy 配置管理
-function caddy_config_management() {
-    clear
-    blue " Rex Lee's ToolBox " 
-    blue " GitHub: https://github.com/RexLee0929 "
-    yellow " ========Caddy配置管理菜单=========== "
-    green " 1. 查看当前配置 "
-    green " 2. 添加配置 "
-    green " 3. 删减配置 "
-    yellow " ==================================="
-    green " 0. 返回Caddy主菜单 "
-    echo
-    read -p " 请输入数字: " configMenuInput
 
-    case "$configMenuInput" in
-        1)
-            display_caddy_config
-            ;;
-        2)
-            blue " 添加配置 "
-            # 提示用户输入站点
-            read -p " 请输入站点 (例如: nmsl.baidu.com): " siteName
-            # 提示用户输入监听地址，并为其设置一个默认值
-            read -p " 请输入监听地址 (默认: localhost): " listenAddress
-            listenAddress=${listenAddress:-localhost}
-            # 提示用户输入监听端口
-            read -p " 请输入监听端口 (例如: 7800): " listenPort
-            # 提示用户选择是否启用tls
-            read -p " 是否启用 TLS (y/n): " enableTls
-
-            # 根据用户的输入构建配置段
-            if [[ "$enableTls" == "y" || "$enableTls" == "Y" ]]; then
-                configToAdd=$(echo -e "\n$siteName {\n    reverse_proxy $listenAddress:$listenPort\n    tls {\n        on_demand\n    }\n}")
-            else
-                configToAdd=$(echo -e "\n$siteName {\n    reverse_proxy $listenAddress:$listenPort\n}")
-            fi
-
-            # 将构建的配置段追加到配置文件的末尾
-            echo "$configToAdd" >> /etc/caddy/Caddyfile
-
-            # 输出提示信息
-            green " 配置添加完成,请重新运行 caddy 使配置生效 "
-            ;;
-
-        3)
-            clear
-            # 显示配置列表
-            display_caddy_config
-
-            # 提示用户输入要删除的配置的序号
-            read -p " 请输入需要删除的配置的序号: " deleteIndex
-
-            # 检查输入的序号是否有效
-            if [[ ! ${siteStartLines[$deleteIndex]} || ! ${siteEndLines[$deleteIndex]} ]]; then
-                red " 输入的序号无效。"
-                read -n 1 -s -r -p " 按任意键返回配置管理菜单... "
-                caddy_config_management
-            fi
-
-            # 确认删除
-            read -p " 请确认是否删除配置 (y/n，默认为n): " confirmDelete
-            if [[ "$confirmDelete" == "y" || "$confirmDelete" == "Y" ]]; then
-                # 获取要删除的配置段的开始和结束行号
-                local startLine=${siteStartLines[$deleteIndex]}
-                local endLine=${siteEndLines[$deleteIndex]}
-                
-                # 使用sed删除指定行
-                awk -v start="$startLine" -v end="$endLine" 'NR < start || NR > end + 1' /etc/caddy/Caddyfile > /tmp/Caddyfile.tmp && mv /tmp/Caddyfile.tmp /etc/caddy/Caddyfile
-
-                green " 配置已删除。"
-            else
-                red " 操作已取消。"
-            fi
-
-            ;;
-        0)
-            caddy_management
-            ;;
-        *)
-            red " 请输入正确数字 "
-            red " 两秒后自动返回 "
-            sleep 2
-            caddy_config_management
-            ;;
-    esac
-
-    # 按任意键返回配置管理菜单
-    read -n 1 -s -r -p " 按任意键返回配置管理菜单... "
-    caddy_config_management
-}
 declare -A siteStartLines siteEndLines  # 声明两个关联数组来保存站点的开始和结束行号
 ## aapanel
 function aapanel_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-    yellow " ============aapanel菜单=============== "
+    yellow " ===========aapanel菜单============== "
     green " 1. 安装 aapanel "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -1943,6 +1914,178 @@ function aapanel_management() {
     # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
     aapanel_management
+}
+## Nezha Agent
+function nezha_agent_management() {
+    clear
+    blue " Rex Lee's ToolBox "
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ===========哪吒监控菜单============= "
+    green " 1. 安装 NeZha 监控 "
+    green " 2. 管理 NeZha 菜单 "
+    green " 3. 查看 Nezha Agent "
+    green " 4. 创建 Nezha Agent "
+    green " 5. 启动 Nezha Agent "
+    green " 6. 停止 Nezha Agent "
+    green " 7. 重启 Nezha Agent "
+    green " 8. 设置 Nezha Agent 开机启动 "
+    green " 9. 关闭 Nezha Agent 开机启动 "
+
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
+
+    case "$menuNumberInput" in
+        1)
+            read -p " 是否使用中国镜像？(y/n，默认为n): " useCNMirror
+            if [[ "$useCNMirror" == "y" || "$useCNMirror" == "Y" ]]; then
+                curl -L https://cdn.jsdelivr.net/gh/naiba/nezha@master/script/install.sh -o nezha.sh
+                chmod +x nezha.sh
+                sudo CN=true ./nezha.sh
+            else
+                curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh
+                chmod +x nezha.sh
+                sudo ./nezha.sh
+            fi
+            ;;
+        2)
+            clear
+            ./nezha.sh
+            ;;
+        3)
+            clear
+            display_nezha_config
+            ;;
+        4)
+            clear
+            display_nezha_config
+            echo "创建 Nezha Agent 服务配置"
+            
+            # 询问用户输入新的配置名称、Panel IP、端口和密钥
+            read -p "请输入新的配置名称（*）: " config_name
+            read -p "请输入Panel IP: " panel_ip
+            read -p "请输入端口: " port
+            read -p "请输入密钥: " key
+
+            # 创建服务文件路径
+            local service_file_path="/etc/systemd/system/nezha-agent_${config_name}.service"
+
+            # 创建服务文件内容
+            local service_content="[Unit]\nDescription=Nezha Agent ${config_name}\nAfter=syslog.target\n\n[Service]\nType=simple\nUser=root\nGroup=root\nWorkingDirectory=/opt/nezha/agent/\nExecStart=/opt/nezha/agent/nezha-agent -s ${panel_ip}:${port} -p ${key}\nRestart=always\n\n[Install]\nWantedBy=multi-user.target"
+
+            # 将服务内容写入文件
+            echo -e "$service_content" > "$service_file_path"
+
+            echo "服务配置文件已创建: $service_file_path"
+            echo "请使用 systemctl 命令启动和管理服务。"
+            ;;
+        5)
+            clear
+            display_nezha_config
+            read -p "请输入要启动的 Nezha Agent 序号: " index
+            local serviceName=${services[$index]}
+            systemctl start "$serviceName"
+            echo "Nezha Agent ${index} 已启动。"
+            ;;
+
+        6)
+            clear
+            display_nezha_config
+            read -p "请输入要停止的 Nezha Agent 序号: " index
+            local serviceName=${services[$index]}
+            systemctl stop "$serviceName"
+            echo "Nezha Agent ${index} 已停止。"
+            ;;
+
+        7)
+            clear
+            display_nezha_config
+            read -p "请输入要重启的 Nezha Agent 序号: " index
+            local serviceName=${services[$index]}
+            systemctl restart "$serviceName"
+            echo "Nezha Agent ${index} 已重启。"
+            ;;
+
+        8)
+            clear
+            display_nezha_config
+            read -p "请输入要设置开机启动的 Nezha Agent 序号: " index
+            local serviceName=${services[$index]}
+            systemctl enable "$serviceName"
+            echo "Nezha Agent ${index} 已设置开机启动。"
+            ;;
+
+        9)
+            clear
+            display_nezha_config
+            read -p "请输入要关闭开机启动的 Nezha Agent 序号: " index
+            local serviceName=${services[$index]}
+            systemctl disable "$serviceName"
+            echo "Nezha Agent ${index} 已关闭开机启动。"
+            ;;
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+        *)
+            red " 请输入正确数字 "
+            red " 两秒后自动返回 "
+            sleep 2
+            nezha_agent_management
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    nezha_agent_management
+}
+declare -A services
+## NeZha 配置显示
+function display_nezha_config() {
+    clear
+    blue " Rex Lee's ToolBox "
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ==========NeZha当前配置============= "
+
+    # 表头
+    local header="┌──────┬────────────┬─────────────────────┬─────────┬──────────────────────┬──────────┬────────────┐"
+    local title="│ 序号 │    名称    │       Panel IP      │   Port  │         Key          │   状态   │  开机启动  │"
+    local divider="├──────┼────────────┼─────────────────────┼─────────┼──────────────────────┼──────────┼────────────┤"
+    local footer="└──────┴────────────┴─────────────────────┴─────────┴──────────────────────┴──────────┴────────────┘"
+
+    echo "$header"
+    echo "$title"
+
+    # 计数器
+    local count=1
+
+    # 查找并解析配置文件
+    for file in /etc/systemd/system/nezha-agent.service /etc/systemd/system/nezha-agent_*.service; do
+        if [ -f "$file" ]; then
+            echo "$divider" # 添加分隔线
+
+            local name="NeZha"
+            if [[ "$file" =~ nezha-agent_(.*)\.service ]]; then
+                name=${BASH_REMATCH[1]}
+            fi
+            local serviceName=$(basename $file .service)
+            services[$count]=$serviceName
+            local execLine=$(grep 'ExecStart=' $file)
+            local panelIP=$(echo $execLine | sed -n 's/.*-s \([^:]*\):.*/\1/p')
+            local port=$(echo $execLine | sed -n 's/.*:\([^ ]*\) -p.*/\1/p')
+            local secretKey=$(echo $execLine | sed -n 's/.*-p \(.*\)/\1/p')
+            local status=$(systemctl is-active $serviceName)
+            local enableStatus=$(systemctl is-enabled $serviceName)
+            printf "│ %-4s │ %-10s │ %-19s │ %-7s │ %-20s │ %-8s │ %-10s │\n" $count $name $panelIP $port $secretKey $status $enableStatus
+
+            count=$((count+1))
+        fi
+    done
+
+    echo "$footer"
 }
 
 # 科学上网
@@ -2151,6 +2294,7 @@ app_menu() {
     green " 6. SpeedTest CLI "
     green " 7. Caddy "
     green " 8. aapanel "
+    green " 9. Nezha Panel "
 
 
     echo
@@ -2183,6 +2327,9 @@ app_menu() {
     ;;
         8 )
             aapanel_management
+    ;;
+        9 )
+            nezha_agent_management
     ;;
         0 )
             start_menu
