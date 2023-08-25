@@ -17,8 +17,6 @@ Ubuntu 使用 netplan 配置ipv6
 
 融合怪脚本
 
-哪吒面板多插
-
 rar
 
 7z
@@ -59,20 +57,6 @@ echo root:'密码' |sudo chpasswd root
 sudo sed -i 's/^.*PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;
 sudo sed -i 's/^.*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
 sudo service sshd restart
-```
-
-### 安装哪吒面板
-
-首次使用
-
-```
-curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh && chmod +x nezha.sh && ./nezha.sh
-```
-
-后续使用
-
-```
-./nezha.sh
 ```
 
 ### 安装unrar
