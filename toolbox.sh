@@ -372,7 +372,7 @@ function ipv6_management() {
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " =============工具菜单=============== "
-    green " 1. 配置 IPv6 "
+    green " 1. 添加 IPv6 配置 "
     green " 2. 删除 IPv6 配置 "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -381,6 +381,27 @@ function ipv6_management() {
     echo
     read -p " 请输入数字: " menuNumberInput
 
+    case $menuNumberInput in
+
+        1)
+            red " 暂时搁置,以后再更新 "
+            ;;
+        2)
+            red " 暂时搁置,以后再更新 "
+            ;;
+        0)
+            # 返回系统菜单
+            system_menu
+            ;;
+        *)
+            red " 无效的选择,请重新输入 "
+            red " 两秒后自动返回 "
+            sleep 2s
+            ipv6_management
+            ;;
+    esac
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    ipv6_management
 }
 ## 融合怪ECS
 function ecs_management() {
@@ -440,8 +461,8 @@ function source_management() {
     yellow " =============换源菜单=============== "
     green " 1. 魔方 Debian 换源 "
     echo
-    orange " 为保证有权限执行,请使用root用户运行 "
     orange " 如有其他换源需求,请提issue "
+    orange " 为保证有权限执行,请使用root用户运行 "
     yellow " =================================== "
     green " 0. 返回应用程序菜单 "
     echo
@@ -2235,6 +2256,113 @@ function display_nezha_config() {
 
     echo "$footer"
 }
+## Aria2
+function aria2_management() {
+    clear
+    blue " Rex Lee's ToolBox "
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ==============Aria2================ "
+    green " 1. 运行 Aria2 安装脚本 "
+    green " 2. Aria2 菜单 "
+    green " 3. Aria2 修复无法开机启动 "
+    green " 4. 查看 Aria2 运行状态 "
+    green " 5. 启动 Aria2 "
+    green " 6. 停止 Aria2 "
+    green " 7. 重启 Aria2 "
+    green " 8. 设置 Aria2 开机启动 "
+    green " 9. 关闭 Aria2 开机启动 "
+
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
+
+    case $menuNumberInput in
+
+        1)
+            # 运行 Aria2 安装脚本
+            apt-get install -y wget curl ca-certificates
+            wget -N git.io/aria2.sh
+            chmod +x aria2.sh
+            ./aria2.sh
+            ;;
+        2)
+            ./aria2.sh
+            ;;
+        3)
+            # 检查 /etc/systemd/system/aria2.service 是否存在
+            if [[ -f /etc/systemd/system/aria2.service ]]; then
+                # 读取现有配置
+                current_config=$(cat /etc/systemd/system/aria2.service)
+                
+                # 准备目标配置
+                target_config=$(printf "[Unit]\nDescription=Aria2\nAfter=network.target\n[Service]\nUser=root\nLimitNOFILE=51200\nExecStart=/usr/local/bin/aria2c --conf-path=/root/.aria2c/aria2.conf\nRestart=on-failure\n[Install]\nWantedBy=multi-user.target\n")
+
+                # 判断当前配置是否与目标配置一致
+                if [[ "$current_config" != "$target_config" ]]; then
+                    printf "%s" "$target_config" > /etc/systemd/system/aria2.service
+                    green " Aria2 服务配置已更新 "
+                else
+                    green " Aria2 服务配置已经是目标配置，无需更改 "
+                fi
+            else
+                # 如果服务文件不存在，则创建
+                printf "%s" "$target_config" > /etc/systemd/system/aria2.service
+                green " Aria2 服务已创建 "
+            fi
+            
+            # 检查并删除冲突的 /etc/init.d/aria2 文件
+            if [[ -f /etc/init.d/aria2 ]]; then
+                rm -f /etc/init.d/aria2
+                green " 为避免冲突，/etc/init.d/aria2 文件已删除 "
+            fi
+            ;;
+        4)
+            # 查看 Aria2 运行状态
+            systemctl status aria2
+            ;;
+        5)
+            # 启动 Aria2
+            systemctl start aria2
+            blue " Aria2 已启动 "
+            ;;
+        6)
+            # 停止 Aria2
+            systemctl stop aria2
+            blue " Aria2 已停止 "
+            ;;
+        7)
+            # 重启 Aria2
+            systemctl restart aria2
+            blue " Aria2 已重启 "
+            ;;
+        8)
+            # 设置 Aria2 开机启动
+            systemctl enable aria2
+            blue " Aria2 已设置为开机启动 "
+            ;;
+        9)
+            # 关闭 Aria2 开机启动
+            systemctl disable aria2
+            blue " Aria2 的开机启动已关闭 "
+            ;;
+        0)
+            # 返回系统菜单
+            system_menu
+            ;;
+        *)
+            red " 无效的选择,请重新输入 "
+            red " 两秒后自动返回 "
+            sleep 2s
+            aria2_management
+            ;;
+    esac
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    aria2_management
+}
+
 
 # 科学上网
 ## soga
@@ -2451,6 +2579,7 @@ app_menu() {
     green " 7. Caddy "
     green " 8. aapanel "
     green " 9. Nezha Panel "
+    green " 10. Aria2 "
 
 
     echo
@@ -2486,6 +2615,9 @@ app_menu() {
     ;;
         9 )
             nezha_agent_management
+    ;;
+        10 )
+            aria2_management
     ;;
         0 )
             start_menu
