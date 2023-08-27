@@ -21,7 +21,7 @@ rar
 
 renamer
 
-aria2
+rclone
 
 挂载硬盘 
 
