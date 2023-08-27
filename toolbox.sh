@@ -4,25 +4,31 @@
 ##脚本所用到的颜色
 
 # 颜色函数
+    ## 报错相关用红色
     red(){
         echo -e "\033[31m\033[01m$1\033[0m"
     }
+    ## 常规用绿色
     green(){
         echo -e "\033[32m\033[01m$1\033[0m"
     }
+    ## 标题用黄色
     yellow(){
         echo -e "\033[33m\033[01m$1\033[0m"
     }
+    ## 提示用蓝色
     blue(){
         echo -e "\033[34m\033[01m$1\033[0m"
     }
+    ## 重要提示用橙色
     orange(){
         echo -e "\033[38;5;208m\033[01m$1\033[0m"
     }
+    ## 重复操作用紫色
     purple(){
         echo -e "\033[38;5;5m$1\033[0m"
     }
-
+    ## 卸载相关用黑色
     black(){
         echo -e "\033[38;5;0m$1\033[0m"
     }
@@ -376,6 +382,98 @@ function ipv6_management() {
     read -p " 请输入数字: " menuNumberInput
 
 }
+## 融合怪ECS
+function ecs_management() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    blue " ECS作者: https://github.com/spiritLHLS "
+    yellow " ==============ECS菜单=============== "
+    green " 1. 直接运行融合怪ECS "
+    green " 2. screen 运行融合怪ECS "
+    green " 3. 查看历史评测结果 "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
+
+    case $menuNumberInput in
+
+        1)
+            # 直接运行融合怪ECS
+            curl -L https://github.com/spiritLHLS/ecs/raw/main/ecs.sh -o ecs.sh
+            chmod +x ecs.sh
+            bash ecs.sh
+            ;;
+        2)
+            # 使用screen运行融合怪ECS
+            curl -L https://github.com/spiritLHLS/ecs/raw/main/ecs.sh -o ecs.sh
+            chmod +x ecs.sh
+            screen -S ecs_session bash ecs.sh
+            green " 已在 screen 会话 'ecs_session' 中运行融合怪 ECS "
+            blue " 要重新进入该会话，请执行: screen -r ecs_session"
+            ;;
+        3)
+            # 查看历史评测结果（这里你可以添加你自己的代码）
+            ;;
+        0)
+            # 返回系统菜单
+            system_menu
+            ;;
+        *)
+            red " 无效的选择,请重新输入 "
+            red " 两秒后自动返回 "
+            sleep 2s
+            ecs_management
+            ;;
+    esac
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    ecs_management
+}
+## 魔方换源
+function source_management() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " =============换源菜单=============== "
+    green " 1. 魔方 Debian 换源 "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    orange " 如有其他换源需求,请提issue "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
+
+    case $menuNumberInput in
+
+        1)
+            # 魔方Debian换源
+            sed -i 's/bullseye\/updates/bullseye-security/g' /etc/apt/sources.list
+            green " 已成功更改魔方 Debian 源 "
+            blue " 请运行 'sudo apt update' 以更新软件包信息 "
+            ;;
+        0)
+            # 返回系统菜单
+            system_menu
+            ;;
+        *)
+            red " 无效的选择,请重新输入 "
+            red " 两秒后自动返回 "
+            sleep 2s
+            source_management
+            ;;
+    esac
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    source_management
+}
+
+
+
+
+
 # 软件
 ## wget, curl 和 git
 function install_wget_curl_git() {
@@ -1698,7 +1796,7 @@ function caddy_management() {
 
             # 检查输入的序号是否有效
             if [[ ! ${siteStartLines[$deleteIndex]} || ! ${siteEndLines[$deleteIndex]} ]]; then
-                red " 输入的序号无效。"
+                red " 输入的序号无效 "
                 read -n 1 -s -r -p " 按任意键返回配置管理菜单... "
                 caddy_management
             fi
@@ -1713,9 +1811,9 @@ function caddy_management() {
                 # 使用sed删除指定行
                 awk -v start="$startLine" -v end="$endLine" 'NR < start || NR > end + 1' /etc/caddy/Caddyfile > /tmp/Caddyfile.tmp && mv /tmp/Caddyfile.tmp /etc/caddy/Caddyfile
 
-                green " 配置已删除。"
+                green " 配置已删除 "
             else
-                red " 操作已取消。"
+                red " 操作已取消 "
             fi
 
             ;;
@@ -1980,7 +2078,7 @@ function nezha_agent_management() {
             echo -e "$service_content" > "$service_file_path"
 
             echo " 服务配置文件已创建: $service_file_path "
-            echo " 请使用 systemctl 命令启动和管理服务。 "
+            echo " 请使用 systemctl 命令启动和管理服务 "
             ;;
         5)
             clear
@@ -1989,13 +2087,13 @@ function nezha_agent_management() {
             if [ "$index" -eq 0 ]; then
                 nezha_agent_management
             elif [ -z "${services[$index]}" ]; then
-                red " 无效的序号，返回菜单。 "
+                red " 无效的序号，返回菜单 "
                 sleep 2
                 nezha_agent_management
             else
                 local serviceName=${services[$index]}
                 systemctl start "$serviceName"
-                echo " Nezha Agent ${index} 已启动。 "
+                echo " Nezha Agent ${index} 已启动 "
             fi
             ;;
 
@@ -2006,13 +2104,13 @@ function nezha_agent_management() {
             if [ "$index" -eq 0 ]; then
                 nezha_agent_management
             elif [ -z "${services[$index]}" ]; then
-                red " 无效的序号，返回菜单。 "
+                red " 无效的序号，返回菜单 "
                 sleep 2
                 nezha_agent_management
             else
                 local serviceName=${services[$index]}
                 systemctl stop "$serviceName"
-                echo " Nezha Agent ${index} 已停止。 "
+                echo " Nezha Agent ${index} 已停止 "
             fi
             ;;
 
@@ -2023,13 +2121,13 @@ function nezha_agent_management() {
             if [ "$index" -eq 0 ]; then
                 nezha_agent_management
             elif [ -z "${services[$index]}" ]; then
-                red " 无效的序号，返回菜单。 "
+                red " 无效的序号，返回菜单 "
                 sleep 2
                 nezha_agent_management
             else
                 local serviceName=${services[$index]}
                 systemctl restart "$serviceName"
-                echo " Nezha Agent ${index} 已重启。 "
+                echo " Nezha Agent ${index} 已重启 "
             fi
             ;;
 
@@ -2040,13 +2138,13 @@ function nezha_agent_management() {
             if [ "$index" -eq 0 ]; then
                 nezha_agent_management
             elif [ -z "${services[$index]}" ]; then
-                red " 无效的序号，返回菜单。 "
+                red " 无效的序号，返回菜单 "
                 sleep 2
                 nezha_agent_management
             else
                 local serviceName=${services[$index]}
                 systemctl enable "$serviceName"
-                echo " Nezha Agent ${index} 已设置开机启动。 "
+                echo " Nezha Agent ${index} 已设置开机启动 "
             fi
             ;;
 
@@ -2057,13 +2155,13 @@ function nezha_agent_management() {
             if [ "$index" -eq 0 ]; then
                 nezha_agent_management
             elif [ -z "${services[$index]}" ]; then
-                red " 无效的序号，返回菜单。 "
+                red " 无效的序号，返回菜单 "
                 sleep 2
                 nezha_agent_management
             else
                 local serviceName=${services[$index]}
                 systemctl disable "$serviceName"
-                echo " Nezha Agent ${index} 已关闭开机启动。 "
+                echo " Nezha Agent ${index} 已关闭开机启动 "
             fi
             ;;
         10)
@@ -2074,7 +2172,7 @@ function nezha_agent_management() {
             systemctl stop "$serviceName"
             systemctl disable "$serviceName"
             rm -f "/etc/systemd/system/${serviceName}.service"
-            echo " Nezha Agent ${index} 已删除。 "
+            echo " Nezha Agent ${index} 已删除 "
             ;;
         0)
             # 返回应用程序菜单
@@ -2294,10 +2392,12 @@ system_menu() {
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
 	yellow " =========ToolBox系统菜单============ "
-    green " 1.BBR加速 "
-    green " 2.设置时区 "
-    green " 3.设置swap "
-    green " 4.IPv4/IPv6优先级调整 "
+    green " 1. BBR加速 "
+    green " 2. 设置时区 "
+    green " 3. 设置swap "
+    green " 4. IPv4/IPv6优先级调整 "
+    green " 5. 配置IPv6 "
+    green " 6. 融合怪ECS "
 
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -2317,6 +2417,12 @@ system_menu() {
 	;;
         4 )
             network_management
+    ;;
+        5 )
+            ipv6_management
+    ;;
+        6 )
+            ecs_management
     ;;
         0 )
             start_menu
@@ -2399,10 +2505,10 @@ vpn_menu() {
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
 	yellow " =========ToolBox科学上网菜单======== "
-    green " 1.安装soga "
-    green " 2.安装XrayR "
-    green " 3.安装ss-go "
-    green " 4.安装极光面板 "
+    green " 1. 安装soga "
+    green " 2. 安装XrayR "
+    green " 3. 安装ss-go "
+    green " 4. 安装极光面板 "
 
 
     echo
@@ -2442,9 +2548,9 @@ start_menu() {
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
 	yellow " ==========ToolBox主菜单============ "
-	orange " 1.系统菜单 "
-    orange " 2.软件菜单 "
-    orange " 3.科学上网菜单 "
+	orange " 1. 系统菜单 "
+    orange " 2. 软件菜单 "
+    orange " 3. 科学上网菜单 "
     echo
 
 
