@@ -128,89 +128,11 @@ find . -name "*.7z" | while read filename; do 7z x -p'password' "$filename" -o"$
 
 ## 常用应用
 
-### Aria2
-
-为了确保能正常使用，请先安装基础组件wget、curl、ca-certificates
-
-```
-yum install -y wget curl ca-certificates #Centos
-apt install -y wget curl ca-certificates #Ubuntu
-```
-
-下载脚本
-
-```
-wget -N git.io/aria2.sh && chmod +x aria2.sh
-```
-
-运行脚本
-
-```
-./aria2.sh
-```
-
-修改配置文件
-
-```
-nano /root/.aria2c/aria2.conf
-```
-
-配置完成下载后自动上传
-
-找到“**下载完成后执行的命令**”，把**clean**.sh替换为**upload**.sh
-
-```
-on-download-complete=/root/.aria2c/upload.sh
-```
-
-修改附加脚本配置
-
-```
-nano /root/.aria2c/script.conf
-```
-
-修改完成后重启Aria2
-
-```
-service aria2 restart
-```
-
-检查配置是否成功
-
-```
-/root/.aria2c/upload.sh
-```
-
-Aria2 配置参考
+## Aria2 配置参考
 
 [Aria2.conf](https://github.com/Rex0929/VPS/blob/main/aria2.conf)
 
 [Script.conf](https://github.com/Rex0929/VPS/blob/main/script.conf)
-
-***Ubuntu22***
-
-在该版本下不会开机启动
-
-```
-cat > /etc/systemd/system/aria2.service <<EOF
-[Unit]
-Description=Aria2
-After=network.target
-
-[Service]
-User=root
-LimitNOFILE=51200
-ExecStart=/usr/local/bin/aria2c --conf-path=/root/.aria2c/aria2.conf
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-
-EOF
-```
-
-然后删除 `/etc/init.d/aria2` 文件避免冲突
-
 
 ### Rclone
 
