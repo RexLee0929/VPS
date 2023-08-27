@@ -15,8 +15,6 @@ wget -O toolbox.sh https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox
 
 Ubuntu 使用 netplan 配置ipv6
 
-融合怪脚本
-
 rar
 
 7z
@@ -28,8 +26,6 @@ aria2
 挂载硬盘 
 
 docker 
-
-魔方源问题 sed -i 's/bullseye\/updates/bullseye-security/g' /etc/apt/sources.list
 
 ....
 
