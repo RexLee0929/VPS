@@ -493,8 +493,6 @@ function source_management() {
 
 
 
-
-
 # 软件
 ## wget, curl 和 git
 function install_wget_curl_git() {
@@ -1201,6 +1199,7 @@ function unzip_management() {
     green " 5. 批量使用 zip 压缩文件夹 "
     green " 6. 使用 screen 执行 zip 批量解压 "
     green " 7. 使用 screen 执行 zip 批量压缩 "
+    black " 8. 卸载 unzip "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
     yellow " =================================== "
@@ -1451,6 +1450,40 @@ function unzip_management() {
 
             blue " 已在新的 screen 会话 zip_session 中启动压缩任务 "
             ;;
+
+    8)
+        if ! command -v unzip &> /dev/null && ! command -v zip &> /dev/null; then
+            red " 您没有安装 unzip 或 zip "
+            red " 两秒后自动返回 "
+            sleep 2
+            unzip_management
+            return
+        fi
+
+        case $OS in
+            ubuntu|debian)
+                blue " 将为您执行 $OS 下的 unzip 卸载 "
+                sudo apt remove -y unzip
+                ;;
+            centos|redhat)
+                blue " 将为您执行 $OS 下的 unzip 卸载 "
+                sudo yum remove -y unzip
+                ;;
+            arch)
+                blue " 将为您执行 $OS 下的 unzip 卸载 "
+                sudo pacman -R unzip
+                ;;
+            *)
+                red " 不支持的操作系统 "
+                red " 两秒后自动返回 "
+                sleep 2
+                unzip_management
+                return
+                ;;
+        esac
+        black " unzip 卸载完成 "
+        ;;
+
 
         0)
             # 返回应用程序菜单
@@ -1782,6 +1815,10 @@ function caddy_management() {
             display_caddy_config
             ;;
         3)
+            clear
+            # 显示配置列表
+            display_caddy_config
+
             blue " 添加配置 "
             # 提示用户输入站点
             read -p " 请输入站点 (例如: nmsl.baidu.com): " siteName
@@ -2362,7 +2399,611 @@ function aria2_management() {
     read -n 1 -s -r -p " 按任意键返回菜单... "
     aria2_management
 }
+## 7zip
+function 7zip_management() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " =============7zip菜单============== "
+    green " 1. 安装 7zip "
+    green " 2. 使用 7zip 解压文件 "
+    green " 3. 使用 7zip 压缩文件夹 "
+    green " 4. 批量使用 7zip 解压文件 "
+    green " 5. 批量使用 7zip 压缩文件夹 "
+    green " 6. 使用 screen 执行 7zip 批量解压 "
+    green " 7. 使用 screen 执行 7zip 批量压缩 "
+    black " 8. 卸载 7z "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
 
+    # 检查操作系统
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        OS=$(uname -s)
+    fi
+
+    blue " 检测到您的系统为: $OS "
+
+    case "$menuNumberInput" in
+        1)
+            if command -v 7z &> /dev/null; then
+                purple " 您已经安装过 7zip 了 "
+                red " 两秒后自动返回 "
+                sleep 2
+                7zip_management
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    blue " 将为您执行 $OS 下的 7zip 安装 "
+                    apt update
+                    apt install -y p7zip p7zip-full p7zip-rar
+                    ;;
+                centos|redhat)
+                    blue " 将为您执行 $OS 下的 7zip 安装 "
+                    sudo yum install -y p7zip p7zip-plugins
+                    ;;
+                arch)
+                    blue " 将为您执行 $OS 下的 7zip 安装 "
+                    sudo pacman -S p7zip
+                    ;;
+
+                *)
+                    red " 不支持的操作系统 "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    7zip_management
+                    return
+                    ;;
+            esac
+            blue " 7zip 及其所有组件安装完成 "
+            ;;
+        2)
+            if ! command -v 7z &> /dev/null; then
+                red " 您没有安装 7zip "
+                red " 两秒后自动返回 "
+                sleep 2
+                7zip_management
+                return
+            fi
+            read -p " 请输入您要解压的文件路径: " archive_path
+            read -p " 请输入解压到的路径: " dest_path
+            mkdir -p "$dest_path"
+            read -p " 请输入密码 (如果不想设置密码,请直接按 Enter ): " password
+            if [ -z "$password" ]; then
+                7z x "$archive_path" -o"$dest_path"
+            else
+                7z x "$archive_path" -o"$dest_path" -p"$password"
+            fi
+            ;;
+        3)
+            if ! command -v 7z &> /dev/null; then
+                red " 您没有安装 7zip "
+                red " 两秒后自动返回 "
+                sleep 2
+                7zip_management
+                return
+            fi
+            read -p " 请输入您要压缩的文件夹路径: " folder_path
+            read -p " 请输入压缩包的存放路径: " dest_path
+            mkdir -p "$dest_path"
+            read -p " 请输入密码 (如果不想设置密码,请直接按 Enter ): " password
+            archive_name=$(basename "$folder_path").7z
+            if [ -z "$password" ]; then
+                7z a "$dest_path/$archive_name" "$folder_path"
+            else
+                7z a -p"$password" "$dest_path/$archive_name" "$folder_path"
+            fi
+            ;;
+        4)
+            if ! command -v 7z &> /dev/null; then
+                red " 您没有安装 7zip "
+                red " 两秒后自动返回 "
+                sleep 2
+                7zip_management
+                return
+            fi
+            read -p " 请输入包含压缩文件的目录路径: " dir_path
+            read -p " 请输入解压到的目标路径: " target_path
+            mkdir -p "$target_path"
+            read -p " 所有文件是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
+
+            if [ -z "$same_password" ]; then
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
+                for archive in "$dir_path"/*.7z; do
+                    if [ -z "$unified_password" ]; then
+                        7z x "$archive" -o"$target_path"
+                    else
+                        7z x "$archive" -o"$target_path" -p"$unified_password"
+                    fi
+                done
+            else
+                for archive in "$dir_path"/*.7z; do
+                    read -p " 为 $archive 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
+                    if [ -z "$individual_password" ]; then
+                        7z x "$archive" -o"$target_path"
+                    else
+                        7z x "$archive" -o"$target_path" -p"$individual_password"
+                    fi
+                done
+            fi
+            ;;
+        5)
+            if ! command -v 7z &> /dev/null; then
+                red " 您没有安装 7zip "
+                red " 两秒后自动返回 "
+                sleep 2
+                7zip_management
+                return
+            fi
+
+            read -p " 请输入包含文件夹的目录路径: " dirpath
+            read -p " 请输入压缩包的存放路径: " destpath
+            mkdir -p "$destpath"
+            read -p " 所有文件夹是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
+
+            # 进入到dirpath所在的目录
+            pushd "$dirpath" > /dev/null
+
+            if [ -z "$same_password" ]; then
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
+                for dir in *; do
+                    if [ -d "$dir" ]; then
+                        archive_name=$(basename "$dir").7z
+                        if [ -z "$unified_password" ]; then
+                            7z a "$destpath/$archive_name" "$dir"
+                        else
+                            7z a -p"$unified_password" "$destpath/$archive_name" "$dir"
+                        fi
+                    fi
+                done
+            else
+                for dir in *; do
+                    if [ -d "$dir" ]; then
+                        read -p " 为 $dir 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
+                        archive_name=$(basename "$dir").7z
+                        if [ -z "$individual_password" ]; then
+                            7z a "$destpath/$archive_name" "$dir"
+                        else
+                            7z a -p"$individual_password" "$destpath/$archive_name" "$dir"
+                        fi
+                    fi
+                done
+            fi
+
+            # 返回原始目录
+            popd > /dev/null
+            ;;
+        6)
+            # 批量解压在screen会话中
+            if ! command -v 7z &> /dev/null || ! command -v screen &> /dev/null; then
+                red " 您没有安装 7zip 或 screen "
+                red " 两秒后自动返回 "
+                sleep 2
+                7zip_management
+                return
+            fi
+            read -p " 请输入包含 7z 文件的目录路径: " dirpath
+            read -p " 请输入要解压到的目标路径: " targetpath
+            mkdir -p "$targetpath"
+            read -p " 所有文件是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
+
+            if [ -z "$same_password" ]; then
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
+                cmd="for z in $dirpath/*.7z; do 7z x -o$targetpath -p'$unified_password' \$z; done"
+                screen -dmS un7z_session bash -c "$cmd"
+            else
+                for z in "$dirpath"/*.7z; do
+                    read -p " 为 $z 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
+                    cmd="7z x -o$targetpath -p'$individual_password' $z"
+                    screen -dmS un7z_session bash -c "$cmd"
+                done
+            fi
+            blue " 已在新的 screen 会话 un7z_session 中启动解压任务 "
+            ;;
+
+        7)
+            # 批量压缩在screen会话中
+            if ! command -v 7z &> /dev/null || ! command -v screen &> /dev/null; then
+                red " 您没有安装 7zip 或 screen "
+                red " 两秒后自动返回 "
+                sleep 2
+                7zip_management
+                return
+            fi
+            read -p " 请输入包含文件夹的目录路径: " dirpath
+            read -p " 请输入压缩包的存放路径: " destpath
+            mkdir -p "$destpath"
+            read -p " 所有文件夹是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
+
+            pushd "$dirpath" > /dev/null
+
+            if [ -z "$same_password" ]; then
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
+                cmd="for d in *; do if [ -d \$d ]; then 7z a -p'$unified_password' $destpath/\$d.7z \$d; fi; done"
+                screen -dmS 7z_session bash -c "$cmd"
+            else
+                for d in *; do
+                    if [ -d "$d" ]; then
+                        read -p " 为 $d 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
+                        cmd="7z a -p'$individual_password' $destpath/$d.7z $d"
+                        screen -dmS 7z_session bash -c "$cmd"
+                    fi
+                done
+            fi
+            popd > /dev/null
+
+            blue " 已在新的 screen 会话 7z_session 中启动压缩任务 "
+            ;;
+        8)
+            if ! command -v 7z &> /dev/null; then
+                red " 您没有安装 7zip "
+                red " 两秒后自动返回 "
+                sleep 2
+                7zip_management
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    blue " 将为您执行 $OS 下的 7zip 卸载 "
+                    sudo apt remove -y p7zip p7zip-full p7zip-rar
+                    ;;
+                centos|redhat)
+                    blue " 将为您执行 $OS 下的 7zip 卸载 "
+                    sudo yum remove -y p7zip p7zip-plugins
+                    ;;
+                arch)
+                    blue " 将为您执行 $OS 下的 7zip 卸载 "
+                    sudo pacman -R p7zip
+                    ;;
+                *)
+                    red " 不支持的操作系统 "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    7zip_management
+                    return
+                    ;;
+            esac
+            black " 7zip 卸载完成 "
+            ;;
+
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+
+        *)
+            red " 请输入正确数字 "
+            red " 两秒后自动返回 "
+            sleep 2
+            7zip_management
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    7zip_management
+}
+## rar
+function rar_management() {
+    clear
+    blue " Rex Lee's ToolBox "
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============rar菜单================= "
+    green " 1. 安装 rar "
+    green " 2. 使用 rar 解压文件 "
+    green " 3. 使用 rar 压缩文件夹 "
+    green " 4. 批量使用 rar 解压文件 "
+    green " 5. 批量使用 rar 压缩文件夹 "
+    green " 6. 使用 screen 执行 rar 批量解压 "
+    green " 7. 使用 screen 执行 rar 批量压缩 "
+    black " 8. 卸载 rar "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
+
+    # 检查操作系统
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        OS=$(uname -s)
+    fi
+
+    blue " 检测到您的系统为: $OS "
+
+    case "$menuNumberInput" in
+
+        1)
+            if command -v rar &> /dev/null && command -v unrar &> /dev/null; then
+                purple " 您已经安装过 rar 和 unrar 了 "
+                red " 两秒后自动返回 "
+                sleep 2
+                rar_management
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    blue " 将为您执行 $OS 下的 rar 和 unrar 安装 "
+                    sudo apt update
+                    sudo apt install -y rar unrar
+                    ;;
+                centos|redhat)
+                    blue " 将为您执行 $OS 下的 rar 和 unrar 手动安装 "
+                    sudo wget https://www.rarlab.com/rar/rarlinux-x64-623.tar.gz --no-check-certificate
+                    sudo tar zxvf rarlinux-x64-623.tar.gz -C /usr/local
+                    sudo ln -s /usr/local/rar/rar /usr/local/bin/rar
+                    sudo ln -s /usr/local/rar/unrar /usr/local/bin/unrar
+                    ;;
+                arch)
+                    blue " 将为您执行 $OS 下的 rar 和 unrar 安装 "
+                    sudo pacman -S rar unrar
+                    ;;
+                *)
+                    red " 不支持的操作系统 "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    rar_management
+                    return
+                    ;;
+            esac
+            blue " rar 和 unrar 安装完成 "
+            ;;
+        2)
+            if ! command -v rar &> /dev/null; then
+                red " 您没有安装 rar "
+                red " 两秒后自动返回 "
+                sleep 2
+                rar_management
+                return
+            fi
+            read -p " 请输入您要解压的rar文件路径: " rarfile
+            read -p " 请输入解压到的路径: " destpath
+            mkdir -p "$destpath"
+            read -p " 请输入密码 (如果不想设置密码,请直接按 Enter ): " password
+            if [ -z "$password" ]; then
+                rar x "$rarfile" "$destpath"
+            else
+                rar x -p"$password" "$rarfile" "$destpath"
+            fi
+            ;;
+        3)
+            if ! command -v rar &> /dev/null; then
+                red " 您没有安装 rar "
+                red " 两秒后自动返回 "
+                sleep 2
+                rar_management
+                return
+            fi
+            read -p " 请输入您要压缩的文件夹路径: " folderpath
+            read -p " 请输入压缩包的存放路径: " destpath
+            mkdir -p "$destpath"
+            read -p " 请输入密码 (如果不想设置密码,请直接按 Enter ): " password
+            foldername=$(basename "$folderpath")
+            # 更改到文件夹的上级目录
+            cd "$(dirname "$folderpath")"
+            if [ -z "$password" ]; then
+                rar a "$destpath/$foldername.rar" "$foldername"
+            else
+                rar a -p"$password" "$destpath/$foldername.rar" "$foldername"
+            fi
+            ;;
+        4)
+            if ! command -v rar &> /dev/null; then
+                red " 您没有安装 rar "
+                red " 两秒后自动返回 "
+                sleep 2
+                rar_management
+                return
+            fi
+            read -p " 请输入包含rar文件的目录路径: " dirpath
+            read -p " 请输入要解压到的目标路径: " targetpath
+            mkdir -p "$targetpath"
+            read -p " 所有文件是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
+
+            if [ -z "$same_password" ]; then
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
+                for r in "$dirpath"/*.rar; do
+                    if [ -z "$unified_password" ]; then
+                        rar x "$r" "$targetpath"
+                    else
+                        rar x -p"$unified_password" "$r" "$targetpath"
+                    fi
+                done
+            else
+                for r in "$dirpath"/*.rar; do
+                    read -p " 为 $r 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
+                    if [ -z "$individual_password" ]; then
+                        rar x "$r" "$targetpath"
+                    else
+                        rar x -p"$individual_password" "$r" "$targetpath"
+                    fi
+                done
+            fi
+            ;;
+        5)
+            if ! command -v rar &> /dev/null; then
+                red " 您没有安装 rar "
+                red " 两秒后自动返回 "
+                sleep 2
+                rar_management
+                return
+            fi
+
+            read -p " 请输入包含文件夹的目录路径: " dirpath
+            read -p " 请输入压缩包的存放路径: " destpath
+            mkdir -p "$destpath"
+            read -p " 所有文件夹是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
+
+            pushd "$dirpath" > /dev/null
+
+            if [ -z "$same_password" ]; then
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
+                for dir in *; do
+                    if [ -d "$dir" ]; then
+                        if [ -z "$unified_password" ]; then
+                            rar a "$destpath/$dir.rar" "$dir"
+                        else
+                            rar a -p"$unified_password" "$destpath/$dir.rar" "$dir"
+                        fi
+                    fi
+                done
+            else
+                for dir in *; do
+                    if [ -d "$dir" ]; then
+                        read -p " 为 $dir 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
+                        if [ -z "$individual_password" ]; then
+                            rar a "$destpath/$dir.rar" "$dir"
+                        else
+                            rar a -p"$individual_password" "$destpath/$dir.rar" "$dir"
+                        fi
+                    fi
+                done
+            fi
+
+            popd > /dev/null
+            ;;
+        6)
+            # 批量解压在screen会话中
+            if ! command -v rar &> /dev/null || ! command -v screen &> /dev/null; then
+                red " 您没有安装 rar 或 screen "
+                red " 两秒后自动返回 "
+                sleep 2
+                rar_management
+                return
+            fi
+            read -p " 请输入包含 rar 文件的目录路径: " dirpath
+            read -p " 请输入要解压到的目标路径: " targetpath
+            mkdir -p "$targetpath"
+            read -p " 所有文件是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
+
+            if [ -z "$same_password" ]; then
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
+                if [ -z "$unified_password" ]; then
+                    cmd="for r in $dirpath/*.rar; do rar x \$r -d $targetpath; done"
+                else
+                    cmd="for r in $dirpath/*.rar; do rar x -p'\$unified_password' \$r -d $targetpath; done"
+                fi
+                screen -dmS unrar_session bash -c "$cmd"
+            else
+                for r in "$dirpath"/*.rar; do
+                    read -p " 为 $r 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
+                    if [ -z "$individual_password" ]; then
+                        cmd="rar x $r -d $targetpath"
+                    else
+                        cmd="rar x -p'$individual_password' $r -d $targetpath"
+                    fi
+                    screen -dmS unrar_session bash -c "$cmd"
+                done
+            fi
+            blue " 已在新的 screen 会话 unrar_session 中启动解压任务 "
+            ;;
+
+        7)
+            # 批量压缩在screen会话中
+            if ! command -v rar &> /dev/null || ! command -v screen &> /dev/null; then
+                red " 您没有安装 rar 或 screen "
+                red " 两秒后自动返回 "
+                sleep 2
+                rar_management
+                return
+            fi
+
+            read -p " 请输入包含文件夹的目录路径: " dirpath
+            read -p " 请输入压缩包的存放路径: " destpath
+            mkdir -p "$destpath"
+            read -p " 所有文件夹是否使用相同的密码? (直接按 Enter 表示'是',其他表示'否') " same_password
+
+            pushd "$dirpath" > /dev/null
+
+            if [ -z "$same_password" ]; then
+                read -p " 请输入统一密码 (如果不想设置密码,请直接按 Enter ): " unified_password
+                if [ -z "$unified_password" ]; then
+                    cmd="for d in *; do if [ -d \$d ]; then rar a $destpath/\$d.rar \$d; fi; done"
+                else
+                    cmd="for d in *; do if [ -d \$d ]; then rar a -p'\$unified_password' $destpath/\$d.rar \$d; fi; done"
+                fi
+                screen -dmS rar_session bash -c "$cmd"
+            else
+                for d in *; do
+                    if [ -d "$d" ]; then
+                        read -p " 为 $d 输入密码 (如果不想设置密码,请直接按 Enter ): " individual_password
+                        if [ -z "$individual_password" ]; then
+                            cmd="rar a $destpath/$d.rar $d"
+                        else
+                            cmd="rar a -p'$individual_password' $destpath/$d.rar $d"
+                        fi
+                        screen -dmS rar_session bash -c "$cmd"
+                    fi
+                done
+            fi
+
+            popd > /dev/null
+
+            blue " 已在新的 screen 会话 rar_session 中启动压缩任务 "
+            ;;
+        8)
+            if ! command -v rar &> /dev/null && ! command -v unrar &> /dev/null; then
+                red " 您没有安装 rar 或 unrar "
+                red " 两秒后自动返回 "
+                sleep 2
+                rar_management
+                return
+            fi
+
+            case $OS in
+                ubuntu|debian)
+                    blue " 将为您执行 $OS 下的 rar 和 unrar 卸载 "
+                    sudo apt remove -y rar unrar
+                    ;;
+                centos|redhat)
+                    blue " 将为您执行 $OS 下的 rar 和 unrar 手动卸载 "
+                    sudo rm -f /usr/local/bin/rar
+                    sudo rm -f /usr/local/bin/unrar
+                    sudo rm -rf /usr/local/rar
+                    ;;
+                arch)
+                    blue " 将为您执行 $OS 下的 rar 和 unrar 卸载 "
+                    sudo pacman -R rar unrar
+                    ;;
+                *)
+                    red " 不支持的操作系统 "
+                    red " 两秒后自动返回 "
+                    sleep 2
+                    rar_management
+                    return
+                    ;;
+            esac
+            black " rar 和 unrar 卸载完成 "
+            ;;
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+        *)
+            red " 请输入正确数字 "
+            red " 两秒后自动返回 "
+            sleep 2
+            rar_management
+            ;;
+    esac
+
+    # 按任意键返回菜单
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    rar_management
+}
 
 # 科学上网
 ## soga
