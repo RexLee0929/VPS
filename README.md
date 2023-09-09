@@ -15,10 +15,6 @@ wget -O toolbox.sh https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox
 
 Ubuntu 使用 netplan 配置ipv6
 
-rar
-
-7z
-
 renamer
 
 rclone
