@@ -3221,7 +3221,8 @@ app_menu() {
     green " 8. aapanel "
     green " 9. Nezha Panel "
     green " 10. Aria2 "
-
+    green " 11. 7zip "
+    green " 12. rar "
 
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -3259,6 +3260,12 @@ app_menu() {
     ;;
         10 )
             aria2_management
+    ;;
+        11 )
+            7zip_management
+    ;;
+        12 )
+            rar_management
     ;;
         0 )
             start_menu
