@@ -490,6 +490,74 @@ function source_management() {
     read -n 1 -s -r -p " 按任意键返回菜单... "
     source_management
 }
+## 流媒体检测
+function mediacheck_management() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============流媒体检测菜单============= "
+    green " 1. 执行流媒体检测 "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
+
+    case $menuNumberInput in
+        1)
+            # 执行流媒体检测
+            bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh)
+            green " 流媒体检测完成 "
+            ;;
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+        *)
+            red " 无效的选择,请重新输入 "
+            red " 两秒后自动返回 "
+            sleep 2s
+            mediacheck_management
+            ;;
+    esac
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    mediacheck_management
+}
+## 游戏延迟检测
+function gamecheck_management() {
+    clear
+    blue " Rex Lee's ToolBox " 
+    blue " GitHub: https://github.com/RexLee0929 "
+    yellow " ============游戏延迟检测菜单=========== "
+    green " 1. 执行游戏延迟检测 "
+    echo
+    orange " 为保证有权限执行,请使用root用户运行 "
+    yellow " =================================== "
+    green " 0. 返回应用程序菜单 "
+    echo
+    read -p " 请输入数字: " menuNumberInput
+
+    case $menuNumberInput in
+        1)
+            # 执行游戏延迟检测
+            bash <(curl -L -s https://raw.githubusercontent.com/lmc999/GamePing/main/GamePing.sh)
+            green " 游戏延迟检测完成 "
+            ;;
+        0)
+            # 返回应用程序菜单
+            app_menu
+            ;;
+        *)
+            red " 无效的选择,请重新输入 "
+            red " 两秒后自动返回 "
+            sleep 2s
+            gamecheck_management
+            ;;
+    esac
+    read -n 1 -s -r -p " 按任意键返回菜单... "
+    gamecheck_management
+}
 
 
 
@@ -3167,6 +3235,8 @@ system_menu() {
     green " 4. IPv4/IPv6优先级调整 "
     green " 5. 配置IPv6 "
     green " 6. 融合怪ECS "
+    green " 7. 流媒体检测 "
+    green " 8. 游戏延迟检测 "
 
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -3192,6 +3262,12 @@ system_menu() {
     ;;
         6 )
             ecs_management
+    ;;
+        7 )
+            mediacheck_management
+    ;;
+        8 )
+            gamecheck_management
     ;;
         0 )
             start_menu
