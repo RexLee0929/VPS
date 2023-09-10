@@ -51,77 +51,6 @@ sudo sed -i 's/^.*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ss
 sudo service sshd restart
 ```
 
-### 安装unrar
-
-***CentOS***
-
-下载rar安装包
-
-```
-wget https://www.rarlab.com/rar/rarlinux-x64-6.0.2.tar.gz --no-check-certificate
-```
-
-解压压缩包到/usr/local下
-
-```
-tar zxvf rarlinux-x64-6.0.2.tar.gz -C /usr/local
-```
-
-将 rar 和 unrar 命令链接到/usr/local/bin目录下
-
-```
-ln -s /usr/local/rar/rar /usr/local/bin/rar
-ln -s /usr/local/rar/unrar /usr/local/bin/unrar
-```
-
-***Ubuntu***
-
-```
-apt-get install -y unrar
-apt-get install -y rar
-```
-
-查看帮助文档
-
-```
-rar --help
-unrar --help
-```
-
-使用方法
-
-```
-unrar x '文件目路径.rar' '保存的路径'
-```
-
-### 安装7zip
-
-***CentOS***
-
-```
-yum install -y epel-release
-yum install -y p7zip p7zip-plugins
-```
-
-***Ubuntu***
-
-```
-add-apt-repository universe
-apt install -y p7zip-full p7zip-rar
-```
-
-使用方法
-
-```
-7z x '压缩文件路径' -r -o/'需要保存到的路径'
-```
-
-解压目录下所有.7z 密码为`password`
-
-```
-find . -name "*.7z" | while read filename; do 7z x -p'password' "$filename" -o"$(dirname "$filename")" ; done
-```
-
 ## 常用应用
 
 ## Aria2 配置参考
@@ -174,24 +103,6 @@ ExecStart=/usr/bin/qbittorrent-nox -d
 WantedBy=multi-user.target
 
 EOF
-```
-
-### 流媒体检测
-
-```
-bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh)
-```
-
-### 多维度测试VPS
-
-```
-bash <(wget -qO- --no-check-certificate https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh)
-```
-
-### 测试部分游戏延迟
-
-```
-bash <(curl -L -s https://raw.githubusercontent.com/lmc999/GamePing/main/GamePing.sh)
 ```
 
 ### 安装Socks5代理
