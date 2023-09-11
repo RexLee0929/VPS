@@ -1,7 +1,7 @@
 # Rex Lee's ToolBox 
 
 ```
-wget -O toolbox.sh https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox.sh && chmod +x toolbox.sh && clear && ./toolbox.sh
+bash <(wget -qO- https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox.sh)
 ```
 
 ## 现已支持
