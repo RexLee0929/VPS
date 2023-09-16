@@ -1,13 +1,3 @@
-#!/bin/bash
-
-# Telegram Bot API Token
-BOT_TOKEN=""
-# Telegram 用户的 Chat ID
-USER_ID=""
-
-# 设置流量限制
-limit="100GB"
-
 # 提取数值和单位
 limit_value=$(echo $limit | tr -d -c 0-9)
 limit_unit=$(echo $limit | tr -d -c a-zA-Z)
