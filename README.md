@@ -31,7 +31,7 @@ nano /root/ddns.sh
 写入定时脚本
 
 ```
-*/2 * * * * /root/ddns.sh -k "key" -u "mail" -z "domain.com" -h "sg.domian.com" -t "A" -l "120" -p "false" >> /root/ddns.log 2>&1
+*/2 * * * * /root/ddns.sh -k "key" -u "mail" -z "domain.com" -h "sg.domian.com" -t "A" -l "120" -p "false" | sed 's/\x1b\[[0-9;]*m//g' >> /root/ddns.log 2>&1
 ```
 
 
