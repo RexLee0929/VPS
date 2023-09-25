@@ -27,6 +27,7 @@ set -o pipefail
 
 echo
 yellow " === 开始运行DDNS更新脚本 === "
+orange " 当前时间：$(date +"%Y-%m-%d %H:%M:%S") "
 
 # 初始化默认参数
 echo 
@@ -41,15 +42,10 @@ FORCE="false"
 CFPROXY="false" # 填入 true 或者 false 来控制是否启用代理
 WANIPSITE="http://ipv4.icanhazip.com"
 
-# 根据记录类型选择获取WAN IP的方式
-if [ "$CFRECORD_TYPE" = "AAAA" ]; then
-  WANIPSITE="http://ipv6.icanhazip.com"
-fi
-
 echo 
 green " 正在解析参数 "
 # 解析命令行参数
-while getopts k:u:h:z:t:f:p: opts; do
+while getopts k:u:h:z:t:f:l:p: opts; do
   case ${opts} in
     k) CFKEY=${OPTARG} ;;
     u) CFUSER=${OPTARG} ;;
@@ -57,9 +53,15 @@ while getopts k:u:h:z:t:f:p: opts; do
     z) CFZONE_NAME=${OPTARG} ;;
     t) CFRECORD_TYPE=${OPTARG} ;;
     f) FORCE=${OPTARG} ;;
+    l) CFTTL=${OPTARG} ;;
     p) CFPROXY=${OPTARG} ;;
   esac
 done
+
+# 根据记录类型选择获取WAN IP的方式
+if [ "$CFRECORD_TYPE" = "AAAA" ]; then
+  WANIPSITE="http://ipv6.icanhazip.com"
+fi
 
 # 获取当前WAN IP
 echo
@@ -90,9 +92,10 @@ DNS_RECORDS_JSON=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$C
   -H "Content-Type: application/json") || { echo "获取DNS记录失败"; exit 1; }
   
 # 解析DNS记录的ID和内容（如果存在）
-CFRECORD_ID=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="id":")[^"]*' | head -1) || { echo "解析记录ID失败，可能是该记录不存在"; }
-EXISTING_IP=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="content":")[^"]*' | head -1) || { echo "解析现有IP失败"; }
-EXISTING_PROXY=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="proxied":)[^,]*' | head -1) || { echo "解析现有代理状态失败"; }
+CFRECORD_ID=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="id":")[^"]*' | head -1) || { echo " 解析记录ID失败，可能是该记录不存在 "; }
+EXISTING_IP=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="content":")[^"]*' | head -1) || { echo " 解析现有IP失败 "; }
+EXISTING_PROXY=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="proxied":)[^,]*' | head -1) || { echo " 解析现有代理状态失败 "; }
+EXISTING_TTL=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="ttl":)[^,]*' | head -1) || { echo "解析现有TTL失败 "; }
 
 # 打印调试信息
 # echo "Debug: Full API Response for DNS Records: $DNS_RECORDS_JSON"
@@ -100,14 +103,39 @@ echo
 blue " DNS 记录 ID = $CFRECORD_ID "
 blue " DSN 记录 IP = $EXISTING_IP "
 blue " DSN 记录代理状态 = $EXISTING_PROXY "
+blue " DNS 记录 TTL = $EXISTING_TTL "
 
 # 检查是否需要更新或创建记录
 if [ -n "$CFRECORD_ID" ]; then
     echo
     green " 找到了记录，检查是否需要更新 "
-    if [ "$EXISTING_IP" != "$WAN_IP" ] || [ "$EXISTING_PROXY" != "$CFPROXY" ]; then
+    
+    NEED_UPDATE=false
+    
+    # 检查IP
+    if [ "$EXISTING_IP" != "$WAN_IP" ]; then
+        NEED_UPDATE=true
+    fi
+    
+    # 检查Proxy
+    if [ "$EXISTING_PROXY" != "$CFPROXY" ]; then
+        NEED_UPDATE=true
+    fi
+    
+    # 检查TTL
+    if [ "$EXISTING_TTL" != "$CFTTL" ] && [ "$CFPROXY" == "false" ]; then
+        NEED_UPDATE=true
+    fi
+    
+    if [ "$NEED_UPDATE" == "true" ]; then
         echo
-        green " IP地址或代理状态有变化，正在更新 "
+        green " IP地址或代理状态或TTL有变化，正在更新 "
+        
+        # 如果Proxy为true，则强制设置TTL为1（Auto）
+        if [ "$CFPROXY" == "true" ]; then
+            CFTTL="1"
+        fi
+
         # 更新记录
         RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$CFZONE_ID/dns_records/$CFRECORD_ID" \
           -H "X-Auth-Email: $CFUSER" \
@@ -153,3 +181,4 @@ fi
 
 echo
 yellow " === DDNS更新脚本运行完毕 === "
+orange " 当前时间：$(date +"%Y-%m-%d %H:%M:%S") "
