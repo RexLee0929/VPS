@@ -4,6 +4,37 @@
 bash <(wget -qO- https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox.sh)
 ```
 
+## DDNS 脚本
+
+下载脚本并且给予运行权限
+
+```
+wget https://raw.githubusercontent.com/RexLee0929/VPS/main/ddns.sh && chmod +x ddns.sh
+```
+
+修改里面的参数,不强制修改,可以在执行的时候加上参数
+
+```
+nano /root/ddns.sh
+```
+
+运行脚本
+
+```
+/root/ddns.sh
+```
+
+```
+/root/ddns.sh -k "key" -u "mail" -z "domain.com" -h "sg.domian.com" -t "A" -l "120" -p "false"
+```
+
+写入定时脚本
+
+```
+*/2 * * * * /root/ddns.sh -k "key" -u "mail" -z "domain.com" -h "sg.domian.com" -t "A" -l "120" -p "false" >> /root/ddns.log 2>&1
+```
+
+
 ## 现已支持
 ![image](https://github.com/RexLee0929/VPS/assets/62170324/8e23c288-5a75-4337-b39f-c3b6b0c1dd5e)
 
