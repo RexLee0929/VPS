@@ -31,14 +31,14 @@ yellow " === 开始运行DDNS更新脚本 === "
 # 初始化默认参数
 echo 
 green " 初始化默认参数 " 
-CFKEY=""# Cloudflare Global Key
-CFUSER=""# Cloudflare 登录邮箱
-CFZONE_NAME="yourdomain.com"# 域名
-CFRECORD_NAME="hk.yourdomain.com"# 解析 name 一定要包括域名，不然后续更新的时候会出错
-CFRECORD_TYPE=""# 选择记录的类型 A 或者 AAAA
-CFTTL="120"# 选择 TTL 时间，默认 120 
+CFKEY="" # Cloudflare Global Key
+CFUSER="" # Cloudflare 登录邮箱
+CFZONE_NAME="" # 域名
+CFRECORD_NAME="" # 解析 name 一定要包括域名，不然后续更新的时候会出错
+CFRECORD_TYPE="A" # 选择记录的类型 A 或者 AAAA
+CFTTL="120" # 选择 TTL 时间，默认 120 
 FORCE="false"
-CFPROXY="false"# 填入 true 或者 false 来控制是否启用代理
+CFPROXY="false" # 填入 true 或者 false 来控制是否启用代理
 WANIPSITE="http://ipv4.icanhazip.com"
 
 # 根据记录类型选择获取WAN IP的方式
@@ -77,9 +77,9 @@ green " 获取 Cloudflare Zone ID "
 CFZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$CFZONE_NAME" \
   -H "X-Auth-Email: $CFUSER" \
   -H "X-Auth-Key: $CFKEY" \
-  -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 ) || { echo "获取Zone ID失败"; exit 1; }
+  -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 ) || { echo " 获取Zone ID失败 "; exit 1; }
 echo 
-blue "CFZONE_ID: $CFZONE_ID"
+blue " CFZONE_ID: $CFZONE_ID"
 
 # 获取DNS记录
 echo 
