@@ -67,10 +67,10 @@ EXISTING_IP=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="content":")[^"]*' | head -
 EXISTING_PROXY=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="proxied":)[^,]*' | head -1) || { echo "解析现有代理状态失败"; }
 
 # 打印调试信息
-echo "Debug: Full API Response for DNS Records: $DNS_RECORDS_JSON"
-echo "DNS记录ID=$CFRECORD_ID"
-echo "DSN记录IP=$EXISTING_IP"
-echo "DSN记录代理状态=$EXISTING_PROXY"
+# echo "Debug: Full API Response for DNS Records: $DNS_RECORDS_JSON"
+echo " DNS 记录 ID = $CFRECORD_ID"
+echo " DSN 记录 IP = $EXISTING_IP"
+echo " DSN 记录代理状态 = $EXISTING_PROXY"
 
 # 检查是否需要更新或创建记录
 if [ -n "$CFRECORD_ID" ]; then
@@ -83,6 +83,15 @@ if [ -n "$CFRECORD_ID" ]; then
           -H "X-Auth-Key: $CFKEY" \
           -H "Content-Type: application/json" \
           --data "{\"id\":\"$CFZONE_ID\",\"type\":\"$CFRECORD_TYPE\",\"name\":\"$CFRECORD_NAME\",\"content\":\"$WAN_IP\", \"ttl\":$CFTTL, \"proxied\":$CFPROXY}")
+        
+        # 检查操作是否成功
+        if [[ "$RESPONSE" == *'"success":true'* ]]; then
+          echo "更新记录成功！"
+        else
+          echo '更新记录失败 :('
+          echo "Response: $RESPONSE"
+          exit 1
+        fi
     else
         echo "IP地址和代理状态没有变化，无需更新。"
     fi
@@ -94,15 +103,15 @@ else
       -H "X-Auth-Key: $CFKEY" \
       -H "Content-Type: application/json" \
       --data "{\"type\":\"$CFRECORD_TYPE\",\"name\":\"$CFRECORD_NAME\",\"content\":\"$WAN_IP\",\"ttl\":$CFTTL, \"proxied\":$CFPROXY}")
-fi
-
-# 检查操作是否成功
-if [[ "$RESPONSE" == *'"success":true'* ]]; then
-  echo "更新或者创建记录成功！"
-else
-  echo '操作失败 :('
-  echo "Response: $RESPONSE"
-  exit 1
+    
+    # 检查操作是否成功
+    if [[ "$RESPONSE" == *'"success":true'* ]]; then
+      echo "创建记录成功！"
+    else
+      echo '创建记录失败 :('
+      echo "Response: $RESPONSE"
+      exit 1
+    fi
 fi
 
 echo "=== DDNS更新脚本运行完毕 ==="
