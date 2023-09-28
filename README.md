@@ -59,7 +59,7 @@ docker
 
 
 
-
+php artisan v2board:update
 
 
 
