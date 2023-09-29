@@ -48,7 +48,7 @@ function bbr_management(){
     fi
 
     # 使用wget下载脚本
-    if ! wget -4 -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh"; then
+    if ! wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh"; then
         echo 
         red " Error: Failed to download the script. Contact Rex to update the script URL "
         return 1
