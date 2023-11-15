@@ -497,6 +497,8 @@ function mediacheck_management() {
     blue " GitHub: https://github.com/RexLee0929 "
     yellow " ============流媒体检测菜单============= "
     green " 1. 执行流媒体检测 "
+    green " 2. 执行 IPv4 流媒体检测 "
+    green " 3. 执行 IPv6 流媒体检测 "
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
     yellow " =================================== "
@@ -510,9 +512,19 @@ function mediacheck_management() {
             bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh)
             green " 流媒体检测完成 "
             ;;
+        2)
+            # 执行 IPv4 流媒体检测
+            bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh) -M 4
+            green " IPv4 流媒体检测完成 "
+            ;;
+        3)
+            # 执行 IPv6 流媒体检测
+            bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh) -M 6
+            green " IPv6 流媒体检测完成 "
+            ;;
         0)
             # 返回应用程序菜单
-            app_menu
+            system_menu
             ;;
         *)
             red " 无效的选择,请重新输入 "
@@ -546,7 +558,7 @@ function gamecheck_management() {
             ;;
         0)
             # 返回应用程序菜单
-            app_menu
+            system_menu
             ;;
         *)
             red " 无效的选择,请重新输入 "
