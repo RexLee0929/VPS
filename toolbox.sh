@@ -3238,7 +3238,7 @@ system_menu() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-	yellow " =========ToolBox系统菜单============ "
+    yellow " =========ToolBox系统菜单============ "
     green " 1. BBR加速 "
     green " 2. 设置时区 "
     green " 3. 设置swap "
@@ -3296,7 +3296,7 @@ app_menu() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-	yellow " =========ToolBox软件菜单========== "
+    yellow " =========ToolBox软件菜单========== "
     green " 1. wget, curl 和 git "
     green " 2. nano "
     green " 3. screen "
@@ -3370,7 +3370,7 @@ vpn_menu() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-	yellow " =========ToolBox科学上网菜单======== "
+    yellow " =========ToolBox科学上网菜单======== "
     green " 1. 安装soga "
     green " 2. 安装XrayR "
     green " 3. 安装ss-go "
@@ -3413,8 +3413,8 @@ start_menu() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-	yellow " ==========ToolBox主菜单============ "
-	orange " 1. 系统菜单 "
+    yellow " ==========ToolBox主菜单============ "
+    orange " 1. 系统菜单 "
     orange " 2. 软件菜单 "
     orange " 3. 科学上网菜单 "
     echo
