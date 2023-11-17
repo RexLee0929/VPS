@@ -40,7 +40,6 @@ CFZONE_NAME="" # 域名
 CFRECORD_NAME="" # 解析 name 一定要包括域名，不然后续更新的时候会出错
 CFRECORD_TYPE="A" # 选择记录的类型 A 或者 AAAA
 CFTTL="1" # 选择 TTL 时间，默认 120 
-FORCE="false"
 CFPROXY="false" # 填入 true 或者 false 来控制是否启用代理
 WANIPSITE="http://ipv4.icanhazip.com"
 
@@ -53,7 +52,6 @@ while getopts k:u:h:z:t:f:l:p: opts; do
     h) CFRECORD_NAME=${OPTARG} ;;
     z) CFZONE_NAME=${OPTARG} ;;
     t) CFRECORD_TYPE=${OPTARG} ;;
-    f) FORCE=${OPTARG} ;;
     l) CFTTL=${OPTARG} ;;
     p) CFPROXY=${OPTARG} ;;
   esac
