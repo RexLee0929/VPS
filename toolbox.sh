@@ -3247,6 +3247,7 @@ system_menu() {
     green " 6. 融合怪ECS "
     green " 7. 流媒体检测 "
     green " 8. 游戏延迟检测 "
+    green " 9. 魔方 Debian 换源 "
 
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -3278,6 +3279,9 @@ system_menu() {
     ;;
         8 )
             gamecheck_management
+    ;;
+        9 )
+	    source_management
     ;;
         0 )
             start_menu
