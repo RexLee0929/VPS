@@ -69,7 +69,7 @@ fi
 execute_ddns() {
   # DDNS更新部分
   echo "执行DDNS脚本..."
-  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/ddns.sh -o ddns.sh && chmod +x ddns.sh
+  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/ddns.sh -o ddns.sh && chmod +x ddns.sh
   ./ddns.sh -k "${key}" -u "${email}" -z "${domain1}" -h "${prefix}.${domain1}" -t "A" -p "false"
   ./ddns.sh -k "${key}" -u "${email}" -z "${domain1}" -h "${prefix}-v6.${domain1}" -t "AAAA" -p "false"
   ./ddns.sh -k "${key}" -u "${email}" -z "${domain2}" -h "${prefix}.${domain2}" -t "A" -p "true"
@@ -85,8 +85,8 @@ install_proxy() {
 modify_config_files() {
   # 修改配置文件部分
   echo "修改配置文件..."
-  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/xrayr.yml -o /etc/XrayR/config.yml
-  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/soga.conf -o /etc/soga/soga.conf
+  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/xrayr.yml -o /etc/XrayR/config.yml
+  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/soga.conf -o /etc/soga/soga.conf
 
   sed -i "s/node_id=.*/node_id=${node_id1}/g" /etc/soga/soga.conf
   sed -i "s|webapi_url=.*|webapi_url=${webapi_url}|g" /etc/soga/soga.conf
