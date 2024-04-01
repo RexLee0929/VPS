@@ -3100,7 +3100,7 @@ function soga_management() {
     case "$menuNumberInput" in
         1)
             blue " 开始安装 soga "
-            bash <(curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh > soga.sh && bash soga.sh install)
+            curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh | bash -s -- install
             blue " soga 安装完成 "
             ;;
         2)
