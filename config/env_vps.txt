@@ -1,0 +1,8 @@
+cf_key="cfkey"
+cf_email="cf邮箱"
+1_domain=""
+2_domain=""
+v2board_webapi_url=""
+v2board_webapi_key=""
+nezha_panel_ip=""
+nezha_panel_port=""
