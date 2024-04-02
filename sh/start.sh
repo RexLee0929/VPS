@@ -10,7 +10,7 @@ nezha_key=""
 choice=""
 
 # 使用getopts解析命名参数
-while getopts "f:p:i:I:c:k:" opt; do
+while getopts "f:R:S:V:C:K:" opt; do
   case $opt in
     f) env_file="$OPTARG";;
     R) record_prefix="$OPTARG";;
@@ -65,6 +65,27 @@ v2board_webapi_url="${env_vars[v2board_webapi_url]}"
 v2board_webapi_key="${env_vars[v2board_webapi_key]}"
 nezha_panel_ip="${env_vars[nezha_panel_ip]}" # 新增读取哪吒面板IP的变量
 nezha_panel_port="${env_vars[nezha_panel_port]}" # 新增读取哪吒面板端口的变量
+
+
+# 打印环境变量
+echo "环境变量"
+echo "nezha_panel_port: ${env_vars[nezha_panel_port]}"
+echo "cf_key: ${env_vars[cf_key]}"
+echo "cf_email: ${env_vars[cf_email]}"
+echo "net_domain: ${env_vars[net_domain]}"
+echo "com_domain: ${env_vars[com_domain]}"
+echo "v2board_webapi_url: ${env_vars[v2board_webapi_url]}"
+echo "v2board_webapi_key: ${env_vars[v2board_webapi_key]}"
+echo "nezha_panel_ip: ${env_vars[nezha_panel_ip]}"
+echo "nezha_panel_port: ${env_vars[nezha_panel_port]}"
+
+# 打印传入值
+echo "传入值"
+echo "env_file: ${env_file}"
+echo "record_prefix: ${record_prefix}"
+echo "ss_node_id: ${ss_node_id}"
+echo "vmess_node_id: ${vmess_node_id}"
+echo "nezha_key: ${nezha_key}"
 
 # 用户选择执行选项
 if [ -z "$choice" ]; then
