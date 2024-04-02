@@ -1,7 +1,12 @@
 # Rex Lee's ToolBox 
 
 ```
-bash <(wget -qO- https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox.sh)
+bash <(curl -sSL https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox.sh)
+```
+## Start 脚本
+
+```
+curl -L "https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/start.sh" -o start.sh && chmod +x start.sh && ./start.sh -f 环境变量下载地址 -R dns前缀 -S soga节点id -V vmess节点id -K 哪吒key
 ```
 
 ## DDNS 脚本
@@ -9,23 +14,23 @@ bash <(wget -qO- https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox.s
 下载脚本并且给予运行权限
 
 ```
-wget https://raw.githubusercontent.com/RexLee0929/VPS/main/ddns.sh && chmod +x ddns.sh
+wget https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/ddns.sh && chmod +x ddns.sh
 ```
 
 修改里面的参数,不强制修改,可以在执行的时候加上参数
 
 ```
-nano /root/ddns.sh
+nano ./ddns.sh
 ```
 
 运行脚本
 
 ```
-/root/ddns.sh
+./ddns.sh
 ```
 
 ```
-/root/ddns.sh -k "key" -u "mail" -z "domain.com" -h "sg.domian.com" -t "A" -l "120" -p "false"
+./ddns.sh -k "key" -u "mail" -z "domain.com" -h "sg.domian.com" -t "A" -l "120" -p "false"
 ```
 
 写入定时脚本
