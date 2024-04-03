@@ -422,17 +422,13 @@ function ecs_management() {
 
         1)
             # 直接运行融合怪ECS
-            curl -L https://github.com/spiritLHLS/ecs/raw/main/ecs.sh -o ecs.sh
-            chmod +x ecs.sh
-            bash ecs.sh
+            curl -L https://github.com/spiritLHLS/ecs/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
             ;;
         2)
             # 使用screen运行融合怪ECS
-            curl -L https://github.com/spiritLHLS/ecs/raw/main/ecs.sh -o ecs.sh
-            chmod +x ecs.sh
-            screen -S ecs_session bash ecs.sh
-            green " 已在 screen 会话 'ecs_session' 中运行融合怪 ECS "
-            blue " 要重新进入该会话，请执行: screen -r ecs_session"
+            curl -L https://github.com/spiritLHLS/ecs/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && screen -S ecs bash ecs.sh
+            green " 已在 screen 会话 'ecs' 中运行融合怪 ECS "
+            blue " 要重新进入该会话，请执行: screen -r ecs"
             ;;
         3)
             # 查看历史评测结果（这里你可以添加你自己的代码）
@@ -3453,5 +3449,3 @@ start_menu() {
 }
 
 start_menu
-
-
