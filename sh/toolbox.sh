@@ -35,33 +35,12 @@
 # 系统设置
 ## BBR加速
 function bbr_management(){
-    # 确保脚本在任何命令失败时停止
-    set -e
+
+    curl -L https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh -o tcp.sh && chmod +x tcp.sh
+
+
+    tcp.sh
     
-    # 检查wget是否已安装
-    if ! command -v wget &> /dev/null; then
-        echo 
-        red " Error: wget is not installed. Please install it first. "
-        return 1
-    fi
-
-    # 使用wget下载脚本
-    if ! wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh"; then
-        echo 
-        red " Error: Failed to download the script. Contact Rex to update the script URL "
-        return 1
-    fi
-    
-    # 使脚本可执行
-    chmod +x tcp.sh
-
-    # 执行脚本
-    ./tcp.sh
-
-    # 可选: 执行后删除脚本
-    # rm -f tcp.sh
-
-    # 按任意键返回菜单
     read -n 1 -s -r -p " 按任意键返回菜单... "
     system_menu
 }
