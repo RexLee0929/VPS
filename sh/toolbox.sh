@@ -36,10 +36,10 @@
 ## BBR加速
 function bbr_management(){
 
-    curl -L https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh -o tcp.sh && chmod +x tcp.sh
+    curl -L https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh -o tcp.sh && chmod +x ./tcp.sh
 
 
-    tcp.sh
+    ./tcp.sh
     
     read -n 1 -s -r -p " 按任意键返回菜单... "
     system_menu
