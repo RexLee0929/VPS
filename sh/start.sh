@@ -97,9 +97,9 @@ execute_ddns() {
   # DDNS更新部分
   echo "执行DDNS脚本..."
   curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/ddns.sh -o ddns.sh && chmod +x ddns.sh
-  ./ddns.sh -k "${cf_key}" -u "${cf_email}" -z "${1_domain}" -h "${record_prefix}.${1_domain}" -t "A" -p "false"
-  ./ddns.sh -k "${cf_key}" -u "${cf_email}" -z "${1_domain}" -h "${record_prefix}-v6.${1_domain}" -t "AAAA" -p "false"
-  ./ddns.sh -k "${cf_key}" -u "${cf_email}" -z "${2_domain}" -h "${record_prefix}.${2_domain}" -t "A" -p "true"
+  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${1_domain}" -r "${record_prefix}.${1_domain}" -t "A" -p "false"
+  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${1_domain}" -r "${record_prefix}-v6.${1_domain}" -t "AAAA" -p "false"
+  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${2_domain}" -r "${record_prefix}.${2_domain}" -t "A" -p "true"
 }
 
 install_proxy() {
