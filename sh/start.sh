@@ -59,8 +59,8 @@ done < "env_vps.txt"
 # 从文件中读取值
 cf_key="${env_vars[cf_key]}"
 cf_email="${env_vars[cf_email]}"
-1_domain="${env_vars[1_domain]}"
-2_domain="${env_vars[2_domain]}"
+domain1="${env_vars[domain1]}"
+domain2="${env_vars[domain2]}"
 v2board_webapi_url="${env_vars[v2board_webapi_url]}"
 v2board_webapi_key="${env_vars[v2board_webapi_key]}"
 nezha_panel_ip="${env_vars[nezha_panel_ip]}" # 新增读取哪吒面板IP的变量
@@ -72,8 +72,8 @@ echo "环境变量"
 echo "nezha_panel_port: ${env_vars[nezha_panel_port]}"
 echo "cf_key: ${env_vars[cf_key]}"
 echo "cf_email: ${env_vars[cf_email]}"
-echo "1_domain: ${env_vars[1_domain]}"
-echo "2_domain: ${env_vars[2_domain]}"
+echo "domain1: ${env_vars[domain1]}"
+echo "domain2: ${env_vars[domain2]}"
 echo "v2board_webapi_url: ${env_vars[v2board_webapi_url]}"
 echo "v2board_webapi_key: ${env_vars[v2board_webapi_key]}"
 echo "nezha_panel_ip: ${env_vars[nezha_panel_ip]}"
@@ -97,9 +97,9 @@ execute_ddns() {
   # DDNS更新部分
   echo "执行DDNS脚本..."
   curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/ddns.sh -o ddns.sh && chmod +x ddns.sh
-  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${1_domain}" -r "${record_prefix}.${1_domain}" -t "A" -p "false"
-  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${1_domain}" -r "${record_prefix}-v6.${1_domain}" -t "AAAA" -p "false"
-  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${2_domain}" -r "${record_prefix}.${2_domain}" -t "A" -p "true"
+  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${domain1}" -r "${record_prefix}.${domain1}" -t "A" -p "false"
+  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${domain1}" -r "${record_prefix}-v6.${domain1}" -t "AAAA" -p "false"
+  ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${domain2}" -r "${record_prefix}.${domain2}" -t "A" -p "true"
 }
 
 install_proxy() {
