@@ -70,7 +70,7 @@ DNS_RECORDS_JSON=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$C
   -H "X-Auth-Email: $cf_email" \
   -H "X-Auth-Key: $cf_key" \
   -H "Content-Type: application/json") || { red " 获取DNS记录失败 "; exit 1; }
-  
+
 CFRECORD_ID=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="id":")[^"]*' | head -1) || { red " 解析记录 ID 失败，可能是该记录不存在 "; }
 EXISTING_IP=$(echo $DNS_RECORDS_JSON | grep -Po '(?<="content":")[^"]*' | head -1) || { red " 解析现有 IP 失败 "; }
 
