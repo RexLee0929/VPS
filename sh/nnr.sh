@@ -87,10 +87,7 @@ print_vars() {
     echo "cf_email: $cf_email"
     echo "domain: $domain"
     echo "env_file: $env_file"
-    echo "env_file: $env_file"
-    echo "env_file: $env_file"
-    echo "env_file: $env_file"
-    echo "env_file: $env_file"
+    echo "env_file: $env_name"
 }
 
 # 获取数据并写入文件
