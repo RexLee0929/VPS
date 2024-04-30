@@ -85,7 +85,7 @@ if [ -n "$CFRECORD_ID" ]; then
     green " 记录已经存在，进行更新操作 "
     # 打印旧的记录情况
     blue " 旧的 DNS 记录 IP: $EXISTING_IP "
-    
+
     RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$CFZONE_ID/dns_records/$CFRECORD_ID" \
       -H "X-Auth-Email: $cf_email" \
       -H "X-Auth-Key: $cf_key" \
