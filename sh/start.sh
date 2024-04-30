@@ -2,6 +2,7 @@
 
 # 定义变量
 env_file="vps.env"
+env_name="vps.env"
 record_prefix=""
 ss_node_id=""
 vmess_node_id=""
@@ -33,12 +34,12 @@ is_url() {
 # 根据env_file变量的值来决定操作
 if is_url "$env_file"; then
   echo "从URL下载env文件：$env_file"
-  curl -L "$env_file" -o "$env_file"
+  curl -L "$env_file" -o "$env_name"
 elif [ ! -f "$env_file" ]; then
   echo "未找到env文件。请输入文件地址以下载："
   read -r file_url
   if is_url "$file_url"; then
-    curl -L "$file_url" -o "$env_file"
+    curl -L "$file_url" -o "$env_name"
   else
     echo "提供的地址不是一个有效的URL。"
     exit 1
@@ -56,7 +57,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     value="${value#\"}"
     env_vars[$key]="$value"
   fi
-done < "env_vps.txt"
+done < "$env_name"
 
 # 从文件中读取值
 cf_key="${env_vars[cf_key]}"
