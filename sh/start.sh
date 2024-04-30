@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # 定义变量
-env_file="env_vps.txt"
+env_file="vps.env"
 record_prefix=""
 ss_node_id=""
 vmess_node_id=""
 nezha_key=""
-
 choice=""
 
 # 使用getopts解析命名参数
@@ -34,13 +33,16 @@ is_url() {
 # 根据env_file变量的值来决定操作
 if is_url "$env_file"; then
   echo "从URL下载env文件：$env_file"
-  curl -L "$env_file" -o "env_vps.txt"
-  env_file="env_vps.txt"
+  curl -L "$env_file" -o "$env_file"
 elif [ ! -f "$env_file" ]; then
   echo "未找到env文件。请输入文件地址以下载："
   read -r file_url
-  curl -L "$file_url" -o "env_vps.txt"
-  env_file="env_vps.txt"
+  if is_url "$file_url"; then
+    curl -L "$file_url" -o "$env_file"
+  else
+    echo "提供的地址不是一个有效的URL。"
+    exit 1
+  fi
 fi
 
 # 读取环境变量文件
@@ -65,7 +67,6 @@ v2board_webapi_url="${env_vars[v2board_webapi_url]}"
 v2board_webapi_key="${env_vars[v2board_webapi_key]}"
 nezha_panel_ip="${env_vars[nezha_panel_ip]}" # 新增读取哪吒面板IP的变量
 nezha_panel_port="${env_vars[nezha_panel_port]}" # 新增读取哪吒面板端口的变量
-
 
 # 打印环境变量
 echo "环境变量"
@@ -129,7 +130,6 @@ modify_config_files() {
 
   xrayr start
 }
-
 
 # 定义安装哪吒探针的函数
 install_nezha_agent() {
