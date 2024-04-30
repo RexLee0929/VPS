@@ -161,26 +161,25 @@ ddns_update() {
         done
     done
 
-    read -p "是否继续执行DDNS更新？(y/n) " confirm
-read -p "是否继续执行DDNS更新? (n取消, 其他任意键继续): " confirm
-if [[ $confirm != "n" ]]; then
-    # 下载并执行 nnr-ddns.sh
-    curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/nnr-ddns.sh -o nnr-ddns.sh && chmod +x nnr-ddns.sh
-    # 对每个设置的IP进行DDNS更新
-    for i in $(seq 1 100); do
-        for suffix in "" {2..10}; do
-            name_var="name${i}${suffix}"
-            prefix_var="prefix${i}${suffix}"
-            ip_var="ip${i}${suffix}"
-            if [[ -n "${!name_var}" && -n "${!prefix_var}" && -n "${!ip_var}" ]]; then
-                ./nnr-ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${domain}" -r "${!prefix_var}.${domain}" -t "A" -a "${!ip_var}"
-            fi
+    read -p "是否继续执行DDNS更新? (n取消, 其他任意键继续): " confirm
+    if [[ $confirm != "n" ]]; then
+        # 下载并执行 nnr-ddns.sh
+        curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/nnr-ddns.sh -o nnr-ddns.sh && chmod +x nnr-ddns.sh
+        # 对每个设置的IP进行DDNS更新
+        for i in $(seq 1 100); do
+            for suffix in "" {2..10}; do
+                name_var="name${i}${suffix}"
+                prefix_var="prefix${i}${suffix}"
+                ip_var="ip${i}${suffix}"
+                if [[ -n "${!name_var}" && -n "${!prefix_var}" && -n "${!ip_var}" ]]; then
+                    ./nnr-ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${domain}" -r "${!prefix_var}.${domain}" -t "A" -a "${!ip_var}"
+                fi
+            done
         done
-    done
-else
-    echo "DDNS更新已取消。"
-fi
-
+    else
+        echo "DDNS更新已取消。"
+    fi
+}
 
 env_help() {
 	echo " Hello,初次使用请准备一个 $env_name 文件, 内容如下: "
