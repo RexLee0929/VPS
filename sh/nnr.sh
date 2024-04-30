@@ -2,6 +2,7 @@
 
 # 初始化变量
 env_file="vps.env"
+env_name="vps.env"
 nnr_token=""
 nnr_url=""
 cf_key=""
@@ -34,25 +35,38 @@ is_url() {
 # 根据env_file变量的值来决定操作
 if is_url "$env_file"; then
   echo "从URL下载env文件：$env_file"
-  curl -L "$env_file" -o "$env_file"
+  curl -L "$env_file" -o "$env_name"
 elif [ ! -f "$env_file" ]; then
   echo "未找到env文件。请输入文件地址以下载："
   read -r file_url
   if is_url "$file_url"; then
-    curl -L "$file_url" -o "$env_file"
+    curl -L "$file_url" -o "$env_name"
   else
     echo "提供的地址不是一个有效的URL。"
     exit 1
   fi
 fi
 
+# # 读取环境变量文件
+# if [ -f "$env_file" ]; then
+#   source "$env_file"
+# else
+#   echo "未找到环境变量文件：$env_file"
+#   exit 1
+# fi
+
 # 读取环境变量文件
-if [ -f "$env_file" ]; then
-  source "$env_file"
-else
-  echo "未找到环境变量文件：$env_file"
-  exit 1
-fi
+declare -A env_vars
+while IFS= read -r line || [[ -n "$line" ]]; do
+  if [[ $line =~ ^[a-zA-Z_]+[a-zA-Z0-9_]*=.*$ ]]; then
+    key="${line%%=*}"
+    value="${line#*=}"
+    # 删除可能的引号
+    value="${value%\"}"
+    value="${value#\"}"
+    env_vars[$key]="$value"
+  fi
+done < "$env_name"
 
 # 打印环境变量和传入值
 print_vars() {
