@@ -426,15 +426,15 @@ function ecs_management() {
     read -n 1 -s -r -p " 按任意键返回菜单... "
     ecs_management
 }
-## 魔方换源
-function source_management() {
+## FinalShell 增强
+function finalshell_management() {
     clear
     blue " Rex Lee's ToolBox " 
     blue " GitHub: https://github.com/RexLee0929 "
-    yellow " =============换源菜单=============== "
-    green " 1. 魔方 Debian 换源 "
+    yellow " =============FinalShell 增强=============== "
+    green " 1. 过滤 docker 挂载路径 "
+    black " 2. 恢复显示 docker 挂载路径 "
     echo
-    orange " 如有其他换源需求,请提issue "
     orange " 为保证有权限执行,请使用root用户运行 "
     yellow " =================================== "
     green " 0. 返回应用程序菜单 "
@@ -444,11 +444,20 @@ function source_management() {
     case $menuNumberInput in
 
         1)
-            # 魔方Debian换源
-            sed -i 's/bullseye\/updates/bullseye-security/g' /etc/apt/sources.list
-            green " 已成功更改魔方 Debian 源 "
-            blue " 请运行 'sudo apt update' 以更新软件包信息 "
-            ;;
+            # 从 GitHub 下载 df 文件并保存到 /usr/local/bin
+	    wget -O /usr/local/bin/df https://github.com/RexLee0929/VPS/raw/main/config/df
+     	    chmod +x /usr/local/bin/df
+	    green "已成功创建过滤 docker 挂载路径"
+	    ;;
+     	2)
+      	    # 恢复显示 docker 挂载路径的配置
+    	    if [ -f /usr/local/bin/df ]; then
+        	rm /usr/local/bin/df
+        	black "已恢复显示 docker 挂载路径"
+    	    else
+        	red "过滤 docker 挂载路径的配置不存在"
+    	    fi
+    	    ;;
         0)
             # 返回系统菜单
             system_menu
@@ -457,11 +466,11 @@ function source_management() {
             red " 无效的选择,请重新输入 "
             red " 两秒后自动返回 "
             sleep 2s
-            source_management
+            finalshell_management
             ;;
     esac
     read -n 1 -s -r -p " 按任意键返回菜单... "
-    source_management
+    finalshell_management
 }
 ## 流媒体检测
 function mediacheck_management() {
@@ -3222,7 +3231,7 @@ system_menu() {
     green " 6. 融合怪ECS "
     green " 7. 流媒体检测 "
     green " 8. 游戏延迟检测 "
-    green " 9. 魔方 Debian 换源 "
+    green " 9. FinalShell 增强 "
 
     echo
     orange " 为保证有权限执行,请使用root用户运行 "
@@ -3256,7 +3265,7 @@ system_menu() {
             gamecheck_management
     ;;
         9 )
-	    source_management
+	    finalshell_management
     ;;
         0 )
             start_menu
