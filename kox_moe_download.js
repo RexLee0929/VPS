@@ -2,7 +2,7 @@
 // @name         Kox.Moe 批量下载
 // @author       Rex Lee
 // @version      1.0
-// @description  kox 批量下载工具
+// @description  kox 批量下载 epub
 // @match        https://kox.moe/c/*
 // ==/UserScript==
 
