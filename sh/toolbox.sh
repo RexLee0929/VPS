@@ -1,49 +1,48 @@
 #by Rex Lee
 
-
 ## 定义颜色
-Define_red="\033[31m\033[01m"
-Define_green="\033[32m\033[01m"
-Define_yellow="\033[33m\033[01m"
-Define_blue="\033[34m\033[01m"
-Define_orange="\033[38;5;208m\033[01m"
-Define_purple="\033[38;5;5m"
-Define_black="\033[38;5;0m"
-Define_reset="\033[0m"
+DEFINE_RED="\033[31m\033[01m"
+DEFINE_GREEN="\033[32m\033[01m"
+DEFINE_YELLOW="\033[33m\033[01m"
+DEFINE_BLUE="\033[34m\033[01m"
+DEFINE_ORANGE="\033[38;5;208m\033[01m"
+DEFINE_PURPLE="\033[38;5;5m"
+DEFINE_BLACK="\033[38;5;0m"
+DEFINE_RESET="\033[0m"
 
 ## 报错相关用红色
 red(){
-    echo -e "${Define_red}$1${Define_reset}"
+    echo -e "${DEFINE_RED}$1${DEFINE_RESET}"
 }
 
 ## 常规用绿色
 green(){
-    echo -e "${Define_green}$1${Define_reset}"
+    echo -e "${DEFINE_GREEN}$1${DEFINE_RESET}"
 }
 
 ## 标题用黄色
 yellow(){
-    echo -e "${Define_yellow}$1${Define_reset}"
+    echo -e "${DEFINE_YELLOW}$1${DEFINE_RESET}"
 }
 
 ## 提示用蓝色
 blue(){
-    echo -e "${Define_blue}$1${Define_reset}"
+    echo -e "${DEFINE_BLUE}$1${DEFINE_RESET}"
 }
 
 ## 重要提示用橙色
 orange(){
-    echo -e "${Define_orange}$1${Define_reset}"
+    echo -e "${DEFINE_ORANGE}$1${DEFINE_RESET}"
 }
 
 ## 重复操作用紫色
 purple(){
-    echo -e "${Define_purple}$1${Define_reset}"
+    echo -e "${DEFINE_PURPLE}$1${DEFINE_RESET}"
 }
 
 ## 卸载相关用黑色
 black(){
-    echo -e "${Define_black}$1${Define_reset}"
+    echo -e "${DEFINE_BLACK}$1${DEFINE_RESET}"
 }
 
 
