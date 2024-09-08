@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# v0.1
-
+v0.5
 # 定义颜色
 DEFINE_YELLOW="\033[33m"
 DEFINE_BLUE="\033[34m"
@@ -38,6 +37,7 @@ fi
 
 # 定义配置文件路径
 SSH_CONFIG="/etc/ssh/sshd_config"
+AUTHORIZED_KEYS="/root/.ssh/authorized_keys"
 
 # 默认值
 DEFAULT_PORT=22
@@ -45,9 +45,10 @@ DEFAULT_PERMIT_ROOT_LOGIN="yes"
 DEFAULT_PASSWORD_AUTH="yes"
 DEFAULT_PERMIT_EMPTY_PASSWORDS="no"
 DEFAULT_MAX_AUTH_TRIES=3
+NEW_PUBLIC_KEY=""
 
 # 处理传入参数
-while getopts "P:R:A:E:M:C:h" opt; do
+while getopts "P:R:A:E:M:C:K:h" opt; do
     case ${opt} in
         P )
             PORT=$OPTARG
@@ -67,6 +68,9 @@ while getopts "P:R:A:E:M:C:h" opt; do
         C )
             CHOICE=$OPTARG
             ;;
+        K )
+            NEW_PUBLIC_KEY=$OPTARG
+            ;;
         h )
             echo "Usage: $0 [options]"
             echo "Options:"
@@ -76,6 +80,7 @@ while getopts "P:R:A:E:M:C:h" opt; do
             echo "  -E <yes|no>                Set PermitEmptyPasswords"
             echo "  -M <number>                Set MaxAuthTries"
             echo "  -C <choice>                Set choice for modification"
+            echo "  -K <public key>            Add a new public key to authorized_keys"
             exit 0
             ;;
         \? )
@@ -115,6 +120,17 @@ check_ssh_config() {
             echo -e "$(green "$ITEM") $(orange "$VALUE")"
         fi
     done
+    echo ""
+	yellow "Public Key:"
+	if [ -f "$AUTHORIZED_KEYS" ]; then
+	    while IFS= read -r line
+	    do
+	        orange "$line"
+	    done < "$AUTHORIZED_KEYS"
+	else
+	    echo "$(orange "No authorized keys file found.")"
+	fi
+echo ""
 }
 
 # 函数：修改 SSH 配置
@@ -139,29 +155,59 @@ modify_config() {
     fi
 }
 
+# 函数：添加公钥
+add_public_key() {
+    local KEY=$1
+    if [ -n "$KEY" ]; then
+        echo "$KEY" >> "$AUTHORIZED_KEYS"
+    fi
+}
+
+# 函数：重启 SSH 服务
+restart_ssh_service() {
+    echo -e "$(blue "正在重启 SSH 服务...")"
+    systemctl restart ssh
+    if [ $? -eq 0 ]; then
+        echo -e "$(green "SSH 服务重启成功")"
+    else
+        echo -e "$(red "SSH 服务重启失败，请检查错误")"
+        exit 1
+    fi
+}
+
 # 执行检查函数
 check_ssh_config
 
 # 打印传入值
 echo "当前传入值："
-echo "Port $PORT"
-echo "PermitRootLogin $PERMIT_ROOT_LOGIN"
-echo "PasswordAuthentication $PASSWORD_AUTH"
-echo "PermitEmptyPasswords $PERMIT_EMPTY_PASSWORDS"
-echo "MaxAuthTries $MAX_AUTH_TRIES"
+echo -n "$(blue "Port: ")"
+echo "$(orange "$PORT")"
+echo -n "$(blue "PermitRootLogin: ")"
+echo "$(orange "$PERMIT_ROOT_LOGIN")"
+echo -n "$(blue "PasswordAuthentication: ")"
+echo "$(orange "$PASSWORD_AUTH")"
+echo -n "$(blue "PermitEmptyPasswords: ")"
+echo "$(orange "$PERMIT_EMPTY_PASSWORDS")"
+echo -n "$(blue "MaxAuthTries: ")"
+echo "$(orange "$MAX_AUTH_TRIES")"
+echo ""
+echo -n "$(blue "Public Key : ")"
+echo "$(orange "$NEW_PUBLIC_KEY")"
+
 
 # 选择修改
 if [ -z "$CHOICE" ]; then
     echo ""
-    echo "请选择要修改的选项："
-    echo "1) 根据传入值修改全部"
-    echo "2) 修改 Port"
-    echo "3) 修改 PermitRootLogin"
-    echo "4) 修改 PasswordAuthentication"
-    echo "5) 修改 PermitEmptyPasswords"
-    echo "6) 修改 MaxAuthTries"
-    echo "0) 退出脚本"
-    read -p "请输入选项: " CHOICE
+    yellow "请选择要修改的选项："
+    echo "$(green "1)") 根据传入值修改全部"
+    echo "$(green "2)") 修改 Port"
+    echo "$(green "3)") 修改 PermitRootLogin"
+    echo "$(green "4)") 修改 PasswordAuthentication"
+    echo "$(green "5)") 修改 PermitEmptyPasswords"
+    echo "$(green "6)") 修改 MaxAuthTries"
+    echo "$(green "7)") 添加公钥"
+    echo "$(green "0)") 退出脚本"
+    read -p "$(blue "请输入选项: ")" CHOICE
 fi
 
 case $CHOICE in
@@ -171,36 +217,50 @@ case $CHOICE in
         modify_config "PasswordAuthentication" "$PASSWORD_AUTH"
         modify_config "PermitEmptyPasswords" "$PERMIT_EMPTY_PASSWORDS"
         modify_config "MaxAuthTries" "$MAX_AUTH_TRIES"
+        if [ -n "$NEW_PUBLIC_KEY" ]; then
+            add_public_key "$NEW_PUBLIC_KEY"
+        fi
+        restart_ssh_service
         ;;
     2)
         echo "请输入新的 Port 值 (默认 $DEFAULT_PORT):"
         read NEW_PORT
         NEW_PORT=${NEW_PORT:-$DEFAULT_PORT}
         modify_config "Port" "$NEW_PORT"
+        restart_ssh_service
         ;;
     3)
         echo "请输入新的 PermitRootLogin 值 (yes/no, 默认 $DEFAULT_PERMIT_ROOT_LOGIN):"
         read NEW_PERMIT_ROOT_LOGIN
         NEW_PERMIT_ROOT_LOGIN=${NEW_PERMIT_ROOT_LOGIN:-$DEFAULT_PERMIT_ROOT_LOGIN}
         modify_config "PermitRootLogin" "$NEW_PERMIT_ROOT_LOGIN"
+        restart_ssh_service
         ;;
     4)
         echo "请输入新的 PasswordAuthentication 值 (yes/no, 默认 $DEFAULT_PASSWORD_AUTH):"
         read NEW_PASSWORD_AUTH
         NEW_PASSWORD_AUTH=${NEW_PASSWORD_AUTH:-$DEFAULT_PASSWORD_AUTH}
         modify_config "PasswordAuthentication" "$NEW_PASSWORD_AUTH"
+        restart_ssh_service
         ;;
     5)
         echo "请输入新的 PermitEmptyPasswords 值 (yes/no, 默认 $DEFAULT_PERMIT_EMPTY_PASSWORDS):"
         read NEW_PERMIT_EMPTY_PASSWORDS
         NEW_PERMIT_EMPTY_PASSWORDS=${NEW_PERMIT_EMPTY_PASSWORDS:-$DEFAULT_PERMIT_EMPTY_PASSWORDS}
         modify_config "PermitEmptyPasswords" "$NEW_PERMIT_EMPTY_PASSWORDS"
+        restart_ssh_service
         ;;
     6)
         echo "请输入新的 MaxAuthTries 值 (数字, 默认 $DEFAULT_MAX_AUTH_TRIES):"
         read NEW_MAX_AUTH_TRIES
         NEW_MAX_AUTH_TRIES=${NEW_MAX_AUTH_TRIES:-$DEFAULT_MAX_AUTH_TRIES}
         modify_config "MaxAuthTries" "$NEW_MAX_AUTH_TRIES"
+        restart_ssh_service
+        ;;
+    7)
+        echo "请输入新的公钥值:"
+        read NEW_PUBLIC_KEY
+        add_public_key "$NEW_PUBLIC_KEY"
         ;;
     0)
         echo "退出脚本"
@@ -211,6 +271,3 @@ case $CHOICE in
         exit 1
         ;;
 esac
-
-# 重新启动 SSH 服务
-echo "完成修改后，请记得重启 SSH 服务：sudo systemctl restart sshd"
