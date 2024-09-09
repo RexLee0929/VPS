@@ -122,16 +122,15 @@ check_ssh_config() {
         fi
     done
     echo ""
-	yellow "Public Key:"
-	if [ -f "$AUTHORIZED_KEYS" ]; then
-	    while IFS= read -r line
-	    do
-	        orange "$line"
-	    done < "$AUTHORIZED_KEYS"
-	else
-	    echo "$(orange "No authorized keys file found.")"
-	fi
-echo ""
+    yellow "Public Key:"
+    if [ -f "$AUTHORIZED_KEYS" ]; then
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            orange "$line"
+        done < "$AUTHORIZED_KEYS"
+    else
+        echo "$(orange "No authorized keys file found.")"
+    fi
+    echo ""
 }
 
 # 函数：修改 SSH 配置
@@ -160,9 +159,23 @@ modify_config() {
 add_public_key() {
     local KEY=$1
     if [ -n "$KEY" ]; then
+        # 确保 .ssh 目录存在
+        if [ ! -d "/root/.ssh" ]; then
+            mkdir -p "/root/.ssh"
+            chmod 700 "/root/.ssh"
+            echo "已自动创建 .ssh 目录"
+        fi
+        # 确保 authorized_keys 文件存在
+        if [ ! -f "$AUTHORIZED_KEYS" ]; then
+            touch "$AUTHORIZED_KEYS"
+            chmod 600 "$AUTHORIZED_KEYS"
+            chown root:root "$AUTHORIZED_KEYS"
+            echo "已自动创建 authorized_keys 文件"
+        fi
         echo "$KEY" >> "$AUTHORIZED_KEYS"
     fi
 }
+
 
 # 函数：重启 SSH 服务
 restart_ssh_service() {
