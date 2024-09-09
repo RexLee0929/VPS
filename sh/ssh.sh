@@ -1,6 +1,7 @@
 #!/bin/bash
 
-v0.5
+# version v0.5
+
 # 定义颜色
 DEFINE_YELLOW="\033[33m"
 DEFINE_BLUE="\033[34m"
