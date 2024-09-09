@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# version v0.5
+# version v0.7
 
 # 定义颜色
 DEFINE_YELLOW="\033[33m"
@@ -107,21 +107,28 @@ check_ssh_config() {
     yellow "当前 SSH 配置检查结果："
     CONFIG_ITEMS=("Port" "PermitRootLogin" "PasswordAuthentication" "PermitEmptyPasswords" "MaxAuthTries")
     for ITEM in "${CONFIG_ITEMS[@]}"; do
-        LINE=$(grep -i "^$ITEM" $SSH_CONFIG | grep -v '^#')
-        COMMENT=$(grep -i "^#$ITEM" $SSH_CONFIG)
-        if [ -z "$LINE" ]; then
-            if [ -n "$COMMENT" ]; then
-                VALUE=$(echo "$COMMENT" | awk '{print $2}')
+        LINES=$(grep -i "^$ITEM\|^#$ITEM" $SSH_CONFIG)
+        COUNT=$(echo "$LINES" | wc -l)
+        ACTIVE_LINES=$(echo "$LINES" | grep -v '^#')
+        ACTIVE_COUNT=$(echo "$ACTIVE_LINES" | wc -l)
+        
+        # 优先显示未注释的配置
+        if [ "$ACTIVE_COUNT" -gt 0 ]; then
+            VALUE=$(echo "$ACTIVE_LINES" | head -n 1 | awk '{print $2}')
+            if [ "$COUNT" -gt 1 ]; then
+                echo -e "$(green "$ITEM") $(orange "$VALUE") $(red "存在多处配置")"
+            else
+                echo -e "$(green "$ITEM") $(orange "$VALUE")"
+            fi
+        else
+            if [ "$COUNT" -gt 0 ]; then
+                VALUE=$(echo "$LINES" | head -n 1 | awk '{print $2}')
                 echo -e "$(green "$ITEM") $(orange "$VALUE") #已注释"
             else
                 echo -e "$(green "$ITEM") $(orange "未设定")"
             fi
-        else
-            VALUE=$(echo "$LINE" | awk '{print $2}')
-            echo -e "$(green "$ITEM") $(orange "$VALUE")"
         fi
     done
-    echo ""
     yellow "Public Key:"
     if [ -f "$AUTHORIZED_KEYS" ]; then
         while IFS= read -r line || [[ -n "$line" ]]; do
@@ -137,21 +144,28 @@ check_ssh_config() {
 modify_config() {
     local OPTION=$1
     local VALUE=$2
-    local LINE
-    local COMMENT
+    local CONFIG_FILE=$SSH_CONFIG
 
-    LINE=$(grep -i "^$OPTION" $SSH_CONFIG | grep -v '^#')
-    COMMENT=$(grep -i "^#$OPTION" $SSH_CONFIG)
-    
-    if [ -n "$LINE" ]; then
-        # 如果配置项已经存在且未注释
-        sed -i "s/^$OPTION.*/$OPTION $VALUE/" $SSH_CONFIG
-    elif [ -n "$COMMENT" ]; then
-        # 如果配置项被注释掉
-        sed -i "s/^#$OPTION.*/$OPTION $VALUE/" $SSH_CONFIG
+    # 检查配置文件中该选项的所有出现（包括注释和未注释的）
+    local EXISTS=$(grep -i "^$OPTION\|^#$OPTION" $CONFIG_FILE)
+
+    if [ -z "$EXISTS" ]; then
+        # 如果没有找到任何相关配置项，确保文件末尾有一个换行符后添加新的配置项
+        # 使用 sed 在文件末尾加入换行符（如果不存在的话）
+        echo >> $CONFIG_FILE
+        echo "$OPTION $VALUE" >> $CONFIG_FILE
     else
-        # 如果配置项不存在
-        echo "$OPTION $VALUE" >> $SSH_CONFIG
+        # 找到第一个出现的配置项（无论是否被注释）
+        local FIRST_OCCURRENCE=$(grep -i "^$OPTION\|^#$OPTION" $CONFIG_FILE | head -n 1)
+
+        # 删除所有同名配置项
+        sed -i "/^$OPTION\|^#$OPTION/d" $CONFIG_FILE
+
+        # 替换第一个出现的配置项的值，并确保它是激活状态（删除前面的注释符号，如果有）
+        local NEW_LINE=$(echo "$FIRST_OCCURRENCE" | sed -e "s/^#*\($OPTION\).*$/\1 $VALUE/")
+
+        # 将更新后的第一个配置项添加回配置文件
+        echo "$NEW_LINE" >> $CONFIG_FILE
     fi
 }
 
@@ -179,12 +193,18 @@ add_public_key() {
 
 # 函数：重启 SSH 服务
 restart_ssh_service() {
-    echo -e "$(blue "正在重启 SSH 服务...")"
-    systemctl restart ssh
-    if [ $? -eq 0 ]; then
-        echo -e "$(green "SSH 服务重启成功")"
+    echo -e "$(yellow "正在测试 SSH 配置...")"
+    if sshd -t; then
+        echo -e "$(yellow "SSH 配置无误，正在重启 SSH 服务...")"
+        systemctl restart ssh
+        if [ $? -eq 0 ]; then
+            echo -e "$(green "SSH 服务重启成功")"
+        else
+            echo -e "$(red "SSH 服务重启失败，请检查错误")"
+            exit 1
+        fi
     else
-        echo -e "$(red "SSH 服务重启失败，请检查错误")"
+        echo -e "$(red "SSH 配置测试失败，请检查配置文件。")"
         exit 1
     fi
 }
@@ -193,7 +213,7 @@ restart_ssh_service() {
 check_ssh_config
 
 # 打印传入值
-echo "当前传入值："
+yellow "当前传入值："
 echo -n "$(blue "Port: ")"
 echo "$(orange "$PORT")"
 echo -n "$(blue "PermitRootLogin: ")"
@@ -204,9 +224,10 @@ echo -n "$(blue "PermitEmptyPasswords: ")"
 echo "$(orange "$PERMIT_EMPTY_PASSWORDS")"
 echo -n "$(blue "MaxAuthTries: ")"
 echo "$(orange "$MAX_AUTH_TRIES")"
-echo ""
 echo -n "$(blue "Public Key : ")"
 echo "$(orange "$NEW_PUBLIC_KEY")"
+echo ""
+echo ""
 
 
 # 选择修改
@@ -234,6 +255,7 @@ case $CHOICE in
         if [ -n "$NEW_PUBLIC_KEY" ]; then
             add_public_key "$NEW_PUBLIC_KEY"
         fi
+        
         restart_ssh_service
         ;;
     2)
