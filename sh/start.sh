@@ -16,7 +16,7 @@ while getopts "f:R:S:V:C:K:" opt; do
     R) record_prefix="$OPTARG";;
     S) ss_node_id="$OPTARG";;
     V) vmess_node_id="$OPTARG";;
-    c) choice="$OPTARG";;
+    C) choice="$OPTARG";;
     K) nezha_key="$OPTARG";; # 新增处理哪吒探针密钥的选项
     \?) echo "无效选项: -$OPTARG" >&2;;
   esac
