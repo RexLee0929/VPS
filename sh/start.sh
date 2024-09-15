@@ -66,8 +66,9 @@ domain1="${env_vars[domain1]}"
 domain2="${env_vars[domain2]}"
 v2board_webapi_url="${env_vars[v2board_webapi_url]}"
 v2board_webapi_key="${env_vars[v2board_webapi_key]}"
-nezha_panel_ip="${env_vars[nezha_panel_ip]}" # 新增读取哪吒面板IP的变量
-nezha_panel_port="${env_vars[nezha_panel_port]}" # 新增读取哪吒面板端口的变量
+nezha_panel_ip="${env_vars[nezha_panel_ip]}"
+nezha_panel_port="${env_vars[nezha_panel_port]}"
+nezha_panel_tls="${env_vars[nezha_panel_tls]}"
 
 # 打印环境变量
 echo "环境变量"
@@ -80,6 +81,7 @@ echo "v2board_webapi_url: ${env_vars[v2board_webapi_url]}"
 echo "v2board_webapi_key: ${env_vars[v2board_webapi_key]}"
 echo "nezha_panel_ip: ${env_vars[nezha_panel_ip]}"
 echo "nezha_panel_port: ${env_vars[nezha_panel_port]}"
+echo "nezha_panel_tls: ${env_vars[nezha_panel_tls]}"
 
 # 打印传入值
 echo "传入值"
@@ -139,7 +141,14 @@ install_nezha_agent() {
     echo "请输入哪吒探针密钥："
     read -r nezha_key
   fi
-  curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh && chmod +x nezha.sh && sudo ./nezha.sh install_agent "${nezha_panel_ip}" "${nezha_panel_port}" "${nezha_key}"
+
+  # 根据 nezha_panel_tls 参数决定是否加上 --tls
+  tls_option=""
+  if [ "$nezha_panel_tls" == "true" ]; then
+    tls_option="--tls"
+  fi
+  
+  curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh && chmod +x nezha.sh && sudo ./nezha.sh install_agent "${nezha_panel_ip}" "${nezha_panel_port}" "${nezha_key}" "${tls_option}"
 }
 
 case $choice in
