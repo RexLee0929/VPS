@@ -196,7 +196,8 @@ restart_ssh_service() {
     echo -e "$(yellow "正在测试 SSH 配置...")"
     if sshd -t; then
         echo -e "$(yellow "SSH 配置无误，正在重启 SSH 服务...")"
-        systemctl restart ssh
+        sudo systemctl daemon-reload
+        sudo systemctl restart ssh
         if [ $? -eq 0 ]; then
             echo -e "$(green "SSH 服务重启成功")"
         else
