@@ -135,7 +135,7 @@ modify_config_files() {
 # 定义安装哪吒探针的函数
 install_nezha_agent() {
   echo "安装哪吒探针..."
-  curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o nezha.sh && chmod +x nezha.sh && env "${nezha_panel_ip}:${nezha_panel_port}" NZ_TLS="${tls_option}" NZ_CLIENT_SECRET="${nezha_key}" ./nezha.sh
+  curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o nezha.sh && chmod +x nezha.sh && env NZ_SERVER="${nezha_panel_ip}:${nezha_panel_port}" NZ_TLS="${tls_option}" NZ_CLIENT_SECRET="${nezha_key}" ./nezha.sh
 }
 
 case $choice in
