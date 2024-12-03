@@ -6,18 +6,16 @@ env_name="vps.env"
 record_prefix=""
 ss_node_id=""
 vmess_node_id=""
-nezha_key=""
 choice=""
 
 # 使用getopts解析命名参数
-while getopts "f:R:S:V:C:K:" opt; do
+while getopts "f:R:S:V:C:" opt; do
   case $opt in
     f) env_file="$OPTARG";;
     R) record_prefix="$OPTARG";;
     S) ss_node_id="$OPTARG";;
     V) vmess_node_id="$OPTARG";;
     C) choice="$OPTARG";;
-    K) nezha_key="$OPTARG";; # 新增处理哪吒探针密钥的选项
     \?) echo "无效选项: -$OPTARG" >&2;;
   esac
 done
@@ -69,6 +67,7 @@ v2board_webapi_key="${env_vars[v2board_webapi_key]}"
 nezha_panel_ip="${env_vars[nezha_panel_ip]}"
 nezha_panel_port="${env_vars[nezha_panel_port]}"
 nezha_panel_tls="${env_vars[nezha_panel_tls]}"
+nezha_agent_key="${env_vars[nezha_agent_key]}"
 
 # 打印环境变量
 echo "环境变量"
@@ -82,6 +81,7 @@ echo "v2board_webapi_key: ${env_vars[v2board_webapi_key]}"
 echo "nezha_panel_ip: ${env_vars[nezha_panel_ip]}"
 echo "nezha_panel_port: ${env_vars[nezha_panel_port]}"
 echo "nezha_panel_tls: ${env_vars[nezha_panel_tls]}"
+echo "nezha_agent_key: ${env_vars[nezha_agent_key]}"
 
 # 打印传入值
 echo "传入值"
@@ -89,7 +89,6 @@ echo "env_file: ${env_file}"
 echo "record_prefix: ${record_prefix}"
 echo "ss_node_id: ${ss_node_id}"
 echo "vmess_node_id: ${vmess_node_id}"
-echo "nezha_key: ${nezha_key}"
 
 # 用户选择执行选项
 if [ -z "$choice" ]; then
@@ -137,18 +136,7 @@ modify_config_files() {
 # 定义安装哪吒探针的函数
 install_nezha_agent() {
   echo "安装哪吒探针..."
-  if [ -z "$nezha_key" ]; then
-    echo "请输入哪吒探针密钥："
-    read -r nezha_key
-  fi
-
-  # 根据 nezha_panel_tls 参数决定是否加上 --tls
-  tls_option=""
-  if [ "$nezha_panel_tls" == "true" ]; then
-    tls_option="--tls"
-  fi
-  
-  curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh && chmod +x nezha.sh && sudo ./nezha.sh install_agent "${nezha_panel_ip}" "${nezha_panel_port}" "${nezha_key}" "${tls_option}"
+  curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh && chmod +x nezha.sh && env "${nezha_panel_ip}":"${nezha_panel_port}" NZ_TLS="${tls_option}" NZ_CLIENT_SECRET="${nezha_key}" ./nezha.sh
 }
 
 case $choice in
