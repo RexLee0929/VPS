@@ -71,7 +71,6 @@ nezha_agent_key="${env_vars[nezha_agent_key]}"
 
 # 打印环境变量
 echo "环境变量"
-echo "nezha_panel_port: ${env_vars[nezha_panel_port]}"
 echo "cf_key: ${env_vars[cf_key]}"
 echo "cf_email: ${env_vars[cf_email]}"
 echo "domain1: ${env_vars[domain1]}"
