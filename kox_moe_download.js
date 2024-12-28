@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kox.Moe 批量下载
 // @author       Rex Lee
-// @version      1.0
+// @version      1.1
 // @description  kox 批量下载 epub
 // @match        https://kox.moe/c/*
 // ==/UserScript==
@@ -75,8 +75,8 @@ async function handleLinkClick(text) {
   });
   buttonContainer.appendChild(button1);
 
-  var button2 = createButton("VIP線路2", function() {
-    handleLinkClick("VIP線路2");
+  var button2 = createButton("VIP線二(旧版本下载,可调用IDM)", function() {
+    handleLinkClick("VIP線二"); //适配新版本
   });
   buttonContainer.appendChild(button2);
 
