@@ -1,5 +1,7 @@
 # Rex Lee's ToolBox 
 
+[<img src="https://api.gitsponsors.com/api/badge/img?id=608610839" height="20">](https://api.gitsponsors.com/api/badge/link?p=dOHoGHWjuQt/fMWB3ROznPq2az1bULm2FdAldg4LymEaX85SMyfjrAxnYUkskQ9+iftUF6zcbgrNivMNpkS4lha/FdaZb+iPJf5eayG2/cuEUj2mtRD1nvMvStR3P+p7UgU6ONg105D1sQiX5n5+bA==)
+
 ```
 bash <(curl -sSL https://raw.githubusercontent.com/RexLee0929/VPS/main/toolbox.sh)
 ```
