@@ -7,6 +7,7 @@ record_prefix=""
 ss_node_id=""
 vmess_node_id=""
 choice=""
+nz_uuid=""
 
 # 使用getopts解析命名参数
 while getopts "f:R:S:V:C:" opt; do
@@ -16,6 +17,7 @@ while getopts "f:R:S:V:C:" opt; do
     S) ss_node_id="$OPTARG";;
     V) vmess_node_id="$OPTARG";;
     C) choice="$OPTARG";;
+    U) nz_uuid="$OPTARG";;
     \?) echo "无效选项: -$OPTARG" >&2;;
   esac
 done
@@ -88,10 +90,11 @@ echo "env_file: ${env_file}"
 echo "record_prefix: ${record_prefix}"
 echo "ss_node_id: ${ss_node_id}"
 echo "vmess_node_id: ${vmess_node_id}"
+echo "nz_uuid: ${nz_uuid}"
 
 # 用户选择执行选项
 if [ -z "$choice" ]; then
-  echo "请选择执行选项：1. 全部执行 2. 执行DDNS 3. 安装代理 4. 修改配置文件 5. 安装哪吒探针 0.退出脚本"
+  echo "请选择执行选项：1. 全部执行 2. 执行DDNS 3. 安装代理 4. 修改配置文件 5. 安装哪吒探针 6.安装代理同时修改配置文件 0.退出脚本"
   read -r choice
 fi
 
@@ -133,9 +136,24 @@ modify_config_files() {
 }
 
 # 定义安装哪吒探针的函数
+# install_nezha_agent() {
+#   echo "安装哪吒探针..."
+#   curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o nezha.sh && chmod +x nezha.sh && env NZ_SERVER="${nezha_panel_ip}:${nezha_panel_port}" NZ_TLS="${nezha_panel_tls}" NZ_CLIENT_SECRET="${nezha_agent_key}" NZ_UUID="${nz_uuid}" ./nezha.sh
+# }
 install_nezha_agent() {
   echo "安装哪吒探针..."
-  curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o nezha.sh && chmod +x nezha.sh && env NZ_SERVER="${nezha_panel_ip}:${nezha_panel_port}" NZ_TLS="${nezha_panel_tls}" NZ_CLIENT_SECRET="${nezha_agent_key}" ./nezha.sh
+  curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o nezha.sh && chmod +x nezha.sh
+
+  # 构造基本环境变量
+  env_cmd="env NZ_SERVER=\"${nezha_panel_ip}:${nezha_panel_port}\" NZ_TLS=\"${nezha_panel_tls}\" NZ_CLIENT_SECRET=\"${nezha_agent_key}\""
+
+  # 判断是否设置了 UUID，如果有则追加
+  if [ -n "$nz_uuid" ]; then
+    env_cmd="${env_cmd} NZ_UUID=\"${nz_uuid}\""
+  fi
+
+  # 执行命令
+  eval "${env_cmd} ./nezha.sh"
 }
 
 case $choice in
@@ -149,6 +167,10 @@ case $choice in
   3) install_proxy ;; # 只安装代理服务
   4) modify_config_files ;; # 只修改配置文件
   5) install_nezha_agent ;; # 新增的哪吒探针安装选项
+  6) 
+    modify_config_files
+    install_nezha_agent
+    ;;
   0) exit 1 ;;
   *) echo "无效的选择：$choice" ;;
 esac
