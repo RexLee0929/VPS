@@ -10,7 +10,7 @@ choice=""
 nz_uuid=""
 
 # 使用getopts解析命名参数
-while getopts "f:R:S:V:C:" opt; do
+while getopts "f:R:S:V:C:U:" opt; do
   case $opt in
     f) env_file="$OPTARG";;
     R) record_prefix="$OPTARG";;
