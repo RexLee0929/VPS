@@ -47,9 +47,10 @@ DEFAULT_PASSWORD_AUTH="yes"
 DEFAULT_PERMIT_EMPTY_PASSWORDS="no"
 DEFAULT_MAX_AUTH_TRIES=3
 NEW_PUBLIC_KEY=""
+DEFAULT_PUBKEY_AUTH="yes"
 
 # 处理传入参数
-while getopts "P:R:A:E:M:C:K:h" opt; do
+while getopts "P:R:A:E:M:C:K:U:h" opt; do
     case ${opt} in
         P )
             PORT=$OPTARG
@@ -69,6 +70,9 @@ while getopts "P:R:A:E:M:C:K:h" opt; do
         C )
             CHOICE=$OPTARG
             ;;
+        U )
+            PUBKEY_AUTH=$OPTARG
+            ;;
         K )
             NEW_PUBLIC_KEY=$OPTARG
             ;;
@@ -82,6 +86,7 @@ while getopts "P:R:A:E:M:C:K:h" opt; do
             echo "  -M <number>                Set MaxAuthTries"
             echo "  -C <choice>                Set choice for modification"
             echo "  -K <public key>            Add a new public key to authorized_keys"
+            echo "  -U <yes|no>                Set PubkeyAuthentication"
             exit 0
             ;;
         \? )
@@ -101,11 +106,12 @@ PERMIT_ROOT_LOGIN=${PERMIT_ROOT_LOGIN:-$DEFAULT_PERMIT_ROOT_LOGIN}
 PASSWORD_AUTH=${PASSWORD_AUTH:-$DEFAULT_PASSWORD_AUTH}
 PERMIT_EMPTY_PASSWORDS=${PERMIT_EMPTY_PASSWORDS:-$DEFAULT_PERMIT_EMPTY_PASSWORDS}
 MAX_AUTH_TRIES=${MAX_AUTH_TRIES:-$DEFAULT_MAX_AUTH_TRIES}
+PUBKEY_AUTH=${PUBKEY_AUTH:-$DEFAULT_PUBKEY_AUTH}
 
 # 函数：检查 SSH 配置
 check_ssh_config() {
     yellow "当前 SSH 配置检查结果："
-    CONFIG_ITEMS=("Port" "PermitRootLogin" "PasswordAuthentication" "PermitEmptyPasswords" "MaxAuthTries")
+    CONFIG_ITEMS=("Port" "PermitRootLogin" "PasswordAuthentication" "PermitEmptyPasswords" "MaxAuthTries" "PubkeyAuthentication")
     for ITEM in "${CONFIG_ITEMS[@]}"; do
         LINES=$(grep -i "^$ITEM\|^#$ITEM" $SSH_CONFIG)
         COUNT=$(echo "$LINES" | wc -l)
@@ -227,6 +233,8 @@ echo -n "$(blue "MaxAuthTries: ")"
 echo "$(orange "$MAX_AUTH_TRIES")"
 echo -n "$(blue "Public Key : ")"
 echo "$(orange "$NEW_PUBLIC_KEY")"
+echo -n "$(blue "PubkeyAuthentication: ")"
+echo "$(orange "$PUBKEY_AUTH")"
 echo ""
 echo ""
 
@@ -242,6 +250,7 @@ if [ -z "$CHOICE" ]; then
     echo "$(green "5)") 修改 PermitEmptyPasswords"
     echo "$(green "6)") 修改 MaxAuthTries"
     echo "$(green "7)") 添加公钥"
+    echo "$(green "8)") 修改 PubkeyAuthentication"
     echo "$(green "0)") 退出脚本"
     read -p "$(blue "请输入选项: ")" CHOICE
 fi
@@ -253,6 +262,7 @@ case $CHOICE in
         modify_config "PasswordAuthentication" "$PASSWORD_AUTH"
         modify_config "PermitEmptyPasswords" "$PERMIT_EMPTY_PASSWORDS"
         modify_config "MaxAuthTries" "$MAX_AUTH_TRIES"
+        modify_config "PubkeyAuthentication" "$PUBKEY_AUTH"
         if [ -n "$NEW_PUBLIC_KEY" ]; then
             add_public_key "$NEW_PUBLIC_KEY"
         fi
@@ -298,6 +308,13 @@ case $CHOICE in
         echo "请输入新的公钥值:"
         read NEW_PUBLIC_KEY
         add_public_key "$NEW_PUBLIC_KEY"
+        ;;
+    8)
+        echo "请输入新的 PubkeyAuthentication 值 (yes/no, 默认 $DEFAULT_PUBKEY_AUTH):"
+        read NEW_PUBKEY_AUTH
+        NEW_PUBKEY_AUTH=${NEW_PUBKEY_AUTH:-$DEFAULT_PUBKEY_AUTH}
+        modify_config "PubkeyAuthentication" "$NEW_PUBKEY_AUTH"
+        restart_ssh_service
         ;;
     0)
         echo "退出脚本"
