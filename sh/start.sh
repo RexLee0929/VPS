@@ -111,28 +111,40 @@ install_proxy() {
   # 代理安装部分
   echo "安装代理服务..."
   curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh | bash -s -- install
-  curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh | bash
+  # curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh | bash
 }
 
 modify_config_files() {
   # 修改配置文件部分
   echo "修改配置文件..."
-  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/xrayr.yml -o /etc/XrayR/config.yml
-  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/soga.conf -o /etc/soga/soga.conf
+  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/soga-ss.conf -o /etc/soga/ss/soga.conf
+  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/soga-vmess.yml -o /etc/soga/vmess/soga.conf
 
-  sed -i "s/node_id=.*/node_id=${ss_node_id}/g" /etc/soga/soga.conf
-  sed -i "s|webapi_url=.*|webapi_url=${v2board_webapi_url}|g" /etc/soga/soga.conf
-  sed -i "s/webapi_key=.*/webapi_key=${v2board_webapi_key}/g" /etc/soga/soga.conf
+  sed -i "s/node_id=.*/node_id=${ss_node_id}/g" /etc/soga/ss/soga.conf
+  sed -i "s|webapi_url=.*|webapi_url=${v2board_webapi_url}|g" /etc/soga/ss/soga.conf
+  sed -i "s/webapi_key=.*/webapi_key=${v2board_webapi_key}/g" /etc/soga/ss/soga.conf
 
-  sed -i "s/NodeID: .*/NodeID: ${vmess_node_id}/g" /etc/XrayR/config.yml
-  sed -i "s|ApiHost: \".*\"|ApiHost: \"${v2board_webapi_url}\"|g" /etc/XrayR/config.yml
-  sed -i "s/ApiKey: \".*\"/ApiKey: \"${v2board_webapi_key}\"/g" /etc/XrayR/config.yml
+  sed -i "s/node_id=.*/node_id=${vmess_node_id}/g" /etc/soga/ss/soga.conf
+  sed -i "s|webapi_url=.*|webapi_url=${v2board_webapi_url}|g" /etc/soga/vmess/soga.conf
+  sed -i "s/webapi_key=.*/webapi_key=${v2board_webapi_key}/g" /etc/soga/vmess/soga.conf
 
+  # 旧版本的实现
+  # curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/soga.conf -o /etc/soga/soga.conf
+  # curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/xrayr.yml -o /etc/XrayR/config.yml
+
+  # sed -i "s/node_id=.*/node_id=${ss_node_id}/g" /etc/soga/soga.conf
+  # sed -i "s|webapi_url=.*|webapi_url=${v2board_webapi_url}|g" /etc/soga/soga.conf
+  # sed -i "s/webapi_key=.*/webapi_key=${v2board_webapi_key}/g" /etc/soga/soga.conf
+
+  # sed -i "s/NodeID: .*/NodeID: ${vmess_node_id}/g" /etc/XrayR/config.yml
+  # sed -i "s|ApiHost: \".*\"|ApiHost: \"${v2board_webapi_url}\"|g" /etc/XrayR/config.yml
+  # sed -i "s/ApiKey: \".*\"/ApiKey: \"${v2board_webapi_key}\"/g" /etc/XrayR/config.yml
+  
   echo "配置文件修改完成"
 
   soga start
 
-  xrayr start
+  # xrayr start
 }
 
 # 定义安装哪吒探针的函数
