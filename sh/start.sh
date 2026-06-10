@@ -107,24 +107,55 @@ execute_ddns() {
   ./ddns.sh -k "${cf_key}" -e "${cf_email}" -d "${domain2}" -r "${record_prefix}.${domain2}" -t "A" -p "true"
 }
 
+# install_proxy() {
+#   # 代理安装部分
+#   echo "安装代理服务..."
+#   curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh | bash -s -- install
+#   curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh | bash
+  
+# }
+
 install_proxy() {
-  # 代理安装部分
-  echo "安装代理服务..."
-  curl -Ls https://github.com/sprov065/soga/raw/master/soga.sh | bash -s -- install
-  # curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh | bash
+    local arch
+
+    case "$(uname -m)" in
+        x86_64) arch="amd64" ;;
+        aarch64) arch="arm64" ;;
+        *) arch="amd64" ;;
+    esac
+
+    echo "开始安装soga管理脚本.. "
+    
+    wget -O /usr/bin/soga \
+      "https://github.com/vaxilu/soga-cmd/releases/latest/download/soga-cmd-linux-${arch}"
+    chmod +x /usr/bin/soga
+    echo "soga管理脚本安装完成！"
+
+    echo "开始安装2.13.4版本的soga.."
+    soga update 2.13.4
+    
+    echo "soga安装完成！"
+
+    echo "创建SS实例"
+    soga new ss
+    
+    echo "创建Vmess实例"
+    soga new vmess
+
+    echo "实例已创建完成，继续执行配置的修改"
 }
 
 modify_config_files() {
   # 修改配置文件部分
   echo "修改配置文件..."
   curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/soga-ss.conf -o /etc/soga/ss/soga.conf
-  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/soga-vmess.yml -o /etc/soga/vmess/soga.conf
+  curl -L https://raw.githubusercontent.com/RexLee0929/VPS/main/config/soga-vmess.conf -o /etc/soga/vmess/soga.conf
 
   sed -i "s/node_id=.*/node_id=${ss_node_id}/g" /etc/soga/ss/soga.conf
   sed -i "s|webapi_url=.*|webapi_url=${v2board_webapi_url}|g" /etc/soga/ss/soga.conf
   sed -i "s/webapi_key=.*/webapi_key=${v2board_webapi_key}/g" /etc/soga/ss/soga.conf
 
-  sed -i "s/node_id=.*/node_id=${vmess_node_id}/g" /etc/soga/ss/soga.conf
+  sed -i "s/node_id=.*/node_id=${vmess_node_id}/g" /etc/soga/vmess/soga.conf
   sed -i "s|webapi_url=.*|webapi_url=${v2board_webapi_url}|g" /etc/soga/vmess/soga.conf
   sed -i "s/webapi_key=.*/webapi_key=${v2board_webapi_key}/g" /etc/soga/vmess/soga.conf
 
@@ -142,8 +173,18 @@ modify_config_files() {
   
   echo "配置文件修改完成"
 
-  soga start
+  echo "启动实例中"
+  soga start ss
+  soga start vmess
+  echo "实例启动完成"
 
+  
+  echo "正在创建开机启动"
+  soga enable ss
+  soga enable vmess
+  echo "已设置开机启动"
+
+  
   # xrayr start
 }
 
@@ -180,8 +221,8 @@ case $choice in
   4) modify_config_files ;; # 只修改配置文件
   5) install_nezha_agent ;; # 新增的哪吒探针安装选项
   6) 
+    install_proxy
     modify_config_files
-    install_nezha_agent
     ;;
   0) exit 1 ;;
   *) echo "无效的选择：$choice" ;;
