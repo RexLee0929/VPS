@@ -41,6 +41,9 @@ SSH_CONFIG="/etc/ssh/sshd_config"
 AUTHORIZED_KEYS="/root/.ssh/authorized_keys"
 
 # 默认值
+EVN_FILE="vps.env"
+ENV_NAME="vps.env"
+PUBLICKEY_NAME=""
 DEFAULT_PORT=22
 DEFAULT_PERMIT_ROOT_LOGIN="yes"
 DEFAULT_PASSWORD_AUTH="yes"
@@ -50,8 +53,11 @@ NEW_PUBLIC_KEY=""
 DEFAULT_PUBKEY_AUTH="yes"
 
 # 处理传入参数
-while getopts "P:R:A:E:M:C:K:U:h" opt; do
+while getopts "f:P:R:A:E:M:C:K:U:N:h" opt; do
     case ${opt} in
+        f )
+            EVN_FILE=$OPTARG
+            ;;
         P )
             PORT=$OPTARG
             ;;
@@ -72,6 +78,9 @@ while getopts "P:R:A:E:M:C:K:U:h" opt; do
             ;;
         U )
             PUBKEY_AUTH=$OPTARG
+            ;;
+        N )
+            PUBKEY_NAME=$OPTARG
             ;;
         K )
             NEW_PUBLIC_KEY=$OPTARG
@@ -100,6 +109,47 @@ while getopts "P:R:A:E:M:C:K:U:h" opt; do
     esac
 done
 
+# 判断是否为URL
+is_url() {
+  if [[ $1 =~ ^https?:// ]]; then
+    return 0  # 是URL
+  else
+    return 1  # 不是URL
+  fi
+}
+
+# 根据env_file变量的值来决定操作
+if is_url "$EVN_FILE"; then
+    echo "从URL下载env文件：$EVN_FILE"
+    curl -L "$EVN_FILE" -o "$ENV_NAME"
+elif [ -f "$EVN_FILE" ]; then
+    env_name="$EVN_FILE"
+fi
+
+# 读取环境变量文件
+declare -A env_vars
+if [ -f "$ENV_NAME" ]; then
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ $line =~ ^[a-zA-Z_]+[a-zA-Z0-9_]*=.*$ ]]; then
+            key="${line%%=*}"
+            value="${line#*=}"
+
+            value="${value%\"}"
+            value="${value#\"}"
+
+            env_vars[$key]="$value"
+        fi
+    done < "$ENV_NAME"
+fi
+
+
+DEFAULT_PORT="${env_vars[ssh_port]:-$DEFAULT_PORT}"
+DEFAULT_PERMIT_ROOT_LOGIN="${env_vars[ssh_permit_root_login]:-$DEFAULT_PERMIT_ROOT_LOGIN}"
+DEFAULT_PASSWORD_AUTH="${env_vars[ssh_password_auth]:-$DEFAULT_PASSWORD_AUTH}"
+DEFAULT_PERMIT_EMPTY_PASSWORDS="${env_vars[ssh_permit_empty_passwords]:-$DEFAULT_PERMIT_EMPTY_PASSWORDS}"
+DEFAULT_MAX_AUTH_TRIES="${env_vars[ssh_max_auth_tries]:-$DEFAULT_MAX_AUTH_TRIES}"
+DEFAULT_PUBKEY_AUTH="${env_vars[ssh_pubkey_auth]:-$DEFAULT_PUBKEY_AUTH}"
+
 # 使用默认值，如果没有传入值
 PORT=${PORT:-$DEFAULT_PORT}
 PERMIT_ROOT_LOGIN=${PERMIT_ROOT_LOGIN:-$DEFAULT_PERMIT_ROOT_LOGIN}
@@ -107,6 +157,10 @@ PASSWORD_AUTH=${PASSWORD_AUTH:-$DEFAULT_PASSWORD_AUTH}
 PERMIT_EMPTY_PASSWORDS=${PERMIT_EMPTY_PASSWORDS:-$DEFAULT_PERMIT_EMPTY_PASSWORDS}
 MAX_AUTH_TRIES=${MAX_AUTH_TRIES:-$DEFAULT_MAX_AUTH_TRIES}
 PUBKEY_AUTH=${PUBKEY_AUTH:-$DEFAULT_PUBKEY_AUTH}
+
+if [ -z "$NEW_PUBLIC_KEY" ] && [ -n "$pubkey_name" ]; then
+    NEW_PUBLIC_KEY="${env_vars[pubkey_${pubkey_name}]}"
+fi
 
 # 函数：检查 SSH 配置
 check_ssh_config() {
@@ -221,6 +275,8 @@ check_ssh_config
 
 # 打印传入值
 yellow "当前传入值："
+echo -n "$(blue "ENVFILE: ")"
+echo "$(orange "$PORT")"
 echo -n "$(blue "Port: ")"
 echo "$(orange "$PORT")"
 echo -n "$(blue "PermitRootLogin: ")"
@@ -237,7 +293,16 @@ echo -n "$(blue "PubkeyAuthentication: ")"
 echo "$(orange "$PUBKEY_AUTH")"
 echo ""
 echo ""
+yellow "ENV配置："
 
+echo "ssh_port: ${env_vars[ssh_port]}"
+echo "ssh_permit_root_login: ${env_vars[ssh_permit_root_login]}"
+echo "ssh_password_auth: ${env_vars[ssh_password_auth]}"
+echo "ssh_permit_empty_passwords: ${env_vars[ssh_permit_empty_passwords]}"
+echo "ssh_max_auth_tries: ${env_vars[ssh_max_auth_tries]}"
+echo "ssh_pubkey_auth: ${env_vars[ssh_pubkey_auth]}"
+
+echo "pubkey_name: $pubkey_name"
 
 # 选择修改
 if [ -z "$CHOICE" ]; then
