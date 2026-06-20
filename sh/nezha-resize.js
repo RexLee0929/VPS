@@ -4,64 +4,65 @@
 // @version      1.0
 // @description  将目标站点中含有 resize-none 的元素（且包含 min-h-[80px]）替换为 resize-y
 // @author       You
-// @match        https://example.com/*    // <- 把这里改成你要运行的站点，例如 https://www.yoursite.com/*
+// @match        https://nezha.rexleepro.com/*
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
-
-    // 检查并处理单个元素
+    function isTarget(el) {
+        if (!el || el.nodeType !== 1 || !el.classList) return false;
+        // 只匹配同时包含这两个类的元素，尽量精准
+        return el.classList.contains('min-h-[80px]') && el.classList.contains('resize-none');
+    }
     function processElement(el) {
-        if (!el || !el.classList) return;
-        // 增加 min-h-[80px] 作为额外判断，减少误改其它元素
-        if (el.classList.contains('resize-none') && el.classList.contains('min-h-[80px]')) {
-            if (typeof el.classList.replace === 'function') {
-                el.classList.replace('resize-none', 'resize-y');
-            } else {
-                el.classList.remove('resize-none');
-                el.classList.add('resize-y');
+        if (!isTarget(el)) return;
+        // 替换类名 resize-none -> resize-y
+        if (typeof el.classList.replace === 'function') {
+            el.classList.replace('resize-none', 'resize-y');
+        } else {
+            el.classList.remove('resize-none');
+            el.classList.add('resize-y');
+        }
+        // 仅当没有内联 height 时，设置默认高度为 300px
+        try {
+            if (!el.style || !el.style.height || el.style.height.trim() === '') {
+                el.style.height = '300px';
             }
+        } catch (e) {
+            // 忽略异常
         }
     }
-
-    // 扫描根节点下所有可能的目标节点
-    function scanRoot(root) {
-        if (!root || root.querySelectorAll === undefined) return;
-        // 使用属性包含选择器快速定位包含 resize-none 的元素，再用 classList 做精确判断
-        var candidates = root.querySelectorAll('[class*="resize-none"]');
-        candidates.forEach(function(el) { processElement(el); });
+    function scan(root) {
+        if (!root || !root.querySelectorAll) return;
+        // 找出可能包含目标类字符串的元素，随后用 isTarget 精确判断
+        var candidates = root.querySelectorAll('[class*="min-h-[80px]"][class*="resize-none"]');
+        candidates.forEach(function (el) { processElement(el); });
     }
-
     // 初次扫描整个文档
-    scanRoot(document);
-
-    // 监听 DOM 变更（新增节点或 class 属性变化）
-    var observer = new MutationObserver(function(muts) {
-        muts.forEach(function(m) {
-            if (m.type === 'attributes' && m.attributeName === 'class') {
-                processElement(m.target);
-            } else if (m.type === 'childList') {
-                m.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) { // element
-                        // 检查新增节点本身
+    scan(document);
+    // 监听动态添加或者 class 变化
+    var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+            if (m.type === 'childList') {
+                m.addedNodes.forEach(function (node) {
+                    if (node.nodeType === 1) {
                         processElement(node);
-                        // 以及其子孙中可能的目标元素
-                        scanRoot(node);
+                        scan(node);
                     }
                 });
+            } else if (m.type === 'attributes' && m.attributeName === 'class') {
+                processElement(m.target);
             }
         });
     });
-
     observer.observe(document.documentElement || document.body, {
         childList: true,
         subtree: true,
         attributes: true,
         attributeFilter: ['class']
     });
-
-    // 可选：在页面完全加载后再跑一次以确保覆盖某些延迟渲染的情况
-    window.addEventListener('load', function() { scanRoot(document); });
+    // 页面完全加载后再跑一次以防遗漏
+    window.addEventListener('load', function () { scan(document); });
 })();
