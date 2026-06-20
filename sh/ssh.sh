@@ -1,392 +1,347 @@
 #!/bin/bash
+#
+# ssh.sh - 简易 SSH 配置与公钥管理脚本
+# version v1.0 (美化并增强了输入校验、日志与兼容性)
+#
+# 用法示例：
+#   ./ssh.sh -f ssh.env -P 2222 -R no -A no -U yes -K "ssh-rsa AAAA..." -C 1
+#
 
-# version v0.7
+set -o pipefail
 
 # 定义颜色
-DEFINE_YELLOW="\033[33m"
-DEFINE_BLUE="\033[34m"
-DEFINE_GREEN="\033[32m"
-DEFINE_RED="\033[31m"
-DEFINE_ORANGE="\033[38;5;208m"
-DEFINE_RESET="\033[0m"
+c_yellow="\033[33m"
+c_blue="\033[34m"
+c_green="\033[32m"
+c_red="\033[31m"
+c_orange="\033[38;5;208m"
+c_reset="\033[0m"
 
-yellow() {
-    echo -e "${DEFINE_YELLOW}$1${DEFINE_RESET}"
-}
+yellow() { printf "%b\n" "${c_yellow}$*${c_reset}"; }
+blue()   { printf "%b\n" "${c_blue}$*${c_reset}"; }
+green()  { printf "%b\n" "${c_green}$*${c_reset}"; }
+red()    { printf "%b\n" "${c_red}$*${c_reset}"; }
+orange() { printf "%b\n" "${c_orange}$*${c_reset}"; }
 
-blue() {
-    echo -e "${DEFINE_BLUE}$1${DEFINE_RESET}"
-}
-
-green() {
-    echo -e "${DEFINE_GREEN}$1${DEFINE_RESET}"
-}
-
-orange() {
-    echo -e "${DEFINE_ORANGE}$1${DEFINE_RESET}"
-}
-
-red() {
-    echo -e "${DEFINE_RED}$1${DEFINE_RESET}"
-}
-
-# 检查是否以 root 用户运行
-if [ "$(id -u)" -ne "0" ]; then
-    red "请以 root 用户身份运行此脚本"
+# 必须以 root 运行
+if [ "$(id -u)" != "0" ]; then
+    red "请以 root 用户运行"
     exit 1
 fi
 
-# 定义配置文件路径
-SSH_CONFIG="/etc/ssh/sshd_config"
-AUTHORIZED_KEYS="/root/.ssh/authorized_keys"
+# 默认配置与路径
+ssh_config="/etc/ssh/sshd_config"
+authorized_keys="/root/.ssh/authorized_keys"
 
-# 默认值
-EVN_FILE="vps.env"
-ENV_NAME="vps.env"
-PUBLICKEY_NAME=""
-DEFAULT_PORT=22
-DEFAULT_PERMIT_ROOT_LOGIN="yes"
-DEFAULT_PASSWORD_AUTH="yes"
-DEFAULT_PERMIT_EMPTY_PASSWORDS="no"
-DEFAULT_MAX_AUTH_TRIES=3
-NEW_PUBLIC_KEY=""
-DEFAULT_PUBKEY_AUTH="yes"
+env_file="ssh.env"      # 默认 env 路径或 URL
+env_name="ssh.env"      # 下载或本地使用的文件名
 
-# 处理传入参数
-while getopts "f:P:R:A:E:M:C:K:U:N:h" opt; do
-    case ${opt} in
-        f )
-            EVN_FILE=$OPTARG
-            ;;
-        P )
-            PORT=$OPTARG
-            ;;
-        R )
-            PERMIT_ROOT_LOGIN=$OPTARG
-            ;;
-        A )
-            PASSWORD_AUTH=$OPTARG
-            ;;
-        E )
-            PERMIT_EMPTY_PASSWORDS=$OPTARG
-            ;;
-        M )
-            MAX_AUTH_TRIES=$OPTARG
-            ;;
-        C )
-            CHOICE=$OPTARG
-            ;;
-        U )
-            PUBKEY_AUTH=$OPTARG
-            ;;
-        N )
-            PUBKEY_NAME=$OPTARG
-            ;;
-        K )
-            NEW_PUBLIC_KEY=$OPTARG
-            ;;
-        h )
-            echo "Usage: $0 [options]"
-            echo "Options:"
-            echo "  -P <port>                  Set the SSH port number"
-            echo "  -R <yes|no>                Set PermitRootLogin"
-            echo "  -A <yes|no>                Set PasswordAuthentication"
-            echo "  -E <yes|no>                Set PermitEmptyPasswords"
-            echo "  -M <number>                Set MaxAuthTries"
-            echo "  -C <choice>                Set choice for modification"
-            echo "  -K <public key>            Add a new public key to authorized_keys"
-            echo "  -U <yes|no>                Set PubkeyAuthentication"
+# 默认值（可被 env 覆盖或命令行参数覆盖）
+default_port=22
+default_permit_root_login="yes"
+default_password_auth="yes"
+default_permit_empty_passwords="no"
+default_max_auth_tries=3
+default_pubkey_auth="yes"
+
+# 运行时变量（可能来自 env 或参数）
+port=""
+permit_root_login=""
+password_auth=""
+permit_empty_passwords=""
+max_auth_tries=""
+pubkey_auth=""
+public_key=""
+pubkey_name=""
+choice=""
+
+# 简单判断字符串是否为 URL
+is_url() {
+    [[ $1 =~ ^https?:// ]]
+}
+
+# 读取环境变量文件（支持 URL 或本地文件）
+load_env() {
+    if is_url "$env_file"; then
+        yellow "下载 env 文件: $env_file"
+        if ! command -v curl >/dev/null 2>&1; then
+            red "curl 未安装，无法下载 env 文件"
+            exit 1
+        fi
+        curl -fsSL "$env_file" -o "$env_name" || {
+            red "env 下载失败"
+            exit 1
+        }
+    elif [ -f "$env_file" ]; then
+        env_name="$env_file"
+    else
+        # 没有 env 文件，返回但不报错
+        return
+    fi
+
+    declare -gA env_vars
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%%#*}"        # 去掉注释
+        line="${line%"${line##*[![:space:]]}"}"   # 右 trim
+        line="${line#"${line%%[![:space:]]*}"}"   # 左 trim
+        [ -z "$line" ] && continue
+        if [[ $line =~ ^[a-zA-Z_][a-zA-Z0-9_]*=.+$ ]]; then
+            key="${line%%=*}"
+            value="${line#*=}"
+            # 去除可能的双引号或单引号包裹
+            value="${value%\"}"
+            value="${value#\"}"
+            value="${value%\'}"
+            value="${value#\'}"
+            env_vars[$key]="$value"
+        fi
+    done < "$env_name"
+}
+
+# 将多种 yes/no 表示规范化为 yes 或 no
+normalize_yesno() {
+    local v="${1,,}"   # 转为小写
+    case "$v" in
+        1|y|yes|on|true) echo "yes" ;;
+        0|n|no|off|false) echo "no" ;;
+        *) echo "$v" ;;   # 原样返回（可能为空或已是 yes/no）
+    esac
+}
+
+# 解析命令行参数
+usage() {
+    cat <<EOF
+Usage: $0 [options]
+
+ -f file_or_url   指定 env 文件或 URL（默认: ssh.env）
+ -P port          SSH 端口
+ -R yes|no        PermitRootLogin
+ -A yes|no        PasswordAuthentication
+ -E yes|no        PermitEmptyPasswords
+ -M number        MaxAuthTries
+ -U yes|no        PubkeyAuthentication
+ -K public_key    直接提供公钥字符串（整行）
+ -N pubkey_name   从 env 文件中读取 env 变量名 pubkey_<pubkey_name>
+ -C choice        操作：1 修改全部 2 仅添加公钥 0 退出
+ -h               显示帮助
+EOF
+}
+
+while getopts "f:P:R:A:E:M:C:K:N:U:h" opt; do
+    case $opt in
+        f) env_file="$OPTARG" ;;
+        P) port="$OPTARG" ;;
+        R) permit_root_login="$OPTARG" ;;
+        A) password_auth="$OPTARG" ;;
+        E) permit_empty_passwords="$OPTARG" ;;
+        M) max_auth_tries="$OPTARG" ;;
+        C) choice="$OPTARG" ;;
+        U) pubkey_auth="$OPTARG" ;;
+        K) public_key="$OPTARG" ;;
+        N) pubkey_name="$OPTARG" ;;
+        h)
+            usage
             exit 0
             ;;
-        \? )
-            echo "Invalid option: -$OPTARG" >&2
-            exit 1
-            ;;
-        : )
-            echo "Option -$OPTARG requires an argument." >&2
+        *)
+            usage
             exit 1
             ;;
     esac
 done
 
-# 判断是否为URL
-is_url() {
-  if [[ $1 =~ ^https?:// ]]; then
-    return 0  # 是URL
-  else
-    return 1  # 不是URL
-  fi
+# 加载 env 文件（如果存在）
+load_env
+
+# 将 env 中的值覆盖默认值（如果存在）
+default_port="${env_vars[ssh_port]:-$default_port}"
+default_permit_root_login="${env_vars[ssh_permit_root_login]:-$default_permit_root_login}"
+default_password_auth="${env_vars[ssh_password_auth]:-$default_password_auth}"
+default_permit_empty_passwords="${env_vars[ssh_permit_empty_passwords]:-$default_permit_empty_passwords}"
+default_max_auth_tries="${env_vars[ssh_max_auth_tries]:-$default_max_auth_tries}"
+default_pubkey_auth="${env_vars[ssh_pubkey_auth]:-$default_pubkey_auth}"
+
+# 将变量取值顺序：命令行 > env > 默认
+port="${port:-$default_port}"
+permit_root_login="${permit_root_login:-$default_permit_root_login}"
+password_auth="${password_auth:-$default_password_auth}"
+permit_empty_passwords="${permit_empty_passwords:-$default_permit_empty_passwords}"
+max_auth_tries="${max_auth_tries:-$default_max_auth_tries}"
+pubkey_auth="${pubkey_auth:-$default_pubkey_auth}"
+
+# 如果提供了 pubkey_name，从 env 里读对应变量 pubkey_<name>
+if [ -z "$public_key" ] && [ -n "$pubkey_name" ]; then
+    public_key="${env_vars[pubkey_${pubkey_name}]}"
+fi
+
+# 规范化 yes/no 字段
+permit_root_login="$(normalize_yesno "$permit_root_login")"
+password_auth="$(normalize_yesno "$password_auth")"
+permit_empty_passwords="$(normalize_yesno "$permit_empty_passwords")"
+pubkey_auth="$(normalize_yesno "$pubkey_auth")"
+
+# 辅助：显示单项配置（从 sshd_config 中获取最后一项）
+show_item() {
+    local item="$1"
+    local value
+    # 忽略注释，按最后一条有效配置显示
+    value="$(grep -iE "^[[:space:]]*${item}[[:space:]]+" "$ssh_config" 2>/dev/null \
+        | tail -n1 \
+        | awk '{print $2}')"
+    if [ -n "$value" ]; then
+        printf "%s %s\n" "$(green "$item")" "$(orange "$value")"
+    else
+        printf "%s %s\n" "$(green "$item")" "$(red "未设置")"
+    fi
 }
 
-# 根据env_file变量的值来决定操作
-if is_url "$EVN_FILE"; then
-    echo "从URL下载env文件：$EVN_FILE"
-    curl -L "$EVN_FILE" -o "$ENV_NAME"
-elif [ -f "$EVN_FILE" ]; then
-    env_name="$EVN_FILE"
-fi
-
-# 读取环境变量文件
-declare -A env_vars
-if [ -f "$ENV_NAME" ]; then
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        if [[ $line =~ ^[a-zA-Z_]+[a-zA-Z0-9_]*=.*$ ]]; then
-            key="${line%%=*}"
-            value="${line#*=}"
-
-            value="${value%\"}"
-            value="${value#\"}"
-
-            env_vars[$key]="$value"
-        fi
-    done < "$ENV_NAME"
-fi
-
-
-DEFAULT_PORT="${env_vars[ssh_port]:-$DEFAULT_PORT}"
-DEFAULT_PERMIT_ROOT_LOGIN="${env_vars[ssh_permit_root_login]:-$DEFAULT_PERMIT_ROOT_LOGIN}"
-DEFAULT_PASSWORD_AUTH="${env_vars[ssh_password_auth]:-$DEFAULT_PASSWORD_AUTH}"
-DEFAULT_PERMIT_EMPTY_PASSWORDS="${env_vars[ssh_permit_empty_passwords]:-$DEFAULT_PERMIT_EMPTY_PASSWORDS}"
-DEFAULT_MAX_AUTH_TRIES="${env_vars[ssh_max_auth_tries]:-$DEFAULT_MAX_AUTH_TRIES}"
-DEFAULT_PUBKEY_AUTH="${env_vars[ssh_pubkey_auth]:-$DEFAULT_PUBKEY_AUTH}"
-
-# 使用默认值，如果没有传入值
-PORT=${PORT:-$DEFAULT_PORT}
-PERMIT_ROOT_LOGIN=${PERMIT_ROOT_LOGIN:-$DEFAULT_PERMIT_ROOT_LOGIN}
-PASSWORD_AUTH=${PASSWORD_AUTH:-$DEFAULT_PASSWORD_AUTH}
-PERMIT_EMPTY_PASSWORDS=${PERMIT_EMPTY_PASSWORDS:-$DEFAULT_PERMIT_EMPTY_PASSWORDS}
-MAX_AUTH_TRIES=${MAX_AUTH_TRIES:-$DEFAULT_MAX_AUTH_TRIES}
-PUBKEY_AUTH=${PUBKEY_AUTH:-$DEFAULT_PUBKEY_AUTH}
-
-if [ -z "$NEW_PUBLIC_KEY" ] && [ -n "$pubkey_name" ]; then
-    NEW_PUBLIC_KEY="${env_vars[pubkey_${pubkey_name}]}"
-fi
-
-# 函数：检查 SSH 配置
-check_ssh_config() {
-    yellow "当前 SSH 配置检查结果："
-    CONFIG_ITEMS=("Port" "PermitRootLogin" "PasswordAuthentication" "PermitEmptyPasswords" "MaxAuthTries" "PubkeyAuthentication")
-    for ITEM in "${CONFIG_ITEMS[@]}"; do
-        LINES=$(grep -i "^$ITEM\|^#$ITEM" $SSH_CONFIG)
-        COUNT=$(echo "$LINES" | wc -l)
-        ACTIVE_LINES=$(echo "$LINES" | grep -v '^#')
-        ACTIVE_COUNT=$(echo "$ACTIVE_LINES" | wc -l)
-        
-        # 优先显示未注释的配置
-        if [ "$ACTIVE_COUNT" -gt 0 ]; then
-            VALUE=$(echo "$ACTIVE_LINES" | head -n 1 | awk '{print $2}')
-            if [ "$COUNT" -gt 1 ]; then
-                echo -e "$(green "$ITEM") $(orange "$VALUE") $(red "存在多处配置")"
-            else
-                echo -e "$(green "$ITEM") $(orange "$VALUE")"
-            fi
-        else
-            if [ "$COUNT" -gt 0 ]; then
-                VALUE=$(echo "$LINES" | head -n 1 | awk '{print $2}')
-                echo -e "$(green "$ITEM") $(orange "$VALUE") #已注释"
-            else
-                echo -e "$(green "$ITEM") $(orange "未设定")"
-            fi
-        fi
+show_config() {
+    yellow "当前 SSH 配置 (从 $ssh_config 读取)"
+    for item in Port PermitRootLogin PasswordAuthentication PermitEmptyPasswords MaxAuthTries PubkeyAuthentication; do
+        show_item "$item"
     done
-    yellow "Public Key:"
-    if [ -f "$AUTHORIZED_KEYS" ]; then
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            orange "$line"
-        done < "$AUTHORIZED_KEYS"
+    echo
+    yellow "Authorized Keys ($authorized_keys)"
+    if [ -f "$authorized_keys" ]; then
+        sed -n '1,200p' "$authorized_keys" || cat "$authorized_keys"
     else
-        echo "$(orange "No authorized keys file found.")"
+        orange "未发现 authorized_keys"
     fi
-    echo ""
+    echo
 }
 
-# 函数：修改 SSH 配置
+# 安全地修改 SSH 配置：删除原有项（忽略大小写/注释），追加新项
 modify_config() {
-    local OPTION=$1
-    local VALUE=$2
-    local CONFIG_FILE=$SSH_CONFIG
-
-    # 检查配置文件中该选项的所有出现（包括注释和未注释的）
-    local EXISTS=$(grep -i "^$OPTION\|^#$OPTION" $CONFIG_FILE)
-
-    if [ -z "$EXISTS" ]; then
-        # 如果没有找到任何相关配置项，确保文件末尾有一个换行符后添加新的配置项
-        # 使用 sed 在文件末尾加入换行符（如果不存在的话）
-        echo >> $CONFIG_FILE
-        echo "$OPTION $VALUE" >> $CONFIG_FILE
-    else
-        # 找到第一个出现的配置项（无论是否被注释）
-        local FIRST_OCCURRENCE=$(grep -i "^$OPTION\|^#$OPTION" $CONFIG_FILE | head -n 1)
-
-        # 删除所有同名配置项
-        sed -i "/^$OPTION\|^#$OPTION/d" $CONFIG_FILE
-
-        # 替换第一个出现的配置项的值，并确保它是激活状态（删除前面的注释符号，如果有）
-        local NEW_LINE=$(echo "$FIRST_OCCURRENCE" | sed -e "s/^#*\($OPTION\).*$/\1 $VALUE/")
-
-        # 将更新后的第一个配置项添加回配置文件
-        echo "$NEW_LINE" >> $CONFIG_FILE
+    local key="$1"
+    local value="$2"
+    local timestamp
+    timestamp="$(date +%s)"
+    # 备份一次配置（首次修改时）
+    if [ ! -f "${ssh_config}.bak.${timestamp}" ]; then
+        cp -a "$ssh_config" "${ssh_config}.bak.${timestamp}" 2>/dev/null || true
     fi
+    # 删除匹配项（忽略大小写和前导注释/空白），然后追加
+    sed -i "/^[#[:space:]]*${key}[[:space:]]/Id" "$ssh_config"
+    echo "${key} ${value}" >> "$ssh_config"
+    green "设置 $key = $value"
 }
 
-# 函数：添加公钥
+# 添加公钥到 root 的 authorized_keys（会去重）
 add_public_key() {
-    local KEY=$1
-    if [ -n "$KEY" ]; then
-        # 确保 .ssh 目录存在
-        if [ ! -d "/root/.ssh" ]; then
-            mkdir -p "/root/.ssh"
-            chmod 700 "/root/.ssh"
-            echo "已自动创建 .ssh 目录"
-        fi
-        # 确保 authorized_keys 文件存在
-        if [ ! -f "$AUTHORIZED_KEYS" ]; then
-            touch "$AUTHORIZED_KEYS"
-            chmod 600 "$AUTHORIZED_KEYS"
-            chown root:root "$AUTHORIZED_KEYS"
-            echo "已自动创建 authorized_keys 文件"
-        fi
-        echo "$KEY" >> "$AUTHORIZED_KEYS"
+    local key="$1"
+    [ -z "$key" ] && { orange "公钥为空，跳过添加"; return; }
+    mkdir -p /root/.ssh
+    chmod 700 /root/.ssh
+    touch "$authorized_keys"
+    chmod 600 "$authorized_keys"
+    chown root:root "$authorized_keys"
+    # 去除行尾空白并去重插入
+    if grep -qxF -- "$key" "$authorized_keys" 2>/dev/null; then
+        green "公钥已存在，跳过添加"
+    else
+        echo "$key" >> "$authorized_keys"
+        green "已添加公钥到 $authorized_keys"
     fi
 }
 
-
-# 函数：重启 SSH 服务
-restart_ssh_service() {
-    echo -e "$(yellow "正在测试 SSH 配置...")"
-    if sshd -t; then
-        echo -e "$(yellow "SSH 配置无误，正在重启 SSH 服务...")"
-        sudo systemctl daemon-reload
-        sudo systemctl restart ssh
-        if [ $? -eq 0 ]; then
-            echo -e "$(green "SSH 服务重启成功")"
-        else
-            echo -e "$(red "SSH 服务重启失败，请检查错误")"
+# 重启 SSH 服务（先校验配置）
+restart_ssh() {
+    yellow "校验 SSH 配置..."
+    if ! command -v sshd >/dev/null 2>&1; then
+        orange "sshd 命令不可用，跳过语法检测（请确认 openssh-server 已安装）"
+    else
+        if ! sshd -t 2>/dev/null; then
+            red "sshd 配置校验失败，请检查 $ssh_config"
             exit 1
         fi
-    else
-        echo -e "$(red "SSH 配置测试失败，请检查配置文件。")"
-        exit 1
     fi
+
+    yellow "重启 SSH 服务..."
+    # 优先尝试 systemctl，如果不可用则尝试 service
+    if command -v systemctl >/dev/null 2>&1; then
+        # 尝试常见的服务名
+        if systemctl list-unit-files | grep -qE '^sshd.service|^ssh.service'; then
+            # 优先重启 sshd.service，否则 ssh.service
+            if systemctl list-unit-files | grep -q '^sshd.service'; then
+                systemctl restart sshd || { red "重启 sshd 失败"; exit 1; }
+            else
+                systemctl restart ssh || { red "重启 ssh 失败"; exit 1; }
+            fi
+        else
+            # 退回到尝试重启 sshd 或 ssh
+            systemctl restart sshd 2>/dev/null || systemctl restart ssh 2>/dev/null || { red "未能通过 systemctl 重启 SSH 服务"; exit 1; }
+        fi
+    elif command -v service >/dev/null 2>&1; then
+        service sshd restart 2>/dev/null || service ssh restart 2>/dev/null || { red "未能通过 service 重启 SSH 服务"; exit 1; }
+    else
+        orange "找不到 systemctl/service 命令，请手动重启 SSH 服务"
+    fi
+
+    green "SSH 服务已重启（或已请求重启）"
 }
 
-# 执行检查函数
-check_ssh_config
+# 应用所有参数到 sshd_config 并重启
+apply_all() {
+    # 参数基本校验（端口）
+    if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+        red "端口值无效: $port"
+        exit 1
+    fi
+    # 将值写入配置
+    declare -A config_map=(
+        ["Port"]="$port"
+        ["PermitRootLogin"]="$permit_root_login"
+        ["PasswordAuthentication"]="$password_auth"
+        ["PermitEmptyPasswords"]="$permit_empty_passwords"
+        ["MaxAuthTries"]="$max_auth_tries"
+        ["PubkeyAuthentication"]="$pubkey_auth"
+    )
 
-# 打印传入值
-yellow "当前传入值："
-echo -n "$(blue "ENVFILE: ")"
-echo "$(orange "$PORT")"
-echo -n "$(blue "Port: ")"
-echo "$(orange "$PORT")"
-echo -n "$(blue "PermitRootLogin: ")"
-echo "$(orange "$PERMIT_ROOT_LOGIN")"
-echo -n "$(blue "PasswordAuthentication: ")"
-echo "$(orange "$PASSWORD_AUTH")"
-echo -n "$(blue "PermitEmptyPasswords: ")"
-echo "$(orange "$PERMIT_EMPTY_PASSWORDS")"
-echo -n "$(blue "MaxAuthTries: ")"
-echo "$(orange "$MAX_AUTH_TRIES")"
-echo -n "$(blue "Public Key : ")"
-echo "$(orange "$NEW_PUBLIC_KEY")"
-echo -n "$(blue "PubkeyAuthentication: ")"
-echo "$(orange "$PUBKEY_AUTH")"
-echo ""
-echo ""
-yellow "ENV配置："
+    for key in "${!config_map[@]}"; do
+        modify_config "$key" "${config_map[$key]}"
+    done
 
-echo "ssh_port: ${env_vars[ssh_port]}"
-echo "ssh_permit_root_login: ${env_vars[ssh_permit_root_login]}"
-echo "ssh_password_auth: ${env_vars[ssh_password_auth]}"
-echo "ssh_permit_empty_passwords: ${env_vars[ssh_permit_empty_passwords]}"
-echo "ssh_max_auth_tries: ${env_vars[ssh_max_auth_tries]}"
-echo "ssh_pubkey_auth: ${env_vars[ssh_pubkey_auth]}"
+    # 添加公钥（如果有）
+    add_public_key "$public_key"
 
-echo "pubkey_name: $pubkey_name"
+    restart_ssh
+}
 
-# 选择修改
-if [ -z "$CHOICE" ]; then
-    echo ""
-    yellow "请选择要修改的选项："
-    echo "$(green "1)") 根据传入值修改全部"
-    echo "$(green "2)") 修改 Port"
-    echo "$(green "3)") 修改 PermitRootLogin"
-    echo "$(green "4)") 修改 PasswordAuthentication"
-    echo "$(green "5)") 修改 PermitEmptyPasswords"
-    echo "$(green "6)") 修改 MaxAuthTries"
-    echo "$(green "7)") 添加公钥"
-    echo "$(green "8)") 修改 PubkeyAuthentication"
-    echo "$(green "0)") 退出脚本"
-    read -p "$(blue "请输入选项: ")" CHOICE
+# 展示当前配置与参数摘要
+show_config
+yellow "当前参数 (优先级: 命令行 > env > 默认)"
+echo "port=$port"
+echo "permit_root_login=$permit_root_login"
+echo "password_auth=$password_auth"
+echo "permit_empty_passwords=$permit_empty_passwords"
+echo "max_auth_tries=$max_auth_tries"
+echo "pubkey_auth=$pubkey_auth"
+echo "pubkey_name=${pubkey_name:-<none>}"
+echo
+
+# 交互式菜单（如果没有通过 -C 指定 choice）
+if [ -z "$choice" ]; then
+    yellow "请选择操作"
+    echo "1. 修改全部（写入 sshd_config 并重启 ssh）"
+    echo "2. 仅添加公钥"
+    echo "0. 退出"
+    read -rp "请输入选项 [0/1/2]: " choice
 fi
 
-case $CHOICE in
+case "$choice" in
     1)
-        modify_config "Port" "$PORT"
-        modify_config "PermitRootLogin" "$PERMIT_ROOT_LOGIN"
-        modify_config "PasswordAuthentication" "$PASSWORD_AUTH"
-        modify_config "PermitEmptyPasswords" "$PERMIT_EMPTY_PASSWORDS"
-        modify_config "MaxAuthTries" "$MAX_AUTH_TRIES"
-        modify_config "PubkeyAuthentication" "$PUBKEY_AUTH"
-        if [ -n "$NEW_PUBLIC_KEY" ]; then
-            add_public_key "$NEW_PUBLIC_KEY"
-        fi
-        
-        restart_ssh_service
+        apply_all
         ;;
     2)
-        echo "请输入新的 Port 值 (默认 $DEFAULT_PORT):"
-        read NEW_PORT
-        NEW_PORT=${NEW_PORT:-$DEFAULT_PORT}
-        modify_config "Port" "$NEW_PORT"
-        restart_ssh_service
-        ;;
-    3)
-        echo "请输入新的 PermitRootLogin 值 (yes/no, 默认 $DEFAULT_PERMIT_ROOT_LOGIN):"
-        read NEW_PERMIT_ROOT_LOGIN
-        NEW_PERMIT_ROOT_LOGIN=${NEW_PERMIT_ROOT_LOGIN:-$DEFAULT_PERMIT_ROOT_LOGIN}
-        modify_config "PermitRootLogin" "$NEW_PERMIT_ROOT_LOGIN"
-        restart_ssh_service
-        ;;
-    4)
-        echo "请输入新的 PasswordAuthentication 值 (yes/no, 默认 $DEFAULT_PASSWORD_AUTH):"
-        read NEW_PASSWORD_AUTH
-        NEW_PASSWORD_AUTH=${NEW_PASSWORD_AUTH:-$DEFAULT_PASSWORD_AUTH}
-        modify_config "PasswordAuthentication" "$NEW_PASSWORD_AUTH"
-        restart_ssh_service
-        ;;
-    5)
-        echo "请输入新的 PermitEmptyPasswords 值 (yes/no, 默认 $DEFAULT_PERMIT_EMPTY_PASSWORDS):"
-        read NEW_PERMIT_EMPTY_PASSWORDS
-        NEW_PERMIT_EMPTY_PASSWORDS=${NEW_PERMIT_EMPTY_PASSWORDS:-$DEFAULT_PERMIT_EMPTY_PASSWORDS}
-        modify_config "PermitEmptyPasswords" "$NEW_PERMIT_EMPTY_PASSWORDS"
-        restart_ssh_service
-        ;;
-    6)
-        echo "请输入新的 MaxAuthTries 值 (数字, 默认 $DEFAULT_MAX_AUTH_TRIES):"
-        read NEW_MAX_AUTH_TRIES
-        NEW_MAX_AUTH_TRIES=${NEW_MAX_AUTH_TRIES:-$DEFAULT_MAX_AUTH_TRIES}
-        modify_config "MaxAuthTries" "$NEW_MAX_AUTH_TRIES"
-        restart_ssh_service
-        ;;
-    7)
-        echo "请输入新的公钥值:"
-        read NEW_PUBLIC_KEY
-        add_public_key "$NEW_PUBLIC_KEY"
-        ;;
-    8)
-        echo "请输入新的 PubkeyAuthentication 值 (yes/no, 默认 $DEFAULT_PUBKEY_AUTH):"
-        read NEW_PUBKEY_AUTH
-        NEW_PUBKEY_AUTH=${NEW_PUBKEY_AUTH:-$DEFAULT_PUBKEY_AUTH}
-        modify_config "PubkeyAuthentication" "$NEW_PUBKEY_AUTH"
-        restart_ssh_service
+        add_public_key "$public_key"
         ;;
     0)
-        echo "退出脚本"
         exit 0
         ;;
     *)
-        echo "无效的选项"
+        red "无效选项: $choice"
         exit 1
         ;;
 esac
+
+exit 0
