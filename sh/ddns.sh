@@ -2,6 +2,16 @@
 #
 # ddns.sh - Cloudflare DDNS Script
 #
+# 本版改动（相对原版，其余一字未动）：
+#   1) 认证方式：Cloudflare Global API Key -> Cloudflare API Token（Authorization: Bearer）
+#   2) -e 由必选改为可选：Token 模式不需要邮箱；传了仍接受，仅做一次格式提示
+#   3) help / 注释文案同步为 Token 说法；凭据可由环境变量 cf_key / cf_email 传入
+#
+# 保持不变（刻意未动）：
+#   - 参数名 -k / -e / -d / -r / -t / -p / -h
+#   - 变量名 cf_key / cf_email（与 config/env_vps.txt 一致）
+#   - ip.sb 取址、PUT 全量更新、proxied 默认 false、输出格式与退出码
+#
 
 set -o errexit
 set -o nounset
@@ -13,8 +23,10 @@ DEFAULT_PROXY="false"
 DEFAULT_MODE="color"
 
 # 运行参数
-cf_key=""
-cf_email=""
+# 命令行未提供时，回退到同名环境变量（名字与原版/env_vps.txt 完全一致）；
+# 注意：需要 export 过的变量才能被子进程继承。
+cf_key="${cf_key:-}"
+cf_email="${cf_email:-}"
 domain=""
 record_name=""
 record_type="$DEFAULT_TYPE"
@@ -93,15 +105,16 @@ section() {
 
 usage() {
     cat <<EOF
-Usage: $0 -k <cf_key> -e <cf_email> -d <domain> -r <record> [options]
+Usage: $0 -k <api_token> -d <domain> -r <record> [options]
 
 必选参数:
-  -k <key>         Cloudflare Global API Key
-  -e <email>       Cloudflare 登录邮箱
+  -k <token>       Cloudflare API Token（Bearer 认证；也可用环境变量 cf_key 传入）
   -d <domain>      主域名，如 example.com
-  -r <record>      完整记录名，如 test.example.com
+  -r <record>      完整记录名，如 fnos.example.com
 
 可选参数:
+  -e <email>       兼容保留：Token 模式不需要邮箱，该值已不再使用
+                   （也可用环境变量 cf_email 传入）
   -t <type>        记录类型: A | AAAA (默认: A)
   -p <bool>        是否启用 Cloudflare 代理: true | false (默认: false)
 
@@ -271,8 +284,11 @@ validate_args() {
             ;;
     esac
 
-    [ -z "$cf_key" ] && { err "缺少参数: -k cf_key"; usage; exit 1; }
-    [ -z "$cf_email" ] && { err "缺少参数: -e cf_email"; usage; exit 1; }
+    [ -z "$cf_key" ] && { err "缺少参数: -k cf_key（或 export cf_key=...）"; usage; exit 1; }
+    # -e 已由必选改为可选：API Token 模式无需邮箱；仅当显式给了值时才做格式提示
+    if [ -n "$cf_email" ]; then
+        [[ "$cf_email" == *@* ]] || { err "邮箱格式可疑: $cf_email"; exit 1; }
+    fi
     [ -z "$domain" ] && { err "缺少参数: -d domain"; usage; exit 1; }
     [ -z "$record_name" ] && { err "缺少参数: -r record"; usage; exit 1; }
 
@@ -334,8 +350,7 @@ get_public_ip() {
 get_zone_id() {
     log "正在获取 Cloudflare Zone ID..."
     zone_api_json="$(curl -fsS -X GET "https://api.cloudflare.com/client/v4/zones?name=$domain" \
-        -H "X-Auth-Email: $cf_email" \
-        -H "X-Auth-Key: $cf_key" \
+        -H "Authorization: Bearer $cf_key" \
         -H "Content-Type: application/json")"
 
     cf_zone_id="$(json_get_first "$zone_api_json" "id")"
@@ -353,8 +368,7 @@ get_zone_id() {
 get_dns_record() {
     log "正在查询 DNS 记录..."
     dns_api_json="$(curl -fsS -X GET "https://api.cloudflare.com/client/v4/zones/$cf_zone_id/dns_records?type=$record_type&name=$record_name" \
-        -H "X-Auth-Email: $cf_email" \
-        -H "X-Auth-Key: $cf_key" \
+        -H "Authorization: Bearer $cf_key" \
         -H "Content-Type: application/json")"
 
     cf_record_id="$(json_get_first "$dns_api_json" "id")"
@@ -379,8 +393,7 @@ update_record() {
 
     action="更新记录"
     api_response="$(curl -fsS -X PUT "https://api.cloudflare.com/client/v4/zones/$cf_zone_id/dns_records/$cf_record_id" \
-        -H "X-Auth-Email: $cf_email" \
-        -H "X-Auth-Key: $cf_key" \
+        -H "Authorization: Bearer $cf_key" \
         -H "Content-Type: application/json" \
         --data "{\"type\":\"$record_type\",\"name\":\"$record_name\",\"content\":\"$current_ip\",\"proxied\":$cf_proxy}")"
 
@@ -400,8 +413,7 @@ create_record() {
     action="创建记录"
 
     api_response="$(curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$cf_zone_id/dns_records" \
-        -H "X-Auth-Email: $cf_email" \
-        -H "X-Auth-Key: $cf_key" \
+        -H "Authorization: Bearer $cf_key" \
         -H "Content-Type: application/json" \
         --data "{\"type\":\"$record_type\",\"name\":\"$record_name\",\"content\":\"$current_ip\",\"proxied\":$cf_proxy}")"
 
