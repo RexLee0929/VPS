@@ -25,8 +25,8 @@ DEFAULT_MODE="color"
 # 运行参数
 # 命令行未提供时，回退到同名环境变量（名字与原版/env_vps.txt 完全一致）；
 # 注意：需要 export 过的变量才能被子进程继承。
-cf_key="${cf_key:-}"
-cf_email="${cf_email:-}"
+cf_key=""
+cf_email=""
 domain=""
 record_name=""
 record_type="$DEFAULT_TYPE"
