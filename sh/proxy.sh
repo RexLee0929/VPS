@@ -466,6 +466,7 @@ do_install() {
   $sudo_cmd bash -c "curl -fsSL -o /usr/bin/soga '$url' || wget -qO /usr/bin/soga '$url'" \
     || die "下载 soga-cmd 失败: $url"
   $sudo_cmd chmod +x /usr/bin/soga
+  [ -s /usr/bin/soga ] || die "下载的 soga 二进制为空，请检查网络"
   log "更新 soga 到 ${soga_version}"
   $sudo_cmd soga update "$soga_version" || warn "soga update 返回非零（可忽略）"
   $sudo_cmd soga new ss    || warn "ss 实例可能已存在"
@@ -486,6 +487,8 @@ do_config() {
   t1="$(mktemp)"; t2="$(mktemp)"
   download "${REPO_RAW}/config/soga-ss.conf"    "$t1" || { rm -f "$t1" "$t2"; die "下载 soga-ss.conf 失败"; }
   download "${REPO_RAW}/config/soga-vmess.conf" "$t2" || { rm -f "$t1" "$t2"; die "下载 soga-vmess.conf 失败"; }
+  [ -s "$t1" ] || { rm -f "$t1" "$t2"; die "下载的 soga-ss.conf 内容为空"; }
+  [ -s "$t2" ] || { rm -f "$t1" "$t2"; die "下载的 soga-vmess.conf 内容为空"; }
   $sudo_cmd mkdir -p /etc/soga/ss /etc/soga/vmess
   $sudo_cmd mv "$t1" /etc/soga/ss/soga.conf
   $sudo_cmd mv "$t2" /etc/soga/vmess/soga.conf
