@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
-#  start.sh — VPS 一键初始化编排（DDNS / 代理 / 配置 / 哪吒探针）
-#  版本 : v2.1
+#  start.sh — VPS 一键初始化编排（DDNS / 代理 / 配置 / 哪吒探针 / SSH）
+#  版本 : v2.2
 #  规范 : sh/UNIFIED v2（与 ddns.sh / ssh.sh / env.sh / proxy.sh / nezha.sh 共用同一套写法）
 #
 #  v2.1 拆分：
 #    · 代理安装/配置 → proxy.sh（soga 默认 2.13.4，--soga-version 可换；config 参数空白即报错）
 #    · 哪吒探针安装 → nezha.sh
 #    · start.sh 只做编排：加载 env、补参、按 --choice 用长选项透传给上述脚本
+#  v2.2 整合：
+#    · SSH 配置 → 委托 ssh.sh（--choice=7 改全部并重启 / --choice=8 仅加公钥）
+#    · 「全部执行」会在【提供了任何 SSH 设置】时自动带上 SSH 步骤，否则跳过（避免意外重启 sshd）
 #
 #  v2 主要改动：
 #    1. 长选项成为唯一权威接口，短选项仅兼容保留（四脚本串联不再传错）
@@ -40,7 +43,7 @@ set -uo pipefail
 IFS=$'\n\t'
 
 SCRIPT_NAME="$(basename "$0" .sh)"
-SCRIPT_VERSION="2.1.0"
+SCRIPT_VERSION="2.2.0"
 
 # ---------- 颜色 ----------
 USE_COLOR=1
@@ -347,10 +350,12 @@ USAGE_NOTE="${USAGE_NOTE:-}"
 #  start.sh 自身部分
 # ==============================================================================
 
-USAGE_LINE="[--env <文件|URL>] [--choice <0-6>] [env 缺失时的手动补参] [选项]"
+USAGE_LINE="[--env <文件|URL>] [--choice <0-8>] [env 缺失时的手动补参] [SSH 参数] [选项]"
 USAGE_NOTE="执行项 --choice:
-  1 全部执行   2 仅 DDNS   3 装代理   4 改配置   5 装哪吒   6 装代理+改配置   0 退出
-  （3/4/6 委托 proxy.sh，5 委托 nezha.sh，参数长选项同名透传）
+  1 全部执行   2 仅 DDNS   3 装代理   4 改配置   5 装哪吒   6 装代理+改配置
+  7 SSH 改全部并重启        8 SSH 仅添加公钥        0 退出
+  （3/4/6 委托 proxy.sh，5 委托 nezha.sh，7/8 委托 ssh.sh，参数长选项同名透传）
+  ⚠️ --choice=1 只在【提供了任何 SSH 设置】时才带上 SSH 步骤，否则跳过（不会平白重启 sshd）
 
 env 缺失 / 内容不全时，可用这些长选项手动补齐（优先级最高）:
   --cf-key      Cloudflare API Token      --cf-email    Cloudflare 邮箱
@@ -360,28 +365,41 @@ env 缺失 / 内容不全时，可用这些长选项手动补齐（优先级最�
   --nezha-tls   true|false                --nezha-key   哪吒 Agent Secret
   --soga-version soga 版本（默认 2.13.4）
 
+SSH（委托 ssh.sh；不传就沿用 ssh.sh 自己的默认值 22/yes/yes/no/3/yes）:
+  --ssh-port            端口              --ssh-root-login      PermitRootLogin yes|no
+  --ssh-password-auth   yes|no            --ssh-empty-passwords yes|no
+  --ssh-max-auth-tries  次数              --ssh-pubkey-auth     yes|no
+  --ssh-pubkey          公钥整行          --ssh-pubkey-file     公钥文件
+  --ssh-pubkey-name     env 里的 pubkey_<名称>
+  --ssh-config          sshd_config 路径  --ssh-action          1|2（--choice=1 时用）
+  --ssh-skip-restart                      --ssh-env             传给 ssh.sh 的 env 文件
+
 对应的环境变量（一次导出，各脚本都能用）:
   VPS_CF_KEY  VPS_CF_EMAIL  VPS_DOMAIN1  VPS_DOMAIN2
   VPS_WEBAPI_URL  VPS_WEBAPI_KEY  VPS_SOGA_VERSION
   VPS_NEZHA_IP  VPS_NEZHA_PORT  VPS_NEZHA_TLS  VPS_NEZHA_KEY
+  VPS_SSH_PORT  VPS_SSH_ROOT_LOGIN  VPS_SSH_PASSWORD_AUTH  VPS_SSH_EMPTY_PASSWORDS
+  VPS_SSH_MAX_AUTH_TRIES  VPS_SSH_PUBKEY_AUTH  VPS_SSH_PUBKEY  VPS_SSH_CONFIG  VPS_SSH_CHOICE
   VPS_PREFIX  VPS_SS_ID  VPS_VMESS_ID  VPS_CHOICE  VPS_NZ_UUID  VPS_ENV
 
 示例:
   $SCRIPT_NAME --env=vps.env --prefix=home --ss-id=3 --vmess-id=4 --choice=6
-  $SCRIPT_NAME --cf-key=cfut_xxx --domain1=example.com --prefix=home --choice=2
+  $SCRIPT_NAME --choice=7 --ssh-port=2222 --ssh-root-login=no --ssh-password-auth=no --ssh-pubkey-file=/root/k.pub
+  $SCRIPT_NAME --choice=8 --ssh-pubkey-file=/root/mykey.pub
   $SCRIPT_NAME --env=vps.env --choice=1 --dry-run
-  $SCRIPT_NAME --cf-key=xxx --domain1=a.com --save-env=vps.env   # 补齐后写回 env
 
 说明:
   · 取值优先级：命令行 > VPS_* 环境变量 > env 文件 > 交互输入 > 报错
   · 缺项在交互模式会逐项询问；非交互模式一次性列全并退出（--force 可改为跳过）
-  · proxy.sh 的 config 对空白参数一律报错；只装不配置用 --choice=3"
+  · proxy.sh 的 config 对空白参数一律报错；只装不配置用 --choice=3
+  · SSH 改动有锁门风险：改端口前先放行新端口；关闭密码登录前先确认公钥能登
+  · 退出码：0 全部成功（含 --force 主动跳过）；1 有步骤失败；2 选项/参数错误"
 
 def_opt env        f 1 A_ENV       "env 文件路径或 URL（默认 vps.env）"
 def_opt prefix     R 1 A_PREFIX    "DNS 记录前缀（record_prefix）"
 def_opt ss-id      S 1 A_SSID      "Shadowsocks 节点 ID"
 def_opt vmess-id   V 1 A_VMESSID   "Vmess 节点 ID"
-def_opt choice     C 1 A_CHOICE    "执行项 0-6（不给则交互选择）"
+def_opt choice     C 1 A_CHOICE    "执行项 0-8（不给则交互选择）"
 def_opt nz-uuid    U 1 A_NZUUID    "哪吒探针 UUID"
 # --- env 缺失时的手动补参 ---
 def_opt cf-key     - 1 A_CFKEY     "Cloudflare API Token（覆盖/补充 env）"
@@ -402,6 +420,21 @@ def_opt force      - 0 A_FORCE     "参数缺失时跳过对应步骤而不是�
 def_opt soga-version - 1 A_SOGAVER "soga 版本（默认 2.13.4，透传给 proxy.sh）"
 def_opt proxy-script - 1 A_PROXYSH "指定 proxy.sh 路径（默认自动查找/下载）"
 def_opt nezha-script - 1 A_NEZHASH "指定 nezha.sh 路径（默认自动查找/下载）"
+# --- v2.2 SSH（委托 ssh.sh；留空即用 ssh.sh 自己的默认值） ---
+def_opt ssh-port           - 1 A_SSHPORT    "SSH 端口（默认 22）"
+def_opt ssh-root-login     - 1 A_SSHROOT    "PermitRootLogin yes|no"
+def_opt ssh-password-auth  - 1 A_SSHPASS    "PasswordAuthentication yes|no"
+def_opt ssh-empty-passwords - 1 A_SSHEMPTY  "PermitEmptyPasswords yes|no"
+def_opt ssh-max-auth-tries - 1 A_SSHMAX     "MaxAuthTries"
+def_opt ssh-pubkey-auth    - 1 A_SSHPUBAUTH "PubkeyAuthentication yes|no"
+def_opt ssh-pubkey         - 1 A_SSHPUBKEY  "公钥整行内容"
+def_opt ssh-pubkey-file    - 1 A_SSHPUBFILE "从文件读取公钥"
+def_opt ssh-pubkey-name    - 1 A_SSHPUBNAME "从 env 文件读取 pubkey_<名称>"
+def_opt ssh-config         - 1 A_SSHCONFIG  "sshd_config 路径（默认 /etc/ssh/sshd_config）"
+def_opt ssh-action         - 1 A_SSHACTION  "SSH 操作 1|2（仅 --choice=1 时生效）"
+def_opt ssh-skip-restart   - 0 A_SSHSKIP    "SSH 改完不重启（透传 --skip-restart）"
+def_opt ssh-env            - 1 A_SSHENV     "传给 ssh.sh 的 env 文件（默认沿用本脚本的 env）"
+def_opt ssh-script         - 1 A_SSHSCRIPT  "指定 ssh.sh 路径（默认自动查找/下载）"
 def_common_opts
 
 parse_cli "$@" || exit $?
@@ -457,7 +490,58 @@ ddns_script_opt="$(cfg_get ddns-script - - "")"
 soga_version="$(cfg_get soga-version VPS_SOGA_VERSION - "2.13.4")"
 proxy_script_opt="$(cfg_get proxy-script - - "")"
 nezha_script_opt="$(cfg_get nezha-script - - "")"
+
+# SSH（env 文件键名与 ssh.sh 完全一致 ⇒ vps.env / ssh.env 都能直接喂给 ssh.sh）
+ssh_action="$(cfg_get ssh-action VPS_SSH_CHOICE ssh_choice "")"
+ssh_port="$(cfg_get ssh-port VPS_SSH_PORT ssh_port "")"
+ssh_root_login="$(cfg_get ssh-root-login VPS_SSH_ROOT_LOGIN ssh_permit_root_login "")"
+ssh_password_auth="$(cfg_get ssh-password-auth VPS_SSH_PASSWORD_AUTH ssh_password_auth "")"
+ssh_empty_passwords="$(cfg_get ssh-empty-passwords VPS_SSH_EMPTY_PASSWORDS ssh_permit_empty_passwords "")"
+ssh_max_auth_tries="$(cfg_get ssh-max-auth-tries VPS_SSH_MAX_AUTH_TRIES ssh_max_auth_tries "")"
+ssh_pubkey_auth="$(cfg_get ssh-pubkey-auth VPS_SSH_PUBKEY_AUTH ssh_pubkey_auth "")"
+ssh_pubkey="$(cfg_get ssh-pubkey VPS_SSH_PUBKEY - "")"
+ssh_pubkey_file="$(cfg_get ssh-pubkey-file - - "")"
+ssh_pubkey_name="$(cfg_get ssh-pubkey-name - - "")"
+ssh_config="$(cfg_get ssh-config VPS_SSH_CONFIG ssh_config "")"
+ssh_env_opt="$(cfg_get ssh-env - - "")"
+ssh_script_opt="$(cfg_get ssh-script - - "")"
 [ -n "$nezha_tls" ] && nezha_tls="$(normalize_bool "$nezha_tls")"
+
+# 传给 ssh.sh 的 env 文件：显式 --ssh-env 优先，否则沿用本脚本的 env（仅当它可用）
+if [ -n "$ssh_env_opt" ]; then
+  ssh_env_for_child="$ssh_env_opt"
+elif is_url "$env_file"; then
+  ssh_env_for_child="$env_file"
+elif [ -f "$env_file" ]; then
+  ssh_env_for_child="$env_file"
+else
+  ssh_env_for_child=""
+fi
+
+# 是否"用户表达过要动 SSH"：任一 SSH 参数 / VPS_SSH_* 变量 / env 文件里的 ssh_* 键
+ssh_params_given() {
+  local lo en
+  for lo in ssh-action ssh-port ssh-root-login ssh-password-auth ssh-empty-passwords \
+            ssh-max-auth-tries ssh-pubkey-auth ssh-pubkey ssh-pubkey-file ssh-pubkey-name ssh-config; do
+    [ "${OPT_SET[$lo]:-0}" = "1" ] && return 0
+  done
+  for en in VPS_SSH_CHOICE VPS_SSH_PORT VPS_SSH_ROOT_LOGIN VPS_SSH_PASSWORD_AUTH \
+            VPS_SSH_EMPTY_PASSWORDS VPS_SSH_MAX_AUTH_TRIES VPS_SSH_PUBKEY_AUTH \
+            VPS_SSH_PUBKEY VPS_SSH_CONFIG; do
+    [ -n "${!en:-}" ] && return 0
+  done
+  for en in ssh_choice ssh_port ssh_permit_root_login ssh_password_auth \
+            ssh_permit_empty_passwords ssh_max_auth_tries ssh_pubkey_auth ssh_config; do
+    [ -n "${ENVF[$en]:-}" ] && return 0
+  done
+  return 1
+}
+
+# 长值截断显示（公钥整行太长）
+trunc() {
+  local s="$1" n="${2:-40}"
+  if [ "${#s}" -gt "$n" ]; then printf '%s…' "${s:0:$n}"; else printf '%s' "$s"; fi
+}
 
 # ---- 交互补齐：仅当值为空且当前是 TTY ----
 fill_var() {
@@ -499,6 +583,12 @@ kv3 "ss-id"        "$ss_node_id"    "$(cfg_src ss-id VPS_SS_ID -)"
 kv3 "vmess-id"     "$vmess_node_id" "$(cfg_src vmess-id VPS_VMESS_ID -)"
 kv3 "soga-version" "$soga_version"  "$(cfg_src soga-version VPS_SOGA_VERSION -)"
 kv3 "nz-uuid"      "$nz_uuid"       "$(cfg_src nz-uuid VPS_NZ_UUID -)"
+kv3 "ssh-action"   "$ssh_action"    "$(cfg_src ssh-action VPS_SSH_CHOICE ssh_choice)"
+kv3 "ssh-port"     "$ssh_port"      "$(cfg_src ssh-port VPS_SSH_PORT ssh_port)"
+kv3 "ssh-root-login" "$ssh_root_login" "$(cfg_src ssh-root-login VPS_SSH_ROOT_LOGIN ssh_permit_root_login)"
+kv3 "ssh-password-auth" "$ssh_password_auth" "$(cfg_src ssh-password-auth VPS_SSH_PASSWORD_AUTH ssh_password_auth)"
+kv3 "ssh-pubkey-auth" "$ssh_pubkey_auth" "$(cfg_src ssh-pubkey-auth VPS_SSH_PUBKEY_AUTH ssh_pubkey_auth)"
+kv3 "ssh-pubkey"   "$(trunc "$ssh_pubkey" 40)" "$(cfg_src ssh-pubkey VPS_SSH_PUBKEY -)"
 
 # ==============================================================================
 #  3. 选择执行项
@@ -509,17 +599,17 @@ if [ -z "$choice" ]; then
     warn "未给 --choice，进入交互选择"
     echo "  1. 全部执行          2. 仅 DDNS        3. 安装代理"
     echo "  4. 修改配置文件      5. 安装哪吒探针   6. 安装代理并修改配置"
-    echo "  0. 退出"
-    choice="$(ask "请输入 [0/1/2/3/4/5/6]" || true)"
+    echo "  7. SSH 改全部并重启  8. SSH 仅加公钥   0. 退出"
+    choice="$(ask "请输入 [0/1/2/3/4/5/6/7/8]" || true)"
   else
     err "未给 --choice，且当前非交互（加 --choice 或 --yes）"
     exit 2
   fi
 fi
 case "$choice" in
-  0|1|2|3|4|5|6) ;;
+  0|1|2|3|4|5|6|7|8) ;;
   "") err "未选择执行项"; exit 2 ;;
-  *)  err "无效的 --choice: $choice（只支持 0-6）"; exit 2 ;;
+  *)  err "无效的 --choice: $choice（只支持 0-8）"; exit 2 ;;
 esac
 
 wants() {
@@ -528,6 +618,7 @@ wants() {
     proxy)  case "$choice" in 1|3|6) return 0 ;; *) return 1 ;; esac ;;
     config) case "$choice" in 1|4|6) return 0 ;; *) return 1 ;; esac ;;
     nezha)  case "$choice" in 1|5) return 0 ;; *) return 1 ;; esac ;;
+    ssh)    case "$choice" in 7|8) return 0 ;; *) return 1 ;; esac ;;
   esac
   return 1
 }
@@ -551,6 +642,17 @@ if wants nezha; then
   fill_var nezha_ip   "哪吒面板 IP/域名" "--nezha-ip" || true
   fill_var nezha_port "哪吒面板端口"     "--nezha-port" || true
   fill_var nezha_key  "哪吒 Agent Secret" "--nezha-key" yes || true
+fi
+if wants ssh; then
+  # SSH 没有"必填项"（ssh.sh 各参数都有默认值），但锁门风险要挑明
+  case "$(normalize_yesno "$ssh_password_auth")" in
+    no) [ -z "${ssh_pubkey}${ssh_pubkey_file}${ssh_pubkey_name}" ] && \
+        warn "将关闭密码登录，却没提供任何公钥 —— 请确认已有可用公钥，否则会把自己锁在门外" ;;
+  esac
+  case "$(normalize_yesno "$ssh_root_login")" in
+    no) warn "将设置 PermitRootLogin no —— 请确认你有普通用户可登录并已配好提权" ;;
+  esac
+  [ -z "$ssh_port" ] && log "未给 --ssh-port，ssh.sh 将按自己的默认值 22 处理"
 fi
 
 if [ ${#MISSING[@]} -gt 0 ]; then
@@ -582,6 +684,15 @@ if [ -n "$save_env_path" ]; then
       printf 'nezha_panel_port=%s\n'    "$nezha_port"
       printf 'nezha_panel_tls=%s\n'     "$nezha_tls"
       printf 'nezha_agent_key=%s\n'     "$nezha_key"
+      # SSH（键名与 ssh.sh 完全一致；只有非空的才写，避免把空值覆盖掉 ssh.sh 默认）
+      if [ -n "$ssh_port" ]; then printf 'ssh_port=%s\n' "$ssh_port"; fi
+      if [ -n "$ssh_root_login" ]; then printf 'ssh_permit_root_login=%s\n' "$ssh_root_login"; fi
+      if [ -n "$ssh_password_auth" ]; then printf 'ssh_password_auth=%s\n' "$ssh_password_auth"; fi
+      if [ -n "$ssh_empty_passwords" ]; then printf 'ssh_permit_empty_passwords=%s\n' "$ssh_empty_passwords"; fi
+      if [ -n "$ssh_max_auth_tries" ]; then printf 'ssh_max_auth_tries=%s\n' "$ssh_max_auth_tries"; fi
+      if [ -n "$ssh_pubkey_auth" ]; then printf 'ssh_pubkey_auth=%s\n' "$ssh_pubkey_auth"; fi
+      if [ -n "$ssh_config" ]; then printf 'ssh_config=%s\n' "$ssh_config"; fi
+      true
     } > "${save_env_path}.tmp" || die "写入临时文件失败: ${save_env_path}.tmp"
     mv -f "${save_env_path}.tmp" "$save_env_path" || die "写入失败: $save_env_path"
     chmod 600 "$save_env_path" 2>/dev/null || true
@@ -638,8 +749,8 @@ run_ddns() {
 execute_ddns() {
   step "执行 DDNS..."
   if [ -z "$cf_key" ] || [ -z "$domain1" ]; then
-    err "DDNS 需要 cf_key / domain1，当前缺失，跳过"
-    return 1
+    warn "DDNS 需要 cf_key / domain1，当前缺失，本步跳过（--force 语义）"
+    return 0
   fi
   locate_ddns || return 1
   local rec
@@ -700,9 +811,9 @@ run_proxy_install() {
 run_proxy_config() {
   step "修改配置（委托 proxy.sh --action=config）..."
   if [ -z "$ss_node_id" ] || [ -z "$vmess_node_id" ] || [ -z "$webapi_url" ] || [ -z "$webapi_key" ]; then
-    err "配置修改需要 --ss-id / --vmess-id / --webapi-url / --webapi-key，当前缺失，跳过"
-    err "（proxy.sh 对空白参数一律报错，不会拿空值写配置）"
-    return 1
+    warn "配置修改需要 --ss-id / --vmess-id / --webapi-url / --webapi-key，当前缺失，本步跳过"
+    warn "（proxy.sh 对空白参数一律报错，不会拿空值写配置）"
+    return 0
   fi
   if [ "$DRY_RUN" -eq 1 ]; then
     log "  [dry-run] bash proxy.sh --action=config --ss-id=${ss_node_id} --vmess-id=${vmess_node_id} --webapi-url=${webapi_url} --webapi-key=$(mask "$webapi_key")"
@@ -719,8 +830,8 @@ run_proxy_config() {
 run_nezha() {
   step "安装哪吒探针（委托 nezha.sh）..."
   if [ -z "$nezha_ip" ] || [ -z "$nezha_port" ] || [ -z "$nezha_key" ]; then
-    err "安装哪吒需要 --nezha-ip / --nezha-port / --nezha-key，当前缺失，跳过"
-    return 1
+    warn "安装哪吒需要 --nezha-ip / --nezha-port / --nezha-key，当前缺失，本步跳过"
+    return 0
   fi
   if [ "$DRY_RUN" -eq 1 ]; then
     log "  [dry-run] bash nezha.sh --nezha-ip=${nezha_ip} --nezha-port=${nezha_port} --nezha-key=$(mask "$nezha_key") --nezha-tls=${nezha_tls}${nz_uuid:+ --nz-uuid=$nz_uuid}"
@@ -733,25 +844,74 @@ run_nezha() {
   bash "$HELPER_PATH" "${nz_args[@]}" ${HELPER_FLAGS[@]+"${HELPER_FLAGS[@]}"}
 }
 
+# run_ssh <ssh.sh 的 --choice 1|2> <动作描述>
+# 只把【非空】的值透传过去，空值一律不传 ⇒ ssh.sh 用自己的默认值，
+# 避免 start.sh 里再抄一份 SSH 默认值（单一真源）。
+run_ssh() {
+  local ssh_choice="$1" what="$2"
+  step "SSH 配置（委托 ssh.sh --choice=${ssh_choice}，${what}）..."
+  local -a a=(--choice="$ssh_choice")
+  [ -n "$ssh_port" ]            && a+=(--port="$ssh_port")
+  [ -n "$ssh_root_login" ]      && a+=(--root-login="$ssh_root_login")
+  [ -n "$ssh_password_auth" ]   && a+=(--password-auth="$ssh_password_auth")
+  [ -n "$ssh_empty_passwords" ] && a+=(--empty-passwords="$ssh_empty_passwords")
+  [ -n "$ssh_max_auth_tries" ]  && a+=(--max-auth-tries="$ssh_max_auth_tries")
+  [ -n "$ssh_pubkey_auth" ]     && a+=(--pubkey-auth="$ssh_pubkey_auth")
+  [ -n "$ssh_pubkey" ]          && a+=(--pubkey="$ssh_pubkey")
+  [ -n "$ssh_pubkey_file" ]     && a+=(--pubkey-file="$ssh_pubkey_file")
+  [ -n "$ssh_pubkey_name" ]     && a+=(--pubkey-name="$ssh_pubkey_name")
+  [ -n "$ssh_config" ]          && a+=(--config="$ssh_config")
+  [ -n "$ssh_env_for_child" ]   && a+=(--env="$ssh_env_for_child")
+  [ "${OPT_SET[ssh-skip-restart]:-0}" = "1" ] && a+=(--skip-restart)
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log "  [dry-run] bash ssh.sh ${a[*]}"
+    return 0
+  fi
+  locate_helper ssh.sh "$ssh_script_opt" || return 1
+  [ -n "$HELPER_PATH" ] || { err "ssh.sh 不可用，跳过"; return 1; }
+  bash "$HELPER_PATH" "${a[@]}" ${HELPER_FLAGS[@]+"${HELPER_FLAGS[@]}"}
+}
+
 if [ "$DRY_RUN" -eq 1 ]; then
   warn "dry-run：以下不会真正执行，只打印步骤"
 fi
 
+# ---- 步骤编排：失败不打断后续，但最后如实上报 ----
+STEP_FAIL=0
+track() {
+  # 跑一个步骤：失败只记录，不中断（--choice=1 的"继续跑完"语义）
+  "$@" || STEP_FAIL=1
+  return 0
+}
+
 case "$choice" in
   0) warn "用户选择退出"; exit 0 ;;
   1)
-    execute_ddns      || true
-    run_proxy_install || true
-    run_proxy_config  || true
-    run_nezha         || true
+    track execute_ddns
+    track run_proxy_install
+    track run_proxy_config
+    track run_nezha
+    # SSH 只在"提供了任何 SSH 设置"时才跟着跑，避免平白重启 sshd
+    if ssh_params_given; then
+      track run_ssh "${ssh_action:-1}" "全部执行的自带步骤"
+    else
+      log "跳过 SSH 步骤：未提供任何 SSH 设置（要改 SSH 用 --choice=7 / 8）"
+    fi
     ;;
-  2) execute_ddns ;;
-  3) run_proxy_install ;;
-  4) run_proxy_config ;;
-  5) run_nezha ;;
-  6) run_proxy_install ; run_proxy_config ;;
+  2) track execute_ddns ;;
+  3) track run_proxy_install ;;
+  4) track run_proxy_config ;;
+  5) track run_nezha ;;
+  6) track run_proxy_install ; track run_proxy_config ;;
+  7) track run_ssh "${ssh_action:-1}" "改全部并重启" ;;
+  8) track run_ssh 2 "仅添加公钥" ;;
 esac
 
 line
-ok "start.sh 执行完毕"
-exit 0
+if [ "$STEP_FAIL" -eq 0 ]; then
+  ok "start.sh 执行完毕"
+  exit 0
+else
+  err "start.sh 执行完毕，但有步骤失败（详见上面的 [ERROR]；退出码 1）"
+  exit 1
+fi
