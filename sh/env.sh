@@ -98,6 +98,44 @@ download() {
   else die "系统缺少 curl/wget，无法下载: $url"; fi
 }
 
+# ---------- 依赖：包管理器 / 解压工具（各脚本的自身部分可直接调用） ----------
+sudo_cmd=""
+if [ ! -w /usr/bin ] && [ "$(id -u)" -ne 0 ]; then sudo_cmd="sudo"; fi
+
+detect_pkg_mgr() {
+  local m
+  for m in apt-get yum dnf pacman apk zypper; do
+    have_cmd "$m" && { printf '%s' "${m%-get}"; return 0; }
+  done
+  printf ''
+}
+
+install_package() {
+  local pkg="$1" mgr
+  mgr="$(detect_pkg_mgr)"
+  [ -n "$mgr" ] || die "无法识别包管理器，请手动安装: $pkg"
+  step "安装依赖 ${pkg}（${mgr}）..."
+  case "$mgr" in
+    apt)    $sudo_cmd apt-get update -y && $sudo_cmd apt-get install -y "$pkg" ;;
+    yum)    $sudo_cmd yum install -y "$pkg" ;;
+    dnf)    $sudo_cmd dnf install -y "$pkg" ;;
+    pacman) $sudo_cmd pacman -Sy --noconfirm "$pkg" ;;
+    apk)    $sudo_cmd apk add --no-cache "$pkg" ;;
+    zypper) $sudo_cmd zypper --non-interactive install -y "$pkg" ;;
+  esac
+}
+
+ensure_unzip() {
+  if have_cmd unzip; then
+    ok "检测到 unzip: $(command -v unzip)"
+    return 0
+  fi
+  warn "未检测到 unzip，尝试安装（解压 .zip 需要）"
+  install_package "unzip"
+  have_cmd unzip || die "unzip 安装失败，请手动安装后重试"
+  ok "unzip 安装完成: $(command -v unzip)"
+}
+
 # ---------- 选项表 ----------
 declare -A OPT_LONG OPT_SHORT OPT_RSHORT OPT_TAKE OPT_VAR OPT_DESC OPT_SET
 OPT_ORDER=()
@@ -361,6 +399,8 @@ USAGE_NOTE="环境变量（优先级低于命令行）:
   · 输出默认就是 vps.env，与 start.sh 的默认读取值一致，拉完可直接跑 start.sh
   · 安全笔记的正文在 CLI 里字段名是 notesPlain；自定义字段用你自己的 label
   · 全程不打印 token，也不打印任何值，只列 KEY 名
+  · 没装 op 会自动装到 /usr/local/bin（约 45MiB）；--no-install-op 可关掉，只打印安装指引
+  · 只用一次的话，跑完可以 rm -f /usr/local/bin/op 清掉
   · 跨脚本串联务必用长选项：env 的 -t 是 --token，ddns.sh 的 -t 是 --type"
 
 def_opt token       t 1 A_TOKEN  "1Password Service Account token（必填）"
@@ -371,6 +411,8 @@ def_opt item        i 1 A_ITEM   "条目名"
 def_opt field       F 1 A_FIELD  "字段名（默认 notesPlain）"
 def_opt out         o 1 A_OUT    "输出文件（默认 vps.env）"
 def_opt list-keys   - 0 A_KEYS   "只列出已有 env 文件的 KEY 名，不拉取"
+def_opt no-install-op - 0 A_NOINSTOP "不自动安装 op（缺失时只打印安装指引）"
+def_opt op-arch     - 1 A_OPARCH "op 的目标架构 amd64|arm64|arm|386（默认自动检测）"
 def_common_opts
 
 parse_cli "$@" || exit $?
@@ -383,6 +425,9 @@ vault="$(cfg_get vault VPS_OP_VAULT - "")"
 item="$(cfg_get item VPS_OP_ITEM - "")"
 field="$(cfg_get field VPS_OP_FIELD - "notesPlain")"
 out_file="$(cfg_get out VPS_OP_OUT - "vps.env")"
+op_arch_opt="$(cfg_get op-arch - - "")"
+
+OP_VERSION_URL="https://app-updates.agilebits.com/check/1/0/CLI2/en/2.0.0/N"
 
 # ---------- --list-keys：只读自检 ----------
 if [ "${OPT_SET[list-keys]:-0}" = "1" ]; then
@@ -394,13 +439,73 @@ if [ "${OPT_SET[list-keys]:-0}" = "1" ]; then
   exit 0
 fi
 
-# ---------- 检查 op ----------
+# ---------- 依赖：op（缺失时自动安装，--no-install-op 可关） ----------
+op_manual_hint() {
+  printf '%s\n' "  手动安装（Linux 直装，不需要包管理器）：" >&2
+  printf '%s\n' "    A=amd64   # ARM 机器改成 arm64" >&2
+  printf '%s\n' "    V=\$(curl -s https://app-updates.agilebits.com/check/1/0/CLI2/en/2.0.0/N | grep -Eo '[0-9]+\\.[0-9]+\\.[0-9]+' | head -1)" >&2
+  printf '%s\n' "    curl -fsSL \"https://cache.agilebits.com/dist/1P/op2/pkg/v\$V/op_linux_\${A}_v\$V.zip\" -o /tmp/op.zip && unzip -oq /tmp/op.zip -d /usr/local/bin/ && rm -f /tmp/op.zip" >&2
+}
+
+op_arch() {
+  if [ -n "$op_arch_opt" ]; then printf '%s' "$op_arch_opt"; return 0; fi
+  case "$(uname -m)" in
+    x86_64|amd64)  printf 'amd64' ;;
+    aarch64|arm64) printf 'arm64' ;;
+    armv7l|armv7)  printf 'arm' ;;
+    i386|i686)     printf '386' ;;
+    *)             warn "无法识别架构 $(uname -m)，按 amd64 处理"; printf 'amd64' ;;
+  esac
+}
+
+op_latest_version() {
+  local raw=""
+  if have_cmd curl; then raw="$(curl -fsSL "$OP_VERSION_URL" 2>/dev/null || true)"
+  elif have_cmd wget; then raw="$(wget -qO- "$OP_VERSION_URL" 2>/dev/null || true)"
+  else return 1; fi
+  printf '%s' "$raw" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true
+}
+
+ensure_op() {
+  have_cmd op && return 0
+  if [ "${OPT_SET[no-install-op]:-0}" = "1" ]; then
+    warn "未检测到 op，且给了 --no-install-op，不自动安装"
+    return 1
+  fi
+  warn "未检测到 1Password CLI（op），尝试自动安装到 /usr/local/bin"
+  ensure_unzip
+  local arch ver url
+  arch="$(op_arch)"
+  ver="$(op_latest_version)"
+  if [ -z "$ver" ]; then
+    err "无法获取 op 最新版本号（网络不通？）"
+    return 1
+  fi
+  url="https://cache.agilebits.com/dist/1P/op2/pkg/v${ver}/op_linux_${arch}_v${ver}.zip"
+  step "下载 op v${ver}（linux-${arch}）..."
+  download "$url" "/tmp/op.zip" || { err "下载失败: $url"; return 1; }
+  [ -s /tmp/op.zip ] || { rm -f /tmp/op.zip; err "下载的 zip 为空"; return 1; }
+  $sudo_cmd unzip -oq /tmp/op.zip -d /usr/local/bin/ \
+    || { rm -f /tmp/op.zip; err "解压失败（/usr/local/bin 不可写？）"; return 1; }
+  rm -f /tmp/op.zip
+  $sudo_cmd chmod +x /usr/local/bin/op 2>/dev/null || true
+  hash -r 2>/dev/null || true
+  if have_cmd op; then
+    ok "op 安装完成: $(command -v op)（$(op --version 2>/dev/null)）"
+    return 0
+  fi
+  err "安装后仍未找到 op —— /usr/local/bin 可能不在 PATH 里"
+  return 1
+}
+
 if ! have_cmd op; then
-  err "未检测到 1Password CLI（op），请先安装："
-  printf '%s\n' "  ARCH=amd64; OP_VERSION=\"v\$(curl -s https://app-updates.agilebits.com/check/1/0/CLI2/en/2.0.0/N | grep -Eo '[0-9]+\\.[0-9]+\\.[0-9]+')\"" >&2
-  printf '%s\n' "  curl -sSfo /tmp/op.zip \"https://cache.agilebits.com/dist/1P/op2/pkg/\${OP_VERSION}/op_linux_\${ARCH}_\${OP_VERSION}.zip\"" >&2
-  printf '%s\n' "  unzip -od /usr/local/bin/ /tmp/op.zip && rm /tmp/op.zip" >&2
-  exit 1
+  if [ "$DRY_RUN" -eq 1 ]; then
+    warn "未检测到 op（dry-run：不安装；实跑时会自动装，或用 --no-install-op 关闭）"
+  elif ! ensure_op; then
+    err "op 自动安装失败，请手动处理后重试："
+    op_manual_hint
+    exit 1
+  fi
 fi
 
 op_version="$(op --version 2>/dev/null || true)"
