@@ -76,17 +76,75 @@ mask() {
   esac
 }
 
+# 显示列宽与补齐（不依赖 locale）
+# bash 的 printf 按【字节数】补齐，而 CJK 占 2 列、… 占 1 列 ⇒ 直接把值交给 %-Ns 会错位。
+# 这里按 UTF-8 首字节自行分类：ASCII=1 列、…=1 列、2 字节字符=1 列、3/4 字节=2 列。
+KW_KEY=18
+KW_VAL=36
+
+disp_width() {
+  local s="$1" i=0 w=0 bytes rest
+  local LC_ALL=C
+  bytes=${#s}
+  while [ "$i" -lt "$bytes" ]; do
+    rest="${s:i}"
+    case "$rest" in
+      $'\xE2\x80\xA6'*)   w=$((w + 1)); i=$((i + 3)) ;;   # … 省略号
+      [$'\xE0'-$'\xEF']*)  w=$((w + 2)); i=$((i + 3)) ;;   # 3 字节（CJK 等）
+      [$'\xF0'-$'\xF7']*)  w=$((w + 2)); i=$((i + 4)) ;;   # 4 字节
+      [$'\xC0'-$'\xDF']*)  w=$((w + 1)); i=$((i + 2)) ;;   # 2 字节（·、° 等按窄算）
+      *)                    w=$((w + 1)); i=$((i + 1)) ;;   # ASCII
+    esac
+  done
+  printf '%s' "$w"
+}
+
+pad_disp() {
+  # pad_disp <字符串> <目标列宽>：不足补空格；超长按字符边界截断并加 …
+  local s="$1" n="$2" i=0 w=0 step=1 cw=1 out="" bytes rest last_i=-1 last_cw=1
+  local LC_ALL=C
+  bytes=${#s}
+  while [ "$i" -lt "$bytes" ]; do
+    rest="${s:i}"
+    case "$rest" in
+      $'\xE2\x80\xA6'*)   cw=1; step=3 ;;
+      [$'\xE0'-$'\xEF']*)  cw=2; step=3 ;;
+      [$'\xF0'-$'\xF7']*)  cw=2; step=4 ;;
+      [$'\xC0'-$'\xDF']*)  cw=1; step=2 ;;
+      *)                    cw=1; step=1 ;;
+    esac
+    if [ $((w + cw)) -gt "$n" ]; then
+      # 截断：为 … 腾出 1 列（已占满 n 列时去掉最后追加的那个字符），补足到 n 列
+      if [ "$w" -ge "$n" ] && [ "$last_i" -ge 0 ]; then
+        out="${out:0:last_i}"
+        w=$((w - last_cw))
+      fi
+      printf '%s…%*s' "$out" "$((n - w - 1))" ""
+      return 0
+    fi
+    last_i=${#out}
+    last_cw=$cw
+    out="${out}${s:i:step}"
+    w=$((w + cw))
+    i=$((i + step))
+  done
+  printf '%s%*s' "$out" "$((n - w))" ""
+}
+
 kv() {
   local k="$1" v="$2" sec="${3:-no}"
   [ "$sec" = "yes" ] && [ -n "$v" ] && v="$(mask "$v")"
-  printf '  %s%-18s%s : %s%s%s\n' "$c_cyan" "$k" "$c_reset" "$c_orange" "${v:-<未设置>}" "$c_reset"
+  printf '  %s%s%s : %s%s%s\n' \
+    "$c_cyan" "$(pad_disp "$k" "$KW_KEY")" "$c_reset" "$c_orange" "${v:-<未设置>}" "$c_reset"
 }
 
 kv3() {
-  local k="$1" v="$2" s="$3" sec="${4:-no}"
+  local k="$1" v="$2" s="${3:-}" sec="${4:-no}"
   [ "$sec" = "yes" ] && [ -n "$v" ] && v="$(mask "$v")"
-  printf '  %s%-18s%s : %s%-26s%s %s(%s)%s\n' \
-    "$c_cyan" "$k" "$c_reset" "$c_orange" "${v:-<未设置>}" "$c_reset" "$c_gray" "$s" "$c_reset"
+  printf '  %s%s%s : %s%s%s %s(%s)%s\n' \
+    "$c_cyan" "$(pad_disp "$k" "$KW_KEY")" "$c_reset" \
+    "$c_orange" "$(pad_disp "${v:-<未设置>}" "$KW_VAL")" "$c_reset" \
+    "$c_gray" "$s" "$c_reset"
 }
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
