@@ -236,8 +236,15 @@ load_env_file() {
     key="${line%%=*}"
     value="${line#*=}"
     value="${value%"${value##*[![:space:]]}"}"
-    value="${value#\"}"; value="${value%\"}"
-    value="${value#\'}"; value="${value%\'}"
+    # 引号包裹：只取引号内的内容，引号之后一律视为行内注释
+    # 无引号：剥掉 " # 说明" / "\t# 说明"
+    case "$value" in
+      \"*)    value="${value#\"}"; value="${value%%\"*}" ;;
+      \'*)    value="${value#\'}"; value="${value%%\'*}" ;;
+      *" #"*)   value="${value%% #*}" ;;
+      *$'\t'#*) value="${value%%$'\t'#*}" ;;
+    esac
+    value="${value%"${value##*[![:space:]]}"}"
     ENVF["$key"]="$value"
   done < "$path"
   return 0
