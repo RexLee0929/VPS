@@ -1,497 +1,642 @@
 #!/usr/bin/env bash
+# ==============================================================================
+#  ddns.sh — Cloudflare DDNS 更新脚本
+#  版本 : v2.0
+#  规范 : sh/UNIFIED v2（与 ssh.sh / env.sh / start.sh 共用同一套写法）
 #
-# ddns.sh - Cloudflare DDNS Script
+#  这次重构要解决的事：
+#    · 四个脚本串联执行时短选项互相撞车（-t 在 ddns 是类型、在 env 是 token）
+#      → 长选项成为唯一权威接口，短选项只作兼容保留
+#    · 参数漏传 → 缺失项一次性列全，并给出可直接复制的补全方式
+#    · 取值来源统一为：命令行 > VPS_* 环境变量 > env 文件 > 内置默认
 #
-# 本版改动（相对原版，其余一字未动）：
-#   1) 认证方式：Cloudflare Global API Key -> Cloudflare API Token（Authorization: Bearer）
-#   2) -e 由必选改为可选：Token 模式不需要邮箱；传了仍接受，仅做一次格式提示
-#   3) help / 注释文案同步为 Token 说法；凭据可由环境变量 cf_key / cf_email 传入
-#
-# 保持不变（刻意未动）：
-#   - 参数名 -k / -e / -d / -r / -t / -p / -h
-#   - 变量名 cf_key / cf_email（与 config/env_vps.txt 一致）
-#   - ip.sb 取址、PUT 全量更新、proxied 默认 false、输出格式与退出码
-#
+#  示例:
+#    ./ddns.sh --domain=example.com --prefix=home
+#    ./ddns.sh --domain=example.com --record=home.example.com --type=AAAA
+#    ./ddns.sh --domain=example.com --prefix=fnos --dry-run
+# ==============================================================================
 
-set -o errexit
-set -o nounset
-set -o pipefail
+# ------------------------------------------------------------------------------
+#  公共区段 v2.0 —— ddns.sh / ssh.sh / env.sh / start.sh / proxy.sh / nezha.sh 完全一致
+#  ---------------------------------------------------------------------------
+#  传参约定（全部脚本统一）：
+#    1. 长选项是唯一权威接口：--key value 或 --key=value
+#       短选项仅为兼容保留，跨脚本含义可能不同 → 串联执行一律用长选项
+#    2. 取值优先级：命令行 > VPS_* 环境变量 > env 文件 > 内置默认
+#    3. 缺失参数一次性列全，并给出可复制的补全方式
+#    4. 通用开关：--dry-run --yes --no-color --verbose --help --version
+#    5. 敏感值打印一律脱敏（显示前 4 后 4 与长度）
+#  修改本区段时请同步其余各脚本。
+# ------------------------------------------------------------------------------
+set -uo pipefail
+IFS=$'\n\t'
 
-# 默认配置
-DEFAULT_TYPE="A"
-DEFAULT_PROXY="false"
-DEFAULT_MODE="color"
+SCRIPT_NAME="$(basename "$0" .sh)"
+SCRIPT_VERSION="2.0.0"
 
-# 运行参数
-# 命令行未提供时，回退到同名环境变量（名字与原版/env_vps.txt 完全一致）；
-# 注意：需要 export 过的变量才能被子进程继承。
-cf_key=""
-cf_email=""
-domain=""
-record_name=""
-record_type="$DEFAULT_TYPE"
-cf_proxy="$DEFAULT_PROXY"
-output_mode="$DEFAULT_MODE"
-
-# 运行状态
-current_ip=""
-existing_ip=""
-cf_zone_id=""
-cf_record_id=""
-api_response=""
-action="未执行"
-result_status="成功"
-result_message=""
-start_time="$(date +"%Y-%m-%d %H:%M:%S")"
-end_time=""
-fail_reason=""
-dns_api_json=""
-zone_api_json=""
-
-# 控制冒号位置
-KEY_WIDTH=12
+# ---------- 颜色 ----------
+USE_COLOR=1
+[ -t 1 ] || USE_COLOR=0
+[ -n "${NO_COLOR:-}" ] && USE_COLOR=0
+case " $* " in *" --no-color "*) USE_COLOR=0 ;; esac
+case " $* " in *" --color "*)    USE_COLOR=1 ;; esac
 
 init_colors() {
-    if [ "$output_mode" = "plain" ] || [ "$output_mode" = "compact" ]; then
-        c_yellow=""
-        c_blue=""
-        c_green=""
-        c_red=""
-        c_orange=""
-        c_cyan=""
-        c_gray=""
-        c_reset=""
-    else
-        c_yellow="\033[33m"
-        c_blue="\033[34m"
-        c_green="\033[32m"
-        c_red="\033[31m"
-        c_orange="\033[38;5;208m"
-        c_cyan="\033[36m"
-        c_gray="\033[90m"
-        c_reset="\033[0m"
-    fi
+  if [ "$USE_COLOR" -eq 1 ]; then
+    c_reset=$'\033[0m';   c_bold=$'\033[1m'
+    c_red=$'\033[31m';    c_green=$'\033[32m'
+    c_yellow=$'\033[33m'; c_blue=$'\033[34m'
+    c_orange=$'\033[38;5;208m'; c_cyan=$'\033[36m'; c_gray=$'\033[90m'
+  else
+    c_reset=""; c_bold=""; c_red=""; c_green=""
+    c_yellow=""; c_blue=""; c_orange=""; c_cyan=""; c_gray=""
+  fi
 }
+init_colors
 
-log() {
-    [ "$output_mode" = "compact" ] && return 0
-    printf "%b[INFO]%b %s\n" "${c_blue}" "${c_reset}" "$*"
-}
+# ---------- 日志 ----------
+log()  { printf '%s%-7s%s %s\n' "$c_blue"   "[INFO]"  "$c_reset" "$*"; }
+ok()   { printf '%s%-7s%s %s\n' "$c_green"  "[OK]"    "$c_reset" "$*"; }
+warn() { printf '%s%-7s%s %s\n' "$c_orange" "[WARN]"  "$c_reset" "$*"; }
+err()  { printf '%s%-7s%s %s\n' "$c_red"    "[ERROR]" "$c_reset" "$*" >&2; }
+step() { printf '%s%-7s%s %s\n' "$c_cyan"   "[STEP]"  "$c_reset" "$*"; }
+die()  { err "$*"; exit 1; }
 
-ok() {
-    [ "$output_mode" = "compact" ] && return 0
-    printf "%b[OK]%b   %s\n" "${c_green}" "${c_reset}" "$*"
-}
+RULE="────────────────────────────────────────────────────────────"
+line()    { printf '%s%s%s\n' "$c_gray" "$RULE" "$c_reset"; }
+section() { printf '\n%s%s%s\n' "$c_bold" "$1" "$c_reset"; line; }
 
-warn() {
-    [ "$output_mode" = "compact" ] && return 0
-    printf "%b[WARN]%b %s\n" "${c_orange}" "${c_reset}" "$*"
-}
-
-err() {
-    printf "%b[ERROR]%b %s\n" "${c_red}" "${c_reset}" "$*"
-}
-
-line() {
-    printf "%b%s%b\n" "${c_gray}" "────────────────────────────────────────────────────────────" "${c_reset}"
-}
-
-section() {
-    [ "$output_mode" = "compact" ] && return 0
-    echo
-    printf "%b%s%b\n" "${c_blue}" "$1" "${c_reset}"
-    line
-}
-
-usage() {
-    cat <<EOF
-Usage: $0 -k <api_token> -d <domain> -r <record> [options]
-
-必选参数:
-  -k <token>       Cloudflare API Token（Bearer 认证；也可用环境变量 cf_key 传入）
-  -d <domain>      主域名，如 example.com
-  -r <record>      完整记录名，如 fnos.example.com
-
-可选参数:
-  -e <email>       兼容保留：Token 模式不需要邮箱，该值已不再使用
-                   （也可用环境变量 cf_email 传入）
-  -t <type>        记录类型: A | AAAA (默认: A)
-  -p <bool>        是否启用 Cloudflare 代理: true | false (默认: false)
-
-输出控制:
-  --mode <mode>    输出模式:
-                   color   彩色模式（默认）
-                   plain   无色普通模式
-                   compact 简洁模式（仅输出核心结果）
-  --color          强制启用彩色模式
-  --no-color       关闭彩色输出（等价于 --mode plain）
-
-帮助:
-  -h, --help       显示帮助
-EOF
-}
-
-# 计算显示宽度：
-# ASCII 算 1，非 ASCII 算 2
-str_width() {
-    local s="$1"
-    local width=0
-    local i char hex
-
-    while [ -n "$s" ]; do
-        char="${s%"${s#?}"}"
-        s="${s#?}"
-
-        hex=$(printf '%s' "$char" | LC_ALL=C od -An -tx1 | tr -d ' \n')
-        if [ -z "$hex" ]; then
-            continue
-        fi
-
-        if [ ${#hex} -le 2 ]; then
-            width=$((width + 1))
-        else
-            width=$((width + 2))
-        fi
-    done
-
-    echo "$width"
-}
-
-pad_key() {
-    local key="$1"
-    local width
-    local pad
-    width="$(str_width "$key")"
-    pad=$((KEY_WIDTH - width))
-    [ "$pad" -lt 0 ] && pad=0
-    printf "%s%*s" "$key" "$pad" ""
+mask() {
+  local s="$1"
+  case "${#s}" in
+    0)                    printf '%s' "" ;;
+    1|2|3|4|5|6|7|8)      printf '%s' "********" ;;
+    *)                    printf '%s…%s(%s字符)' "${s:0:4}" "${s: -4}" "${#s}" ;;
+  esac
 }
 
 kv() {
-    local key="$1"
-    local value="$2"
-    local padded
-    padded="$(pad_key "$key")"
-    printf "  %b%s%b : %b%s%b\n" \
-        "${c_cyan}" "$padded" "${c_reset}" \
-        "${c_orange}" "$value" "${c_reset}"
+  local k="$1" v="$2" sec="${3:-no}"
+  [ "$sec" = "yes" ] && [ -n "$v" ] && v="$(mask "$v")"
+  printf '  %s%-18s%s : %s%s%s\n' "$c_cyan" "$k" "$c_reset" "$c_orange" "${v:-<未设置>}" "$c_reset"
+}
+
+kv3() {
+  local k="$1" v="$2" s="$3" sec="${4:-no}"
+  [ "$sec" = "yes" ] && [ -n "$v" ] && v="$(mask "$v")"
+  printf '  %s%-18s%s : %s%-26s%s %s(%s)%s\n' \
+    "$c_cyan" "$k" "$c_reset" "$c_orange" "${v:-<未设置>}" "$c_reset" "$c_gray" "$s" "$c_reset"
+}
+
+have_cmd() { command -v "$1" >/dev/null 2>&1; }
+is_url()   { [[ "$1" =~ ^https?:// ]]; }
+
+download() {
+  local url="$1" out="$2"
+  if have_cmd curl; then curl -fsSL "$url" -o "$out"
+  elif have_cmd wget; then wget -qO "$out" "$url"
+  else die "系统缺少 curl/wget，无法下载: $url"; fi
+}
+
+# ---------- 选项表 ----------
+declare -A OPT_LONG OPT_SHORT OPT_RSHORT OPT_TAKE OPT_VAR OPT_DESC OPT_SET
+OPT_ORDER=()
+DRY_RUN=0; ASSUME_YES=0; VERBOSE=0
+POSITIONAL=(); NORM_ARGS=(); MISSING=()
+
+def_opt() {
+  local lo="$1" sh="$2" take="$3" var="$4" desc="$5"
+  OPT_ORDER+=("$lo")
+  OPT_LONG["--$lo"]="$lo"
+  OPT_RSHORT["$lo"]="$sh"
+  [ "$sh" != "-" ] && OPT_SHORT["-$sh"]="$lo"
+  OPT_TAKE["$lo"]="$take"
+  OPT_VAR["$lo"]="$var"
+  OPT_DESC["$lo"]="$desc"
+}
+
+def_common_opts() {
+  def_opt dry-run  - 0 - "只打印将要执行的动作，不产生实际改动"
+  def_opt yes      y 0 - "非交互模式，所有确认按 yes 处理"
+  def_opt verbose  - 0 - "输出调试信息"
+  def_opt no-color - 0 - "关闭彩色输出"
+  def_opt color    - 0 - "强制开启彩色输出"
+  def_opt help     h 0 - "显示本帮助"
+  def_opt version  - 0 - "显示版本号"
+}
+
+usage() {
+  local lo sh take desc left
+  printf '%s%s%s v%s\n\n' "$c_bold" "$SCRIPT_NAME" "$c_reset" "$SCRIPT_VERSION"
+  printf '用法: %s %s\n\n' "$SCRIPT_NAME" "$USAGE_LINE"
+  printf '选项:\n'
+  for lo in ${OPT_ORDER[@]+"${OPT_ORDER[@]}"}; do
+    sh="${OPT_RSHORT[$lo]:--}"; take="${OPT_TAKE[$lo]}"; desc="${OPT_DESC[$lo]}"
+    if [ "$sh" != "-" ]; then
+      if [ "$take" = "1" ]; then left="  -${sh} <值>, --${lo}=<值>"
+      else left="  -${sh}, --${lo}"; fi
+    else
+      if [ "$take" = "1" ]; then left="      --${lo}=<值>"
+      else left="      --${lo}"; fi
+    fi
+    printf '%-40s %s\n' "$left" "$desc"
+  done
+  [ -n "$USAGE_NOTE" ] && printf '\n%s\n' "$USAGE_NOTE"
+}
+
+# 阶段一：把 -x / -xVALUE / --long value / --long=value 统一成 "名字<TAB>值"
+normalize_args() {
+  NORM_ARGS=()
+  local i=1 n=$# a name val lo ch rest
+  while [ "$i" -le "$n" ]; do
+    a="${!i}"
+    case "$a" in
+      --*=*)
+        name="${a%%=*}"; val="${a#*=}"
+        NORM_ARGS+=("$name"$'\t'"$val")
+        ;;
+      --*)
+        name="$a"; lo="${OPT_LONG[$name]:-}"
+        if [ -z "$lo" ]; then err "未知选项: $name（用 --help 查看可用选项）"; return 2; fi
+        if [ "${OPT_TAKE[$lo]}" = "1" ]; then
+          i=$((i+1))
+          if [ "$i" -gt "$n" ]; then err "选项 $name 需要一个参数"; return 2; fi
+          val="${!i}"
+        else val=""; fi
+        NORM_ARGS+=("$name"$'\t'"$val")
+        ;;
+      -?*)
+        ch="${a:1:1}"; rest="${a:2}"
+        lo="${OPT_SHORT["-$ch"]:-}"
+        if [ -z "$lo" ]; then
+          err "未知选项: -$ch"
+          err "提示：跨脚本串联请用长选项（短选项在各脚本里含义不同）"
+          return 2
+        fi
+        if [ "${OPT_TAKE[$lo]}" = "1" ]; then
+          if [ -n "$rest" ]; then val="$rest"
+          else
+            i=$((i+1))
+            if [ "$i" -gt "$n" ]; then err "选项 -$ch 需要一个参数"; return 2; fi
+            val="${!i}"
+          fi
+        else val=""; fi
+        NORM_ARGS+=("--$lo"$'\t'"$val")
+        ;;
+      *)
+        POSITIONAL+=("$a")
+        ;;
+    esac
+    i=$((i+1))
+  done
+  return 0
+}
+
+apply_args() {
+  local t name val lo var
+  for t in ${NORM_ARGS[@]+"${NORM_ARGS[@]}"}; do
+    name="${t%%$'\t'*}"; val="${t#*$'\t'}"
+    lo="${OPT_LONG[$name]:-}"
+    [ -n "$lo" ] || { err "未知选项: $name"; return 2; }
+    case "$lo" in
+      help)     usage; exit 0 ;;
+      version)  printf '%s %s\n' "$SCRIPT_NAME" "$SCRIPT_VERSION"; exit 0 ;;
+      no-color) USE_COLOR=0; init_colors ;;
+      color)    USE_COLOR=1; init_colors ;;
+      dry-run)  DRY_RUN=1 ;;
+      yes)      ASSUME_YES=1 ;;
+      verbose)  VERBOSE=1 ;;
+      *)
+        var="${OPT_VAR[$lo]:-}"
+        if [ -n "$var" ] && [ "$var" != "-" ]; then
+          printf -v "$var" '%s' "$val"
+          OPT_SET["$lo"]=1
+        fi
+        ;;
+    esac
+  done
+  return 0
+}
+
+parse_cli() {
+  normalize_args "$@" || return $?
+  apply_args || return $?
+  if [ ${#POSITIONAL[@]} -gt 0 ]; then
+    err "不接受位置参数: ${POSITIONAL[0]}（本脚本全部用选项传参）"
+    return 2
+  fi
+  return 0
+}
+
+# ---------- env 文件 ----------
+declare -A ENVF
+load_env_file() {
+  local path="$1" line key value
+  [ -f "$path" ] || return 1
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in \#*|"") continue ;; esac
+    line="${line#"${line%%[![:space:]]*}"}"
+    [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
+    key="${line%%=*}"
+    value="${line#*=}"
+    value="${value%"${value##*[![:space:]]}"}"
+    value="${value#\"}"; value="${value%\"}"
+    value="${value#\'}"; value="${value%\'}"
+    ENVF["$key"]="$value"
+  done < "$path"
+  return 0
+}
+
+# cfg_get <长选项名> <环境变量名> <env文件键> <默认值>
+cfg_get() {
+  local lo="$1" en="$2" ek="$3" def="$4" var v=""
+  # "-" 表示"无对应来源"，必须归一化为空串：
+  # 否则 ${!en} 会变成对名字为 "-" 的变量做间接展开，bash 会给出垃圾值
+  case "$en" in ""|-) en="" ;; esac
+  case "$ek" in ""|-) ek="" ;; esac
+  var="${OPT_VAR[$lo]:-}"
+  if [ -n "$var" ] && [ "$var" != "-" ] && [ "${OPT_SET[$lo]:-0}" = "1" ]; then v="${!var:-}"; fi
+  if [ -z "$v" ] && [ -n "$en" ] && [ -n "${!en+x}" ]; then v="${!en}"; fi
+  if [ -z "$v" ] && [ -n "$ek" ] && [ -n "${ENVF[$ek]:-}" ]; then v="${ENVF[$ek]}"; fi
+  [ -z "$v" ] && v="$def"
+  printf '%s' "$v"
+}
+
+cfg_src() {
+  local lo="$1" en="$2" ek="$3" var
+  case "$en" in ""|-) en="" ;; esac
+  case "$ek" in ""|-) ek="" ;; esac
+  var="${OPT_VAR[$lo]:-}"
+  if [ -n "$var" ] && [ "$var" != "-" ] && [ "${OPT_SET[$lo]:-0}" = "1" ]; then printf '命令行'; return; fi
+  if [ -n "$en" ] && [ -n "${!en+x}" ] && [ -n "${!en}" ]; then printf '环境变量'; return; fi
+  if [ -n "$ek" ] && [ -n "${ENVF[$ek]:-}" ]; then printf 'env文件'; return; fi
+  printf '默认值'
+}
+
+# ---------- 缺失参数：一次性列全 ----------
+miss() {
+  # miss <长选项/环境变量> [说明] —— 两列对齐，缺几项一眼看全
+  local opt="$1" tip="${2:-}"
+  if [ -n "$tip" ]; then
+    MISSING+=("$(printf '%-38s %s' "$opt" "$tip")")
+  else
+    MISSING+=("$opt")
+  fi
+}
+check_missing() {
+  [ ${#MISSING[@]} -gt 0 ] || return 0
+  local m
+  err "以下必填参数缺失（共 ${#MISSING[@]} 项）："
+  for m in ${MISSING[@]+"${MISSING[@]}"}; do
+    printf '  %s· %s%s\n' "$c_red" "$m" "$c_reset" >&2
+  done
+  return 1
+}
+
+ask() {
+  local tip="$1" sec="${2:-no}" ans=""
+  [ -t 0 ] || return 1
+  [ "$ASSUME_YES" -eq 1 ] && return 1
+  printf '%s%s%s ' "$c_yellow" "$tip" "$c_reset" >&2
+  if [ "$sec" = "yes" ]; then read -r -s ans || true; printf '\n' >&2
+  else read -r ans || true; fi
+  ans="${ans#"${ans%%[![:space:]]*}"}"
+  ans="${ans%"${ans##*[![:space:]]}"}"
+  [ -n "$ans" ] || return 1
+  printf '%s' "$ans"
+}
+
+confirm() {
+  local tip="${1:-确认继续?}" ans
+  [ "$ASSUME_YES" -eq 1 ] && return 0
+  [ -t 0 ] || { warn "非交互且未给 --yes，按继续处理"; return 0; }
+  printf '%s%s%s [y/N] ' "$c_yellow" "$tip" "$c_reset" >&2
+  read -r ans || true
+  case "$ans" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
 }
 
 normalize_bool() {
-    case "${1,,}" in
-        1|true|yes|on) echo "true" ;;
-        0|false|no|off) echo "false" ;;
-        *) echo "$1" ;;
-    esac
+  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)  printf 'true' ;;
+    0|false|no|off) printf 'false' ;;
+    *)              printf '%s' "${1:-}" ;;
+  esac
 }
 
-has_cmd() {
-    command -v "$1" >/dev/null 2>&1
+normalize_yesno() {
+  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)  printf 'yes' ;;
+    0|false|no|off) printf 'no' ;;
+    *)              printf '%s' "${1:-}" ;;
+  esac
 }
 
+USAGE_LINE="${USAGE_LINE:-[选项]}"
+USAGE_NOTE="${USAGE_NOTE:-}"
+# ------------------------------ 公共区段结束 ----------------------------------
+
+# ==============================================================================
+#  ddns.sh 自身部分
+# ==============================================================================
+
+USAGE_LINE="--domain <域名> (--record <记录名> | --prefix <前缀>) [选项]"
+USAGE_NOTE="环境变量（优先级低于命令行、高于默认值）:
+  VPS_CF_KEY        Cloudflare API Token
+  VPS_CF_EMAIL      Cloudflare 账号邮箱（Token 模式可省略）
+  VPS_DDNS_DOMAIN   主域名
+  VPS_DDNS_RECORD   完整记录名
+  VPS_DDNS_PREFIX   记录前缀
+  VPS_DDNS_TYPE     A | AAAA
+  VPS_DDNS_PROXY    true | false
+  VPS_DDNS_MODE     color | plain | compact
+
+示例:
+  $SCRIPT_NAME --domain=example.com --prefix=home
+  $SCRIPT_NAME --domain=example.com --record=home.example.com --type=AAAA
+  $SCRIPT_NAME --domain=example.com --prefix=fnos --proxy=false --dry-run
+
+说明:
+  · --record 优先于 --prefix；两者都不给时，记录名取 --domain 本身（根域名）
+  · 跨脚本串联务必用长选项：ddns 的 -t 是 --type，env.sh 的 -t 是 --token"
+
+def_opt key     k 1 A_KEY    "Cloudflare API Token（必填，或使用 VPS_CF_KEY）"
+def_opt email   e 1 A_EMAIL  "Cloudflare 账号邮箱（Token 模式可省略）"
+def_opt domain  d 1 A_DOMAIN "主域名，如 example.com（必填）"
+def_opt record  r 1 A_RECORD "完整记录名，如 home.example.com"
+def_opt prefix  - 1 A_PREFIX "记录前缀，与 --domain 组合成完整记录名"
+def_opt type    t 1 A_TYPE   "记录类型 A | AAAA（默认 A）"
+def_opt proxy   p 1 A_PROXY  "是否走 CF 代理 true | false（默认 false）"
+def_opt mode    - 1 A_MODE   "输出模式 color | plain | compact（默认自动）"
+def_common_opts
+
+parse_cli "$@" || exit $?
+
+# ---------- 解析取值 ----------
+cf_key="$(cfg_get key    VPS_CF_KEY        cf_key        "")"
+cf_email="$(cfg_get email VPS_CF_EMAIL     cf_email      "")"
+domain="$(cfg_get domain VPS_DDNS_DOMAIN   domain        "")"
+record_name="$(cfg_get record VPS_DDNS_RECORD record     "")"
+prefix="$(cfg_get prefix VPS_DDNS_PREFIX   record_prefix "")"
+record_type="$(cfg_get type VPS_DDNS_TYPE  type          "A")"
+cf_proxy="$(cfg_get proxy VPS_DDNS_PROXY   proxy         "false")"
+output_mode="$(cfg_get mode VPS_DDNS_MODE  mode          "")"
+
+# 输出模式：未显式指定时，非 TTY 走 plain
+if [ -z "$output_mode" ]; then
+  if [ -t 1 ]; then output_mode="color"; else output_mode="plain"; fi
+fi
+case "$output_mode" in
+  color|plain|compact) ;;
+  *) err "无效的 --mode: $output_mode（只支持 color / plain / compact）"; exit 2 ;;
+esac
+if [ "$output_mode" = "plain" ] || [ "$output_mode" = "compact" ]; then
+  USE_COLOR=0; init_colors
+fi
+
+compact() { [ "$output_mode" = "compact" ]; }
+
+# 记录名推导：--record > --prefix + --domain > --domain
+if [ -z "$record_name" ]; then
+  if [ -n "$prefix" ] && [ -n "$domain" ]; then
+    record_name="${prefix}.${domain}"
+  elif [ -n "$domain" ]; then
+    record_name="$domain"
+    [ -n "$prefix" ] || warn "未给 --record 也未给 --prefix，记录名按根域名处理: ${domain}"
+  fi
+fi
+
+# ---------- 校验（一次列全） ----------
+[ -z "$cf_key" ]      && miss "--key / VPS_CF_KEY" "Cloudflare API Token"
+[ -z "$domain" ]      && miss "--domain / VPS_DDNS_DOMAIN" "主域名"
+[ -z "$record_name" ] && miss "--record 或 --prefix" "解析出的完整记录名为空"
+
+record_type="$(printf '%s' "$record_type" | tr '[:lower:]' '[:upper:]')"
+case "$record_type" in
+  A|AAAA) ;;
+  *) err "无效的 --type: $record_type（只支持 A / AAAA）"; exit 2 ;;
+esac
+
+cf_proxy="$(normalize_bool "$cf_proxy")"
+case "$cf_proxy" in
+  true|false) ;;
+  *) err "无效的 --proxy: $cf_proxy（只支持 true / false）"; exit 2 ;;
+esac
+
+if [ -n "$cf_email" ] && [[ "$cf_email" != *@* ]]; then
+  err "--email 格式可疑: $cf_email"
+  exit 2
+fi
+
+if ! check_missing; then
+  err "补齐后重试；或用 --help 查看全部选项"
+  exit 2
+fi
+
+# ---------- 头部与参数摘要 ----------
+start_time="$(date +"%Y-%m-%d %H:%M:%S")"
+if ! compact; then
+  echo
+  line
+  printf '%s%s%s\n' "$c_bold" "  Rex Lee's DDNS Script  v${SCRIPT_VERSION}" "$c_reset"
+  printf '%s%s%s\n' "$c_gray" "  Cloudflare DDNS · ${start_time}" "$c_reset"
+  line
+  section "参数摘要（来源已标注）"
+  kv3 "domain"      "$domain"      "$(cfg_src domain VPS_DDNS_DOMAIN domain)"
+  kv3 "record"      "$record_name" "$(cfg_src record VPS_DDNS_RECORD record)"
+  kv3 "type"        "$record_type" "$(cfg_src type VPS_DDNS_TYPE type)"
+  kv3 "proxy"       "$cf_proxy"    "$(cfg_src proxy VPS_DDNS_PROXY proxy)"
+  kv3 "key"         "$cf_key"      "$(cfg_src key VPS_CF_KEY cf_key)" yes
+  [ -n "$cf_email" ] && kv3 "email" "$cf_email" "$(cfg_src email VPS_CF_EMAIL cf_email)"
+fi
+
+# ---------- dry-run ----------
+if [ "$DRY_RUN" -eq 1 ]; then
+  warn "dry-run：只展示将要执行的操作，不会请求 Cloudflare API"
+  section "将要执行"
+  log "1. 获取公网 IP（${record_type}）"
+  log "2. GET  /zones?name=${domain}          → 取 Zone ID"
+  log "3. GET  /dns_records?type=${record_type}&name=${record_name}  → 查现有记录"
+  log "4. 存在则 PUT 更新，不存在则 POST 新建（proxied=${cf_proxy}）"
+  exit 0
+fi
+
+# ---------- 工具函数 ----------
 json_get_first() {
-    local json="$1"
-    local field="$2"
-
-    if has_cmd jq; then
-        echo "$json" | jq -r --arg field "$field" '.result[0][$field] // empty' 2>/dev/null || true
-    else
-        echo "$json" | grep -Po "(?<=\"${field}\":\")[^\"]*" | head -1 || true
-    fi
+  local json="$1" field="$2"
+  if have_cmd jq; then
+    printf '%s' "$json" | jq -r --arg f "$field" '.result[0][$f] // empty' 2>/dev/null || true
+  else
+    printf '%s' "$json" | grep -Po "(?<=\"${field}\":\")[^\"]*" 2>/dev/null | head -1 || true
+  fi
 }
 
 json_success() {
-    local json="$1"
-    if has_cmd jq; then
-        [ "$(echo "$json" | jq -r '.success // false' 2>/dev/null)" = "true" ]
-    else
-        [[ "$json" == *'"success":true'* ]]
-    fi
+  local json="$1"
+  if have_cmd jq; then
+    [ "$(printf '%s' "$json" | jq -r '.success // false' 2>/dev/null)" = "true" ]
+  else
+    [[ "$json" == *'"success":true'* ]]
+  fi
 }
 
-set_failure() {
-    result_status="失败"
-    result_message="$1"
-    fail_reason="$1"
-}
+# ---------- 主流程 ----------
+current_ip=""; existing_ip=""; cf_zone_id=""; cf_record_id=""
+action="未执行"; result_message=""; fail_reason=""
 
-finish() {
-    end_time="$(date +"%Y-%m-%d %H:%M:%S")"
-    print_final_result
-}
-
-on_error() {
-    local exit_code=$?
-    if [ "$result_status" != "失败" ]; then
-        set_failure "脚本执行过程中发生未捕获错误"
-    fi
-    finish
-    exit "$exit_code"
-}
-
-trap on_error ERR
-
-parse_args() {
-    local args=()
-
-    while [ $# -gt 0 ]; do
-        case "$1" in
-            --mode)
-                shift
-                [ $# -eq 0 ] && { echo "缺少 --mode 的参数"; exit 1; }
-                output_mode="$1"
-                ;;
-            --color)
-                output_mode="color"
-                ;;
-            --no-color)
-                output_mode="plain"
-                ;;
-            --help)
-                usage
-                exit 0
-                ;;
-            *)
-                args+=("$1")
-                ;;
-        esac
-        shift || true
-    done
-
-    set -- "${args[@]}"
-
-    while getopts ":k:e:d:r:t:p:h" opt; do
-        case "$opt" in
-            k) cf_key="$OPTARG" ;;
-            e) cf_email="$OPTARG" ;;
-            d) domain="$OPTARG" ;;
-            r) record_name="$OPTARG" ;;
-            t) record_type="$OPTARG" ;;
-            p) cf_proxy="$OPTARG" ;;
-            h) usage; exit 0 ;;
-            \?) echo "无效选项: -$OPTARG"; usage; exit 1 ;;
-            :) echo "选项 -$OPTARG 需要参数"; usage; exit 1 ;;
-        esac
-    done
-}
-
-validate_args() {
-    case "$output_mode" in
-        color|plain|compact) ;;
-        *)
-            echo "无效的输出模式: $output_mode"
-            exit 1
-            ;;
-    esac
-
-    [ -z "$cf_key" ] && { err "缺少参数: -k cf_key（或 export cf_key=...）"; usage; exit 1; }
-    # -e 已由必选改为可选：API Token 模式无需邮箱；仅当显式给了值时才做格式提示
-    if [ -n "$cf_email" ]; then
-        [[ "$cf_email" == *@* ]] || { err "邮箱格式可疑: $cf_email"; exit 1; }
-    fi
-    [ -z "$domain" ] && { err "缺少参数: -d domain"; usage; exit 1; }
-    [ -z "$record_name" ] && { err "缺少参数: -r record"; usage; exit 1; }
-
-    case "${record_type^^}" in
-        A|AAAA) record_type="${record_type^^}" ;;
-        *)
-            err "记录类型无效: $record_type，仅支持 A 或 AAAA"
-            exit 1
-            ;;
-    esac
-
-    cf_proxy="$(normalize_bool "$cf_proxy")"
-    case "$cf_proxy" in
-        true|false) ;;
-        *)
-            err "代理参数无效: $cf_proxy，仅支持 true 或 false"
-            exit 1
-            ;;
-    esac
-}
-
-print_header() {
-    [ "$output_mode" = "compact" ] && return 0
-    echo
-    line
-    printf "%b%s%b\n" "${c_blue}" "  Rex Lee's DDNS Script" "${c_reset}"
-    printf "%b%s%b\n" "${c_yellow}" "  Cloudflare DDNS Enhanced" "${c_reset}"
-    printf "%b%s%b\n" "${c_orange}" "  开始时间：${start_time}" "${c_reset}"
-    line
-}
-
-print_args_summary() {
-    [ "$output_mode" = "compact" ] && return 0
-    section "参数摘要"
-    kv "Domain" "$domain"
-    kv "Record" "$record_name"
-    kv "Type" "$record_type"
-    kv "Proxy" "$cf_proxy"
-    kv "Mode" "$output_mode"
-}
+IP_SERVICES=("https://ip.sb" "https://icanhazip.com" "https://ifconfig.me/ip")
 
 get_public_ip() {
-    log "正在获取当前公网 IP..."
-    if [ "$record_type" = "AAAA" ]; then
-        current_ip="$(curl -6 -fsS ip.sb)"
+  local flag="-4" svc ip
+  [ "$record_type" = "AAAA" ] && flag="-6"
+  step "获取公网 IP（${record_type}）..."
+  for svc in "${IP_SERVICES[@]}"; do
+    ip="$(curl "$flag" -fsS --max-time 10 "$svc" 2>/dev/null | tr -d '[:space:]')" || ip=""
+    [ -z "$ip" ] && continue
+    if [ "$record_type" = "A" ]; then
+      [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || { ip=""; continue; }
     else
-        current_ip="$(curl -4 -fsS ip.sb)"
+      [[ "$ip" == *:* ]] || { ip=""; continue; }
     fi
-
-    [ -z "$current_ip" ] && {
-        set_failure "获取公网 IP 失败"
-        err "$fail_reason"
-        exit 1
-    }
-
-    ok "公网 IP 获取成功: $current_ip"
+    current_ip="$ip"
+    ok "公网 IP: $current_ip（来源 $svc）"
+    return 0
+  done
+  fail_reason="获取公网 IP 失败（已尝试 ${#IP_SERVICES[@]} 个服务）"
+  err "$fail_reason"
+  exit 1
 }
 
 get_zone_id() {
-    log "正在获取 Cloudflare Zone ID..."
-    zone_api_json="$(curl -fsS -X GET "https://api.cloudflare.com/client/v4/zones?name=$domain" \
-        -H "Authorization: Bearer $cf_key" \
-        -H "Content-Type: application/json")"
-
-    cf_zone_id="$(json_get_first "$zone_api_json" "id")"
-
-    if [ -z "$cf_zone_id" ]; then
-        set_failure "获取 Cloudflare Zone ID 失败"
-        err "$fail_reason"
-        [ "$output_mode" != "compact" ] && printf "%bAPI Response:%b %s\n" "${c_red}" "${c_reset}" "$zone_api_json"
-        exit 1
-    fi
-
-    ok "Zone ID 获取成功: $cf_zone_id"
+  local json
+  step "获取 Cloudflare Zone ID..."
+  if ! json="$(curl -fsS --max-time 20 -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
+        -H "Authorization: Bearer ${cf_key}" \
+        -H "Content-Type: application/json" 2>&1)"; then
+    fail_reason="请求 Zone ID 失败（网络或凭据问题）"
+    err "$fail_reason"
+    printf '%s\n' "$json" >&2
+    exit 1
+  fi
+  cf_zone_id="$(json_get_first "$json" "id")"
+  if [ -z "$cf_zone_id" ]; then
+    fail_reason="获取 Zone ID 失败：域名不在该账号下，或 Token 没有该 zone 的权限"
+    err "$fail_reason"
+    printf '%s\n' "$json" >&2
+    exit 1
+  fi
+  ok "Zone ID: $cf_zone_id"
 }
 
 get_dns_record() {
-    log "正在查询 DNS 记录..."
-    dns_api_json="$(curl -fsS -X GET "https://api.cloudflare.com/client/v4/zones/$cf_zone_id/dns_records?type=$record_type&name=$record_name" \
-        -H "Authorization: Bearer $cf_key" \
-        -H "Content-Type: application/json")"
-
-    cf_record_id="$(json_get_first "$dns_api_json" "id")"
-    existing_ip="$(json_get_first "$dns_api_json" "content")"
-
-    if [ -n "$cf_record_id" ]; then
-        ok "检测到已有 DNS 记录"
-    else
-        warn "未检测到现有 DNS 记录，将创建新记录"
-    fi
+  local json
+  step "查询现有 DNS 记录..."
+  if ! json="$(curl -fsS --max-time 20 -X GET \
+        "https://api.cloudflare.com/client/v4/zones/${cf_zone_id}/dns_records?type=${record_type}&name=${record_name}" \
+        -H "Authorization: Bearer ${cf_key}" \
+        -H "Content-Type: application/json" 2>&1)"; then
+    fail_reason="查询 DNS 记录失败"
+    err "$fail_reason"
+    printf '%s\n' "$json" >&2
+    exit 1
+  fi
+  cf_record_id="$(json_get_first "$json" "id")"
+  existing_ip="$(json_get_first "$json" "content")"
+  if [ -n "$cf_record_id" ]; then
+    ok "已存在记录: ${record_name} → ${existing_ip:-<空>}"
+  else
+    warn "未找到现有记录，将新建: ${record_name}"
+  fi
 }
 
 update_record() {
-    log "准备更新现有 DNS 记录..."
-    action="跳过更新"
-
-    if [ "${existing_ip:-}" = "$current_ip" ]; then
-        result_message="DNS 记录 IP 未变化"
-        warn "$result_message"
-        return 0
-    fi
-
-    action="更新记录"
-    api_response="$(curl -fsS -X PUT "https://api.cloudflare.com/client/v4/zones/$cf_zone_id/dns_records/$cf_record_id" \
-        -H "Authorization: Bearer $cf_key" \
+  local json
+  action="跳过更新"
+  if [ "${existing_ip:-}" = "$current_ip" ]; then
+    result_message="DNS 记录 IP 未变化，无需更新"
+    warn "$result_message"
+    return 0
+  fi
+  action="更新记录"
+  step "更新 DNS 记录 ${existing_ip:-<空>} → ${current_ip} ..."
+  if ! json="$(curl -fsS --max-time 20 -X PUT \
+        "https://api.cloudflare.com/client/v4/zones/${cf_zone_id}/dns_records/${cf_record_id}" \
+        -H "Authorization: Bearer ${cf_key}" \
         -H "Content-Type: application/json" \
-        --data "{\"type\":\"$record_type\",\"name\":\"$record_name\",\"content\":\"$current_ip\",\"proxied\":$cf_proxy}")"
-
-    if json_success "$api_response"; then
-        result_message="DNS 记录更新成功"
-        ok "$result_message"
-    else
-        set_failure "DNS 记录更新失败"
-        err "$fail_reason"
-        [ "$output_mode" != "compact" ] && printf "%bAPI Response:%b %s\n" "${c_red}" "${c_reset}" "$api_response"
-        exit 1
-    fi
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${current_ip}\",\"proxied\":${cf_proxy}}" 2>&1)"; then
+    fail_reason="更新 DNS 记录失败（请求未成功）"
+    err "$fail_reason"
+    printf '%s\n' "$json" >&2
+    exit 1
+  fi
+  if json_success "$json"; then
+    result_message="DNS 记录更新成功"
+    ok "$result_message"
+  else
+    fail_reason="DNS 记录更新失败"
+    err "$fail_reason"
+    printf '%s\n' "$json" >&2
+    exit 1
+  fi
 }
 
 create_record() {
-    log "准备创建新的 DNS 记录..."
-    action="创建记录"
-
-    api_response="$(curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$cf_zone_id/dns_records" \
-        -H "Authorization: Bearer $cf_key" \
+  local json
+  action="创建记录"
+  step "创建新 DNS 记录 ${record_name} → ${current_ip} ..."
+  if ! json="$(curl -fsS --max-time 20 -X POST \
+        "https://api.cloudflare.com/client/v4/zones/${cf_zone_id}/dns_records" \
+        -H "Authorization: Bearer ${cf_key}" \
         -H "Content-Type: application/json" \
-        --data "{\"type\":\"$record_type\",\"name\":\"$record_name\",\"content\":\"$current_ip\",\"proxied\":$cf_proxy}")"
-
-    if json_success "$api_response"; then
-        result_message="DNS 记录创建成功"
-        ok "$result_message"
-    else
-        set_failure "DNS 记录创建失败"
-        err "$fail_reason"
-        [ "$output_mode" != "compact" ] && printf "%bAPI Response:%b %s\n" "${c_red}" "${c_reset}" "$api_response"
-        exit 1
-    fi
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${current_ip}\",\"proxied\":${cf_proxy}}" 2>&1)"; then
+    fail_reason="创建 DNS 记录失败（请求未成功）"
+    err "$fail_reason"
+    printf '%s\n' "$json" >&2
+    exit 1
+  fi
+  if json_success "$json"; then
+    result_message="DNS 记录创建成功"
+    ok "$result_message"
+  else
+    fail_reason="DNS 记录创建失败"
+    err "$fail_reason"
+    printf '%s\n' "$json" >&2
+    exit 1
+  fi
 }
 
 print_final_result() {
-    if [ "$output_mode" = "compact" ]; then
-        printf "%s | %s | %s | %s | %s -> %s\n" \
-            "$result_status" \
-            "$action" \
-            "$record_type" \
-            "$record_name" \
-            "${existing_ip:-<none>}" \
-            "${current_ip:-<unknown>}"
-        return 0
-    fi
-
-    section "执行结果"
-
-    kv "状态" "$result_status"
-    kv "操作" "$action"
-    line
-
-    kv "记录类型" "$record_type"
-    kv "主域名" "$domain"
-    kv "记录名称" "$record_name"
-    kv "当前 IP" "${current_ip:-<未知>}"
-    kv "原记录 IP" "${existing_ip:-<无>}"
-    kv "代理状态" "$cf_proxy"
-    kv "Zone ID" "${cf_zone_id:-<未知>}"
-    kv "开始时间" "$start_time"
-    kv "结束时间" "${end_time:-$(date +"%Y-%m-%d %H:%M:%S")}"
-
-    if [ -n "${result_message:-}" ]; then
-        kv "结果说明" "$result_message"
-    fi
-
-    if [ -n "${fail_reason:-}" ]; then
-        kv "失败原因" "$fail_reason"
-    fi
-
-    line
-
-    if [ "$result_status" = "成功" ]; then
-        printf "%b%s%b\n\n" "${c_green}" "✓ DDNS 脚本执行完毕" "${c_reset}"
-    else
-        printf "%b%s%b\n\n" "${c_red}" "✗ DDNS 脚本执行失败" "${c_reset}"
-    fi
+  local end_time
+  end_time="$(date +"%Y-%m-%d %H:%M:%S")"
+  if compact; then
+    printf '成功|%s|%s|%s|%s -> %s\n' \
+      "$action" "$record_type" "$record_name" "${existing_ip:-<none>}" "${current_ip:-<unknown>}"
+    return 0
+  fi
+  section "执行结果"
+  kv "操作"       "$action"
+  kv "记录类型"   "$record_type"
+  kv "主域名"     "$domain"
+  kv "记录名称"   "$record_name"
+  kv "当前 IP"    "${current_ip:-<未知>}"
+  kv "原记录 IP"  "${existing_ip:-<无>}"
+  kv "代理状态"   "$cf_proxy"
+  kv "Zone ID"    "${cf_zone_id:-<未知>}"
+  kv "开始时间"   "$start_time"
+  kv "结束时间"   "$end_time"
+  [ -n "${result_message:-}" ] && kv "结果说明" "$result_message"
+  line
+  printf '%s%s%s\n\n' "$c_green" "  ✓ DDNS 执行完毕" "$c_reset"
 }
 
-main() {
-    parse_args "$@"
-    init_colors
-    validate_args
-    print_header
-    print_args_summary
+get_public_ip
+get_zone_id
+get_dns_record
 
-    get_public_ip
-    get_zone_id
-    get_dns_record
+if [ -n "${cf_record_id:-}" ]; then
+  update_record
+else
+  create_record
+fi
 
-    if [ -n "${cf_record_id:-}" ]; then
-        update_record
-    else
-        create_record
-    fi
-
-    end_time="$(date +"%Y-%m-%d %H:%M:%S")"
-    finish
-}
-
-main "$@"
+print_final_result
+exit 0
