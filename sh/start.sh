@@ -251,8 +251,15 @@ load_env_file() {
     key="${line%%=*}"
     value="${line#*=}"
     value="${value%"${value##*[![:space:]]}"}"
-    value="${value#\"}"; value="${value%\"}"
-    value="${value#\'}"; value="${value%\'}"
+    # 引号包裹：只取引号内的内容，引号之后一律视为行内注释
+    # 无引号：剥掉 " # 说明" / "\t# 说明"
+    case "$value" in
+      \"*)    value="${value#\"}"; value="${value%%\"*}" ;;
+      \'*)    value="${value#\'}"; value="${value%%\'*}" ;;
+      *" #"*)   value="${value%% #*}" ;;
+      *$'\t'#*) value="${value%%$'\t'#*}" ;;
+    esac
+    value="${value%"${value##*[![:space:]]}"}"
     ENVF["$key"]="$value"
   done < "$path"
   return 0
@@ -864,7 +871,10 @@ run_ssh() {
   [ -n "$ssh_env_for_child" ]   && a+=(--env="$ssh_env_for_child")
   [ "${OPT_SET[ssh-skip-restart]:-0}" = "1" ] && a+=(--skip-restart)
   if [ "$DRY_RUN" -eq 1 ]; then
-    log "  [dry-run] bash ssh.sh ${a[*]}"
+    # 注意别用 ${a[*]}：它按 IFS（这里是 \n\t）拼接，会把参数用制表符连起来，显示很难看
+    local disp
+    disp="$(printf '%s ' "${a[@]}")"
+    log "  [dry-run] bash ssh.sh ${disp% }"
     return 0
   fi
   locate_helper ssh.sh "$ssh_script_opt" || return 1
