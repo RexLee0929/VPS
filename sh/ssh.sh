@@ -97,6 +97,44 @@ download() {
   else die "系统缺少 curl/wget，无法下载: $url"; fi
 }
 
+# ---------- 依赖：包管理器 / 解压工具（各脚本的自身部分可直接调用） ----------
+sudo_cmd=""
+if [ ! -w /usr/bin ] && [ "$(id -u)" -ne 0 ]; then sudo_cmd="sudo"; fi
+
+detect_pkg_mgr() {
+  local m
+  for m in apt-get yum dnf pacman apk zypper; do
+    have_cmd "$m" && { printf '%s' "${m%-get}"; return 0; }
+  done
+  printf ''
+}
+
+install_package() {
+  local pkg="$1" mgr
+  mgr="$(detect_pkg_mgr)"
+  [ -n "$mgr" ] || die "无法识别包管理器，请手动安装: $pkg"
+  step "安装依赖 ${pkg}（${mgr}）..."
+  case "$mgr" in
+    apt)    $sudo_cmd apt-get update -y && $sudo_cmd apt-get install -y "$pkg" ;;
+    yum)    $sudo_cmd yum install -y "$pkg" ;;
+    dnf)    $sudo_cmd dnf install -y "$pkg" ;;
+    pacman) $sudo_cmd pacman -Sy --noconfirm "$pkg" ;;
+    apk)    $sudo_cmd apk add --no-cache "$pkg" ;;
+    zypper) $sudo_cmd zypper --non-interactive install -y "$pkg" ;;
+  esac
+}
+
+ensure_unzip() {
+  if have_cmd unzip; then
+    ok "检测到 unzip: $(command -v unzip)"
+    return 0
+  fi
+  warn "未检测到 unzip，尝试安装（解压 .zip 需要）"
+  install_package "unzip"
+  have_cmd unzip || die "unzip 安装失败，请手动安装后重试"
+  ok "unzip 安装完成: $(command -v unzip)"
+}
+
 # ---------- 选项表 ----------
 declare -A OPT_LONG OPT_SHORT OPT_RSHORT OPT_TAKE OPT_VAR OPT_DESC OPT_SET
 OPT_ORDER=()
