@@ -178,7 +178,7 @@ chmod +x start.sh
 
 ### 2.4 env 文件与环境变量
 
-只解析 `KEY=VALUE` 行（跳过 `#` 注释与空行，自动剥掉值两端的 `"` `'`）。读取的键：
+只解析 `KEY=VALUE` 行（跳过整行 `#` 注释与空行，自动剥掉值两端的 `"` `'`，并**剥掉值后面的行内注释**）。读取的键：
 
 ```ini
 cf_key  cf_email  domain1  domain2  record_prefix
@@ -321,22 +321,26 @@ VPS_SSH_MAX_AUTH_TRIES  VPS_SSH_PUBKEY_AUTH  VPS_SSH_PUBKEY  VPS_SSH_CONFIG  VPS
 
 ### 4.2 参数
 
-| 长选项                | 短选项 | 说明                                         | 默认 / 其它来源                              |
-| --------------------- | :----: | -------------------------------------------- | -------------------------------------------- |
-| `--token <token>`     |  `-t`  | Service Account token（`ops_` 开头）         | `VPS_OP_TOKEN` / `$OP_SERVICE_ACCOUNT_TOKEN` |
-| `--token-file <文件>` |  `-T`  | 从文件读 token（首行，自动去换行）           | —                                            |
-| `--ref <op://…>`      |  `-r`  | 完整引用 `<库>/<条目>/<字段>`                | `VPS_OP_REF`                                 |
-| `--vault <库>`        |  `-v`  | 保管库名（不给 `--ref` 时必填）              | `VPS_OP_VAULT`                               |
-| `--item <条目>`       |  `-i`  | 条目名（不给 `--ref` 时必填）                | `VPS_OP_ITEM`                                |
-| `--field <字段>`      |  `-F`  | 字段名，安全笔记正文 = `notesPlain`          | `VPS_OP_FIELD`，默认 `notesPlain`            |
-| `--out <文件>`        |  `-o`  | 输出文件                                     | `VPS_OP_OUT`，默认 `vps.env`                 |
-| `--list-keys`         |   —    | **只读**：列出已有 env 文件的 KEY 名，不拉取 | —                                            |
+| 长选项                               | 短选项 | 说明                                          | 默认 / 其它来源                              |
+| ------------------------------------ | :----: | --------------------------------------------- | -------------------------------------------- |
+| `--token <token>`                    |  `-t`  | Service Account token（`ops_` 开头）          | `VPS_OP_TOKEN` / `$OP_SERVICE_ACCOUNT_TOKEN` |
+| `--token-file <文件>`                |  `-T`  | 从文件读 token（首行，自动去换行）            | —                                            |
+| `--ref <op://…>`                     |  `-r`  | 完整引用 `<库>/<条目>/<字段>`                 | `VPS_OP_REF`                                 |
+| `--vault <库>`                       |  `-v`  | 保管库名（不给 `--ref` 时必填）               | `VPS_OP_VAULT`                               |
+| `--item <条目>`                      |  `-i`  | 条目名（不给 `--ref` 时必填）                 | `VPS_OP_ITEM`                                |
+| `--field <字段>`                     |  `-F`  | 字段名，安全笔记正文 = `notesPlain`           | `VPS_OP_FIELD`，默认 `notesPlain`            |
+| `--out <文件>`                       |  `-o`  | 输出文件                                      | `VPS_OP_OUT`，默认 `vps.env`                 |
+| `--list-keys`                        |   —    | **只读**：列出已有 env 文件的 KEY 名，不拉取  | —                                            |
+| `--no-install-op`                    |   —    | 不让脚本自动安装 `op`（缺失时只打印安装指引） | 关（即默认会自动装）                         |
+| `--op-arch <amd64\|arm64\|arm\|386>` |   —    | `op` 的目标架构                               | 按 `uname -m` 自动识别                       |
 
 token 优先级：`-t` > `--token-file` > `$OP_SERVICE_ACCOUNT_TOKEN`。
 
 ### 4.3 行为要点
 
-- 检测不到 `op` 会打印官方一行安装法；版本 < 2 直接退出，< 2.18.0 告警（Service Account 需要 ≥ 2.18.0）。
+- **没装 `op` 会自动安装**：从官方 cache 直接下 zip（无需包管理器）解到 `/usr/local/bin`；缺 `unzip` 先按包管理器补上。`--no-install-op` 只打印安装指引不安装，`--op-arch` 可强制架构（默认按 `uname -m` 识别）。
+- `op` 是约 45 MiB 的静态二进制；只跑一次的话用完可以 `rm -f /usr/local/bin/op` 清掉。
+- 版本 < 2 直接退出，< 2.18.0 告警（Service Account 需要 ≥ 2.18.0）。
 - token 不是 `ops_` 开头会告警（可能是个人账号凭据）。
 - 落盘前自动备份 `vps.env.bak.<时间戳>`；覆盖需确认（`--yes` 跳过）；写入后 `chmod 600`。
 - **全程不打印 token、不打印任何值**；结果校验只列 KEY 名，并检查 `start.sh` 需要的 10 个核心键（`cf_key` / `cf_email` / `domain1` / `domain2` / `v2board_webapi_url` / `v2board_webapi_key` / `nezha_panel_ip` / `nezha_panel_port` / `nezha_panel_tls` / `nezha_agent_key`），缺哪些会列出来。
@@ -474,21 +478,22 @@ env 文件键（默认 `ssh.env`）：`ssh_port` `ssh_permit_root_login` `ssh_pa
 
 ## 8. 公共区段（六脚本一致）
 
-六个脚本顶部有**完全相同**的「公共区段 v2.0」（从 `set -uo pipefail` 行到 `公共区段结束` 标记，共 306 行），包含：
+六个脚本顶部有**完全相同**的「公共区段 v2.0」（从 `set -uo pipefail` 行到 `公共区段结束` 标记，共 351 行），包含：
 
-| 组件                                                 | 作用                                                         |
-| ---------------------------------------------------- | ------------------------------------------------------------ |
-| `init_colors` / `log` `ok` `warn` `err` `step` `die` | 颜色与五级日志（`err` 走 stderr）                            |
-| `line` / `section`                                   | 分隔线与分节标题                                             |
-| `mask` / `kv` / `kv3`                                | 敏感值脱敏；`kv3` 额外显示**取值来源**                       |
-| `have_cmd` / `is_url` / `download`                   | 命令探测 / URL 判断 / `curl → wget` 下载                     |
-| `def_opt` / `def_common_opts` / `usage`              | 选项表注册与自动生成帮助                                     |
-| `normalize_args` + `apply_args`                      | **两段式解析**：先归一化 `--long=val` / `--long val` / `-x val` / `-xval`，再应用；未知短选项会给「跨脚本请用长选项」提示 |
-| `load_env_file`                                      | env 文件解析（`KEY=VALUE`、跳注释、剥引号）                  |
-| `cfg_get` / `cfg_src`                                | 四级取值与来源判定（`-` 占位符会归一成空串，避免间接展开取到垃圾值） |
-| `miss` / `check_missing`                             | 缺失参数一次性列全                                           |
-| `ask` / `confirm`                                    | 交互询问（非 TTY 自动退化为非交互）                          |
-| `normalize_bool` / `normalize_yesno`                 | `1/true/yes/on` ↔ `0/false/no/off` 规范化                    |
+| 组件                                                  | 作用                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------ |
+| `init_colors` / `log` `ok` `warn` `err` `step` `die`  | 颜色与五级日志（`err` 走 stderr）                            |
+| `line` / `section`                                    | 分隔线与分节标题                                             |
+| `mask` / `kv` / `kv3`                                 | 敏感值脱敏；`kv3` 额外显示**取值来源**                       |
+| `have_cmd` / `is_url` / `download`                    | 命令探测 / URL 判断 / `curl → wget` 下载                     |
+| `detect_pkg_mgr` / `install_package` / `ensure_unzip` | 包管理器探测（apt/yum/dnf/pacman/apk/zypper）、装包、**unzip 保障**（`nezha.sh` 与 `env.sh` 共用）；顺带定义 `sudo_cmd` |
+| `def_opt` / `def_common_opts` / `usage`               | 选项表注册与自动生成帮助                                     |
+| `normalize_args` + `apply_args`                       | **两段式解析**：先归一化 `--long=val` / `--long val` / `-x val` / `-xval`，再应用；未知短选项会给「跨脚本请用长选项」提示 |
+| `load_env_file`                                       | env 文件解析（`KEY=VALUE`、跳整行注释、剥引号、**支持值后面的行内注释**） |
+| `cfg_get` / `cfg_src`                                 | 四级取值与来源判定（`-` 占位符会归一成空串，避免间接展开取到垃圾值） |
+| `miss` / `check_missing`                              | 缺失参数一次性列全                                           |
+| `ask` / `confirm`                                     | 交互询问（非 TTY 自动退化为非交互）                          |
+| `normalize_bool` / `normalize_yesno`                  | `1/true/yes/on` ↔ `0/false/no/off` 规范化                    |
 
 > [!IMPORTANT]
 > **修改公共区段必须同步六份。** 校验方法（排除各自不同的 `SCRIPT_VERSION` 行后，六份应当逐字节相同）：
@@ -500,22 +505,30 @@ for f in *.sh; do
   printf '%-10s ' "$f"
   sed -n "${b},${e}p" "$f" | grep -v '^SCRIPT_VERSION=' | md5sum
 done
-# 期望六行完全相同：99d7347a16bc97e33f16e5e7ccd3ee74
+# 期望六行完全相同：e62403c8d51a45e0d6a99dd5c5075452
 ```
+
+带 `SCRIPT_VERSION` 原样算时按版本分三组（差异只有这一行）：
+
+| 版本组 | 脚本                        | raw md5                            |
+| ------ | --------------------------- | ---------------------------------- |
+| v2.0.0 | `ddns.sh` `ssh.sh` `env.sh` | `c1b9f50ba2ce5d19e3c5e88c25399f27` |
+| v2.1.0 | `proxy.sh` `nezha.sh`       | `c9f5ef0dfd2f9c5c8c2bab2d1776d7d2` |
+| v2.2.0 | `start.sh`                  | `b36fbce195cac82b6b769a3d335dd488` |
 
 ---
 
 ## 9. 依赖与运行环境
 
-| 依赖                          | 谁需要                                         | 说明                                         |
-| ----------------------------- | ---------------------------------------------- | -------------------------------------------- |
-| `bash` 4+                     | 全部                                           | 用了关联数组 `declare -A` 与间接展开 `${!i}` |
-| `curl`                        | `ddns.sh`（**只用 curl**）、其余任一           | 其余脚本 `curl` / `wget` 任有其一即可        |
-| `jq`                          | `ddns.sh`                                      | **可选**，缺失时回退 `grep -Po` 解析 JSON    |
-| `op`（1Password CLI）≥ 2.18.0 | `env.sh`                                       | Service Account 模式                         |
-| `openssh-server`（`sshd`）    | `ssh.sh`                                       | 需要 `sshd -t` 与 systemd / service          |
-| `unzip`                       | `nezha.sh`                                     | 缺失时按包管理器自动安装                     |
-| root 或 `sudo`                | `ssh.sh`（必须 root）/ `proxy.sh` / `nezha.sh` | 要写 `/usr/bin`、`/etc/soga`、`/root/.ssh`   |
+| 依赖                          | 谁需要                                         | 说明                                                         |
+| ----------------------------- | ---------------------------------------------- | ------------------------------------------------------------ |
+| `bash` 4+                     | 全部                                           | 用了关联数组 `declare -A` 与间接展开 `${!i}`                 |
+| `curl`                        | `ddns.sh`（**只用 curl**）、其余任一           | 其余脚本 `curl` / `wget` 任有其一即可                        |
+| `jq`                          | `ddns.sh`                                      | **可选**，缺失时回退 `grep -Po` 解析 JSON                    |
+| `op`（1Password CLI）≥ 2.18.0 | `env.sh`                                       | **没装会自动装**（zip 直装到 `/usr/local/bin`，约 45 MiB；`--no-install-op` 可关） |
+| `openssh-server`（`sshd`）    | `ssh.sh`                                       | 需要 `sshd -t` 与 systemd / service                          |
+| `unzip`                       | `nezha.sh`                                     | 缺失时按包管理器自动安装                                     |
+| root 或 `sudo`                | `ssh.sh`（必须 root）/ `proxy.sh` / `nezha.sh` | 要写 `/usr/bin`、`/etc/soga`、`/root/.ssh`                   |
 
 ---
 
@@ -524,8 +537,9 @@ done
 ### 10.1 新装 VPS 一把梭
 
 ```bash
-# 1) 从 1Password 拉 env（默认产出 vps.env，chmod 600）
+# 1) 从 1Password 拉 env（默认产出 vps.env，chmod 600；没装 op 会自动装）
 ./env.sh --token-file=/root/.config/op/token --vault=Infra --item=vps-env
+#    也可以直接传 token：./env.sh --token="ops_xxx" --vault=Infra --item=vps-env
 
 # 2) 先看一遍会做什么
 ./start.sh --env=vps.env --prefix=home --ss-id=3 --vmess-id=4 --choice=6 --dry-run
