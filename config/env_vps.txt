@@ -1,8 +1,34 @@
-cf_key="cfkey"
-cf_email="cf邮箱"
-1_domain=""
-2_domain=""
+# DDNS
+cf_key=""
+cf_email=""
+domain1=""
+domain2=""
+
+# 代理
 v2board_webapi_url=""
 v2board_webapi_key=""
+
+# 探针
 nezha_panel_ip=""
 nezha_panel_port=""
+nezha_panel_tls=""
+nezha_agent_key=""
+
+# ssh
+ssh_port=
+ssh_permit_root_login=
+ssh_password_auth=
+ssh_permit_empty_passwords=
+ssh_max_auth_tries=
+ssh_pubkey_auth=
+
+# Public Key
+pubkey_aliyun=
+pubkey_aws=
+pubkey_bagevm=
+pubkey_buyvm=
+pubkey_coalcloud=
+pubkey_ggy=
+pubkey_halocloud=
+pubkey_hytron=
+pubkey_netcup=
