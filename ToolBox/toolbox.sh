@@ -19,6 +19,7 @@
 #   -h, --help        显示帮助后退出
 #   -V, --version     显示版本后退出
 #       --no-color    禁用颜色（亦支持 NO_COLOR 环境变量；非 TTY 自动禁用）
+#       --color       强制启用颜色（便于管道/日志留色）
 #       --verbose     详细模式，打印实际执行的命令
 #       --dry-run     演练模式：只打印将执行的操作，不做任何实际变更
 #       --yes         所有交互确认自动回答"是"
@@ -54,7 +55,6 @@ FS_DF_URL="https://github.com/RexLee0929/VPS/raw/main/config/df"
 RAR_VERSION="623"   # 升级 rar 只需改这一行（rarlinux-x64-<ver>.tar.gz）
 
 # ---- 2. 选项解析 ---------------------------------------------------------------
-OPT_NO_COLOR=0
 OPT_VERBOSE=0
 DRY_RUN=0
 OPT_YES=0
@@ -68,6 +68,7 @@ usage() {
   -h, --help        显示帮助后退出
   -V, --version     显示版本后退出
       --no-color    禁用颜色（亦支持 NO_COLOR 环境变量；非 TTY 自动禁用）
+      --color       强制启用颜色（覆盖非 TTY 自动禁用，便于管道/日志留色）
       --verbose     详细模式，打印实际执行的命令
       --dry-run     演练模式：只打印将执行的操作，不做任何实际变更
       --yes         所有交互确认自动回答"是"
@@ -82,7 +83,8 @@ parse_args() {
         case "$1" in
             -h|--help)        usage; exit 0 ;;
             -V|--version)     printf '%s %s\n' "$SCRIPT_NAME" "$SCRIPT_VERSION"; exit 0 ;;
-            --no-color)       OPT_NO_COLOR=1 ;;
+            --no-color)       USE_COLOR=0 ;;
+            --color)          USE_COLOR=1 ;;
             --verbose)        OPT_VERBOSE=1 ;;
             --dry-run)        DRY_RUN=1 ;;
             --yes)            OPT_YES=1 ;;
@@ -94,36 +96,40 @@ parse_args() {
     done
 }
 
-# ---- 3. 颜色 ------------------------------------------------------------------
-# 上游 black() 用 38;5;0 黑字，深色终端下"卸载"选项直接不可见 -> 改为灰色
+# ---- 3. 颜色（与六脚本套件公共区段同一套定义；那六个不动，这里向它们对齐） --------
+# 注意: 必须用 $'\033[...]' ANSI-C 引用生成真实 ESC 字节。
+# 早期版本把 "\033[34m" 当普通字符串存，printf '%s' 不解释反斜杠，
+# 终端里会输出字面量 \033[34m（颜色整体失效），已按六脚本写法修正。
+USE_COLOR=1
+[ -t 1 ] || USE_COLOR=0
+[ -n "${NO_COLOR:-}" ] && USE_COLOR=0
+
 init_colors() {
-    if (( OPT_NO_COLOR )) || [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
-        C_RED=""; C_GREEN=""; C_YELLOW=""; C_BLUE=""; C_ORANGE=""; C_PURPLE=""; C_GRAY=""; C_RESET=""
+    if [ "$USE_COLOR" -eq 1 ]; then
+        c_reset=$'\033[0m';   c_bold=$'\033[1m'
+        c_red=$'\033[31m';    c_green=$'\033[32m'
+        c_yellow=$'\033[33m'; c_blue=$'\033[34m'
+        c_orange=$'\033[38;5;208m'; c_cyan=$'\033[36m'; c_gray=$'\033[90m'
     else
-        C_RED="\033[31m\033[01m"
-        C_GREEN="\033[32m\033[01m"
-        C_YELLOW="\033[33m\033[01m"
-        C_BLUE="\033[34m\033[01m"
-        C_ORANGE="\033[38;5;208m\033[01m"
-        C_PURPLE="\033[38;5;5m\033[01m"
-        C_GRAY="\033[38;5;8m\033[01m"
-        C_RESET="\033[0m"
+        c_reset=""; c_bold=""; c_red=""; c_green=""
+        c_yellow=""; c_blue=""; c_orange=""; c_cyan=""; c_gray=""
     fi
 }
 
-red()    { printf '%s%s%s\n' "$C_RED"    "$1" "$C_RESET"; }
-green()  { printf '%s%s%s\n' "$C_GREEN"  "$1" "$C_RESET"; }
-yellow() { printf '%s%s%s\n' "$C_YELLOW" "$1" "$C_RESET"; }
-blue()   { printf '%s%s%s\n' "$C_BLUE"   "$1" "$C_RESET"; }
-orange() { printf '%s%s%s\n' "$C_ORANGE" "$1" "$C_RESET"; }
-purple() { printf '%s%s%s\n' "$C_PURPLE" "$1" "$C_RESET"; }
-gray()   { printf '%s%s%s\n' "$C_GRAY"   "$1" "$C_RESET"; }
-black()  { gray "$@"; }   # 兼容旧名，语义已修正为灰色
+# 菜单着色。上游 purple(重复操作提示) 与 black(黑字,深色终端不可见) 不在六脚本
+# 色板内，分别并入 c_cyan 与 c_gray，全库只保留这一套 7 色。
+red()    { printf '%s%s%s\n' "$c_red"    "$1" "$c_reset"; }
+green()  { printf '%s%s%s\n' "$c_green"  "$1" "$c_reset"; }
+yellow() { printf '%s%s%s\n' "$c_yellow" "$1" "$c_reset"; }
+blue()   { printf '%s%s%s\n' "$c_blue"   "$1" "$c_reset"; }
+orange() { printf '%s%s%s\n' "$c_orange" "$1" "$c_reset"; }
+cyan()   { printf '%s%s%s\n' "$c_cyan"   "$1" "$c_reset"; }
+gray()   { printf '%s%s%s\n' "$c_gray"   "$1" "$c_reset"; }
 
 # 诊断信息一律走 stderr（stdout 可能被 $(...) 捕获）
-err()   { printf '%s%s%s\n' "$C_RED"    "$1" "$C_RESET" >&2; }
-warn()  { printf '%s%s%s\n' "$C_YELLOW" "$1" "$C_RESET" >&2; }
-note()  { printf '%s%s%s\n' "$C_ORANGE" "$1" "$C_RESET" >&2; }
+err()   { printf '%s%s%s\n' "$c_red"    "$1" "$c_reset" >&2; }
+warn()  { printf '%s%s%s\n' "$c_yellow" "$1" "$c_reset" >&2; }
+note()  { printf '%s%s%s\n' "$c_orange" "$1" "$c_reset" >&2; }
 vlog()  { (( OPT_VERBOSE )) && printf '%s\n' "$1" >&2; return 0; }
 die()   { err " $1"; exit "${2:-1}"; }
 
@@ -491,7 +497,7 @@ tool_install() {
     local key="$1"
     need_root
     if tool_installed "$key"; then
-        purple " 您已经安装过 $key 了"
+        cyan " 您已经安装过 $key 了"
         return 0
     fi
     tool_pkgs "$key" || return 1
@@ -597,7 +603,7 @@ tz_set() {
     local current=""
     current=$(timedatectl show --property=Timezone --value 2>/dev/null)
     if [[ "$current" == "$zone" ]]; then
-        purple " 您已经设置过时区为 $zone 了"
+        cyan " 您已经设置过时区为 $zone 了"
         return 0
     fi
     if run sudo_run timedatectl set-timezone "$zone"; then
@@ -724,7 +730,7 @@ gai_v4() {
     need_root
     gai_prepare || return 1
     if grep -qE '^precedence[[:space:]]+::ffff:0:0/96[[:space:]]+100' "$GAI_CONF" 2>/dev/null; then
-        purple " 您已经设置过优先使用 IPv4 了"
+        cyan " 您已经设置过优先使用 IPv4 了"
         return 0
     fi
     if (( DRY_RUN )); then
@@ -732,19 +738,19 @@ gai_v4() {
         return 0
     fi
     if grep -qE '^label[[:space:]]+2002::/16[[:space:]]+2' "$GAI_CONF"; then
-        purple " 检测到 IPv6 优先设置，本次将一并清除"
+        cyan " 检测到 IPv6 优先设置，本次将一并清除"
     fi
     backup_file "$GAI_CONF"
     run sudo_run sed -i -E '/^label[[:space:]]+2002::\/16[[:space:]]+2/d' "$GAI_CONF"
     printf '%s\n' 'precedence ::ffff:0:0/96  100' | run sudo_run tee -a "$GAI_CONF" >/dev/null
-    purple " 已经成功设置为 IPv4 优先"
+    cyan " 已经成功设置为 IPv4 优先"
 }
 
 gai_v6() {
     need_root
     gai_prepare || return 1
     if grep -qE '^label[[:space:]]+2002::/16[[:space:]]+2' "$GAI_CONF" 2>/dev/null; then
-        purple " 您已经设置过优先使用 IPv6 了"
+        cyan " 您已经设置过优先使用 IPv6 了"
         return 0
     fi
     if (( DRY_RUN )); then
@@ -752,12 +758,12 @@ gai_v6() {
         return 0
     fi
     if grep -qE '^precedence[[:space:]]+::ffff:0:0/96[[:space:]]+100' "$GAI_CONF"; then
-        purple " 检测到 IPv4 优先设置，本次将一并清除"
+        cyan " 检测到 IPv4 优先设置，本次将一并清除"
     fi
     backup_file "$GAI_CONF"
     run sudo_run sed -i -E '/^precedence[[:space:]]+::ffff:0:0\/96[[:space:]]+100/d' "$GAI_CONF"
     printf '%s\n' 'label 2002::/16   2' | run sudo_run tee -a "$GAI_CONF" >/dev/null
-    purple " 已经成功设置为 IPv6 优先"
+    cyan " 已经成功设置为 IPv6 优先"
 }
 
 gai_reset() {
@@ -929,7 +935,7 @@ wcg_action() {
     case "$i" in
         0)  need_root
             tool_installed wget && tool_installed curl && tool_installed git \
-                && { purple " 您已经安装过 wget, curl 和 git 了"; return 0; }
+                && { cyan " 您已经安装过 wget, curl 和 git 了"; return 0; }
             tool_pkgs wget || return 1
             local all=("${TOOL_PKGS[@]}")
             tool_pkgs curl || return 1; all+=("${TOOL_PKGS[@]}")
@@ -1083,7 +1089,7 @@ SPEEDTEST_ACTIONS=(speedtest_install speedtest_run speedtest_server speedtest_un
 speedtest_install() {
     need_root
     if command -v speedtest >/dev/null 2>&1; then
-        purple " 您已经安装过 Speedtest CLI"
+        cyan " 您已经安装过 Speedtest CLI"
         return 0
     fi
     detect_os
@@ -1162,7 +1168,7 @@ CADDY_ACTIONS=(caddy_install caddy_show caddy_add caddy_del caddy_reload caddy_s
 caddy_install() {
     need_root
     if command -v caddy >/dev/null 2>&1; then
-        purple " 您已经安装过 Caddy"
+        cyan " 您已经安装过 Caddy"
         return 0
     fi
     detect_os
@@ -1668,7 +1674,7 @@ arch_install() {
             need_root
             detect_os
             if tool_installed rar; then
-                purple " 您已经安装过 rar 和 unrar 了"
+                cyan " 您已经安装过 rar 和 unrar 了"
                 return 0
             fi
             case "$OS_ID" in
