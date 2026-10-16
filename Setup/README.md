@@ -1,22 +1,22 @@
-# sh/ 脚本使用说明
+# Setup 脚本使用说明
 
 新装 VPS 的一站式初始化脚本套件 —— 从 1Password 取配置、跑 DDNS、装代理、装探针、收紧 SSH，六个脚本共用一套传参规范。
 
 ## 目录
 
-| 章节 | 内容 |
-| --- | --- |
-| [1. 总览](#1-总览) | 六个脚本的分工、调用关系、统一规范 |
-| [2. `start.sh`](#2-startsh--一键部署编排入口) | 编排入口：执行项、参数、流程、退出码 |
-| [3. `ddns.sh`](#3-ddnssh--cloudflare-ddns) | Cloudflare A / AAAA 记录同步 |
-| [4. `env.sh`](#4-envsh--从-1password-拉取-env-文件) | 从 1Password 拉取完整 env |
-| [5. `ssh.sh`](#5-sshsh--ssh-配置与公钥管理) | sshd_config 与公钥管理 |
-| [6. `proxy.sh`](#6-proxysh--soga-代理安装与配置) | soga 安装与配置 |
-| [7. `nezha.sh`](#7-nezhash--哪吒探针-agent-安装) | 哪吒探针 Agent 安装 |
-| [8. 公共区段](#8-公共区段六脚本一致) | 六脚本共用的底层组件 |
-| [9. 依赖](#9-依赖与运行环境) | 运行环境要求 |
-| [10. 组合用法](#10-典型组合用法) | 常见场景的完整命令 |
-| [11. 注意事项](#11-已知问题与注意事项) | 坑位清单 |
+| 章节                                                | 内容                                 |
+| --------------------------------------------------- | ------------------------------------ |
+| [1. 总览](#1-总览)                                  | 六个脚本的分工、调用关系、统一规范   |
+| [2. `start.sh`](#2-startsh--一键部署编排入口)       | 编排入口：执行项、参数、流程、退出码 |
+| [3. `ddns.sh`](#3-ddnssh--cloudflare-ddns)          | Cloudflare A / AAAA 记录同步         |
+| [4. `env.sh`](#4-envsh--从-1password-拉取-env-文件) | 从 1Password 拉取完整 env            |
+| [5. `ssh.sh`](#5-sshsh--ssh-配置与公钥管理)         | sshd_config 与公钥管理               |
+| [6. `proxy.sh`](#6-proxysh--soga-代理安装与配置)    | soga 安装与配置                      |
+| [7. `nezha.sh`](#7-nezhash--哪吒探针-agent-安装)    | 哪吒探针 Agent 安装                  |
+| [8. 公共区段](#8-公共区段六脚本一致)                | 六脚本共用的底层组件                 |
+| [9. 依赖](#9-依赖与运行环境)                        | 运行环境要求                         |
+| [10. 组合用法](#10-典型组合用法)                    | 常见场景的完整命令                   |
+| [11. 注意事项](#11-已知问题与注意事项)              | 坑位清单                             |
 
 ---
 
@@ -24,14 +24,14 @@
 
 ### 1.1 六个脚本的分工
 
-| 脚本 | 作用 | 运行身份 | 依赖 |
-| --- | --- | --- | --- |
+| 脚本           | 作用                                                      | 运行身份         | 依赖                                                         |
+| -------------- | --------------------------------------------------------- | ---------------- | ------------------------------------------------------------ |
 | **`start.sh`** | **编排入口**：加载 env → 解析配置 → 选执行项 → 委托子脚本 | root 或可 `sudo` | 委托 `ddns.sh` / `proxy.sh` / `nezha.sh` / `ssh.sh`（本地优先，缺失自动下载） |
-| `ddns.sh` | 把本机公网 IP 同步成 Cloudflare A / AAAA 记录 | 任意用户 | 只需 `curl`（`jq` 可选） |
-| `env.sh` | 从 1Password 拉取完整 env 文件到本地 | 任意用户 | `op` ≥ 2.18.0 |
-| `ssh.sh` | 改 `sshd_config` 常用项 + 维护 root 公钥 | **必须 root** | `sshd` + systemd / service |
-| `proxy.sh` | soga 代理安装与配置修改 | root 或可 `sudo` | `curl` 或 `wget` |
-| `nezha.sh` | 哪吒探针 Agent 安装 | root 或可 `sudo` | `curl`/`wget` + `unzip`（缺失自动装） |
+| `ddns.sh`      | 把本机公网 IP 同步成 Cloudflare A / AAAA 记录             | 任意用户         | 只需 `curl`（`jq` 可选）                                     |
+| `env.sh`       | 从 1Password 拉取完整 env 文件到本地                      | 任意用户         | `op` ≥ 2.18.0                                                |
+| `ssh.sh`       | 改 `sshd_config` 常用项 + 维护 root 公钥                  | **必须 root**    | `sshd` + systemd / service                                   |
+| `proxy.sh`     | soga 代理安装与配置修改                                   | root 或可 `sudo` | `curl` 或 `wget`                                             |
+| `nezha.sh`     | 哪吒探针 Agent 安装                                       | root 或可 `sudo` | `curl`/`wget` + `unzip`（缺失自动装）                        |
 
 ### 1.2 调用关系
 
@@ -70,8 +70,6 @@
 
 1. **长选项是唯一权威接口**：`--key value`、`--key=value`、`-k value`、`-kvalue` 四种写法都认。
    短选项仅为兼容保留，**且跨脚本含义不同** —— `-t` 在 `env.sh` 是 token、在 `ddns.sh` 是记录类型；`-R` 在 `ssh.sh` 是 root 登录、在 `start.sh` 是 DNS 前缀。
-   > [!IMPORTANT]
-   > **串联执行一律用长选项。** 敲错短选项最坏的结果是把 `PermitRootLogin home` 这类值写进配置。
 2. **取值优先级**：`命令行 > VPS_* 环境变量 > env 文件 > 内置默认 >（交互询问 / 报错）`。
    参数摘要会用 `kv3` 标注每个值**来自哪里**（命令行 / 环境变量 / env文件 / 默认值）。
 3. **缺失参数一次性列全**：缺几项列几项，并给出可复制的补全方式。
@@ -79,6 +77,9 @@
 5. **敏感值脱敏**：只显示前 4 位 + 后 4 位 + 长度（≤8 字符显示 `********`），日志可安全外发。
 6. **不接受位置参数**：全部用选项传参，误给位置参数直接报错。
 7. **`set -uo pipefail`**（刻意不用 `-e`），`IFS=$'\n\t'`。
+
+> [!IMPORTANT]
+> **串联执行一律用长选项。** 敲错短选项最坏的结果是把 `PermitRootLogin home` 这类值写进配置（`-R` 在两个脚本里含义不同，就是典型）。
 
 ---
 
@@ -101,17 +102,17 @@ chmod +x start.sh
 
 ### 2.2 执行项 `--choice` / `-C`
 
-| 值 | 含义 | 委托 |
-| :-: | --- | --- |
-| `1` | 全部执行（DDNS → 装代理 → 改配置 → 装探针 →〔SSH〕） | 全部 |
-| `2` | 仅 DDNS | `ddns.sh` |
-| `3` | 仅安装代理（soga） | `proxy.sh --action=install` |
-| `4` | 仅修改代理配置 | `proxy.sh --action=config` |
-| `5` | 仅安装哪吒探针 | `nezha.sh` |
-| `6` | 安装代理 + 修改配置（**最常用**） | `proxy.sh --action=both` |
-| `7` | SSH 改全部并重启 | `ssh.sh --choice=1` |
-| `8` | SSH 仅添加公钥 | `ssh.sh --choice=2` |
-| `0` | 退出 | — |
+|  值  | 含义                                                 | 委托                        |
+| :--: | ---------------------------------------------------- | --------------------------- |
+| `1`  | 全部执行（DDNS → 装代理 → 改配置 → 装探针 →〔SSH〕） | 全部                        |
+| `2`  | 仅 DDNS                                              | `ddns.sh`                   |
+| `3`  | 仅安装代理（soga）                                   | `proxy.sh --action=install` |
+| `4`  | 仅修改代理配置                                       | `proxy.sh --action=config`  |
+| `5`  | 仅安装哪吒探针                                       | `nezha.sh`                  |
+| `6`  | 安装代理 + 修改配置（**最常用**）                    | `proxy.sh --action=both`    |
+| `7`  | SSH 改全部并重启                                     | `ssh.sh --choice=1`         |
+| `8`  | SSH 仅添加公钥                                       | `ssh.sh --choice=2`         |
+| `0`  | 退出                                                 | —                           |
 
 > [!NOTE]
 > `--choice=1` 的 SSH 步骤是**条件执行**的：只有你提供了任何 SSH 设置（`--ssh-*` / `VPS_SSH_*` / env 文件里的 `ssh_*` 键）才会带上，否则打印「跳过 SSH 步骤」。这是为了避免只想装代理却把 sshd 重启一遍。
@@ -122,26 +123,26 @@ chmod +x start.sh
 
 **基础参数**
 
-| 长选项 | 短选项 | 说明 | 默认 |
-| --- | :-: | --- | --- |
-| `--env <文件\|URL>` | `-f` | env 文件路径或 `http(s)://` 地址 | `vps.env` |
-| `--prefix <前缀>` | `-R` | DNS 记录前缀（拼成 `<前缀>.<域名>`） | 空（按根域名，会告警） |
-| `--ss-id <id>` | `-S` | Shadowsocks 节点 ID | 空 |
-| `--vmess-id <id>` | `-V` | Vmess 节点 ID | 空 |
-| `--choice <0-8>` | `-C` | 执行项 | 交互选择 |
-| `--nz-uuid <uuid>` | `-U` | 哪吒 Agent UUID（不给由面板分配） | 空 |
-| `--soga-version <版本>` | — | soga 版本，透传 `proxy.sh` | `2.13.4` |
+| 长选项                  | 短选项 | 说明                                 | 默认                   |
+| ----------------------- | :----: | ------------------------------------ | ---------------------- |
+| `--env <文件\|URL>`     |  `-f`  | env 文件路径或 `http(s)://` 地址     | `vps.env`              |
+| `--prefix <前缀>`       |  `-R`  | DNS 记录前缀（拼成 `<前缀>.<域名>`） | 空（按根域名，会告警） |
+| `--ss-id <id>`          |  `-S`  | Shadowsocks 节点 ID                  | 空                     |
+| `--vmess-id <id>`       |  `-V`  | Vmess 节点 ID                        | 空                     |
+| `--choice <0-8>`        |  `-C`  | 执行项                               | 交互选择               |
+| `--nz-uuid <uuid>`      |  `-U`  | 哪吒 Agent UUID（不给由面板分配）    | 空                     |
+| `--soga-version <版本>` |   —    | soga 版本，透传 `proxy.sh`           | `2.13.4`               |
 
 **委托与落盘**
 
-| 长选项 | 说明 | 默认 |
-| --- | --- | --- |
-| `--ddns-script <路径>` | 指定 `ddns.sh` 路径 | 自动查找 / 下载 |
-| `--proxy-script <路径>` | 指定 `proxy.sh` 路径 | 自动查找 / 下载 |
-| `--nezha-script <路径>` | 指定 `nezha.sh` 路径 | 自动查找 / 下载 |
-| `--ssh-script <路径>` | 指定 `ssh.sh` 路径 | 自动查找 / 下载 |
-| `--save-env <路径>` | 把最终配置写回 env 文件（权限 600） | 不写 |
-| `--force` | 参数缺失时**跳过对应步骤**而不是退出 | 关 |
+| 长选项                  | 说明                                 | 默认            |
+| ----------------------- | ------------------------------------ | --------------- |
+| `--ddns-script <路径>`  | 指定 `ddns.sh` 路径                  | 自动查找 / 下载 |
+| `--proxy-script <路径>` | 指定 `proxy.sh` 路径                 | 自动查找 / 下载 |
+| `--nezha-script <路径>` | 指定 `nezha.sh` 路径                 | 自动查找 / 下载 |
+| `--ssh-script <路径>`   | 指定 `ssh.sh` 路径                   | 自动查找 / 下载 |
+| `--save-env <路径>`     | 把最终配置写回 env 文件（权限 600）  | 不写            |
+| `--force`               | 参数缺失时**跳过对应步骤**而不是退出 | 关              |
 
 **env 缺失时的手动补参**（优先级最高，也可用对应的 `VPS_*` 环境变量）
 
@@ -153,21 +154,21 @@ chmod +x start.sh
 
 **SSH 参数**（v2.2 起，全部透传给 `ssh.sh`；**留空即用 `ssh.sh` 自己的默认值**）
 
-| 长选项 | 说明 | 透传目标 |
-| --- | --- | --- |
-| `--ssh-port <端口>` | SSH 端口 | `--port` |
-| `--ssh-root-login <yes\|no>` | PermitRootLogin | `--root-login` |
-| `--ssh-password-auth <yes\|no>` | PasswordAuthentication | `--password-auth` |
-| `--ssh-empty-passwords <yes\|no>` | PermitEmptyPasswords | `--empty-passwords` |
-| `--ssh-max-auth-tries <n>` | MaxAuthTries | `--max-auth-tries` |
-| `--ssh-pubkey-auth <yes\|no>` | PubkeyAuthentication | `--pubkey-auth` |
-| `--ssh-pubkey <公钥整行>` | 直接给公钥字符串 | `--pubkey` |
-| `--ssh-pubkey-file <文件>` | 从文件读公钥 | `--pubkey-file` |
-| `--ssh-pubkey-name <名字>` | 从 env 读 `pubkey_<名字>` | `--pubkey-name` |
-| `--ssh-config <路径>` | `sshd_config` 路径 | `--config` |
-| `--ssh-action <1\|2>` | SSH 动作（**仅 `--choice=1` 时生效**） | `--choice` |
-| `--ssh-skip-restart` | 改完不重启 SSH | `--skip-restart` |
-| `--ssh-env <文件>` | 传给 `ssh.sh` 的 env 文件 | `--env` |
+| 长选项                            | 说明                                   | 透传目标            |
+| --------------------------------- | -------------------------------------- | ------------------- |
+| `--ssh-port <端口>`               | SSH 端口                               | `--port`            |
+| `--ssh-root-login <yes\|no>`      | PermitRootLogin                        | `--root-login`      |
+| `--ssh-password-auth <yes\|no>`   | PasswordAuthentication                 | `--password-auth`   |
+| `--ssh-empty-passwords <yes\|no>` | PermitEmptyPasswords                   | `--empty-passwords` |
+| `--ssh-max-auth-tries <n>`        | MaxAuthTries                           | `--max-auth-tries`  |
+| `--ssh-pubkey-auth <yes\|no>`     | PubkeyAuthentication                   | `--pubkey-auth`     |
+| `--ssh-pubkey <公钥整行>`         | 直接给公钥字符串                       | `--pubkey`          |
+| `--ssh-pubkey-file <文件>`        | 从文件读公钥                           | `--pubkey-file`     |
+| `--ssh-pubkey-name <名字>`        | 从 env 读 `pubkey_<名字>`              | `--pubkey-name`     |
+| `--ssh-config <路径>`             | `sshd_config` 路径                     | `--config`          |
+| `--ssh-action <1\|2>`             | SSH 动作（**仅 `--choice=1` 时生效**） | `--choice`          |
+| `--ssh-skip-restart`              | 改完不重启 SSH                         | `--skip-restart`    |
+| `--ssh-env <文件>`                | 传给 `ssh.sh` 的 env 文件              | `--env`             |
 
 ### 2.4 env 文件与环境变量
 
@@ -199,23 +200,23 @@ VPS_SSH_MAX_AUTH_TRIES  VPS_SSH_PUBKEY_AUTH  VPS_SSH_PUBKEY  VPS_SSH_CONFIG  VPS
 
 ### 2.5 五段式执行流程
 
-| 段 | 内容 |
-| :-: | --- |
-| 1/5 | 加载 env 文件（缺失不退出，转手动模式） |
-| 2/5 | 配置解析结果（每项标注来源，敏感值脱敏） |
-| 3/5 | 选择执行项（交互菜单或 `--choice`） |
-| 4/5 | 参数完整性检查（只检查本次 choice 需要的项；缺项则询问或一次列全；`--force` 改为跳过） |
-| 5/5 | 执行（`--dry-run` 全程只打印） |
+|  段  | 内容                                                         |
+| :--: | ------------------------------------------------------------ |
+| 1/5  | 加载 env 文件（缺失不退出，转手动模式）                      |
+| 2/5  | 配置解析结果（每项标注来源，敏感值脱敏）                     |
+| 3/5  | 选择执行项（交互菜单或 `--choice`）                          |
+| 4/5  | 参数完整性检查（只检查本次 choice 需要的项；缺项则询问或一次列全；`--force` 改为跳过） |
+| 5/5  | 执行（`--dry-run` 全程只打印）                               |
 
 ### 2.6 DDNS 行为（choice 1 / 2）
 
 需要 `cf_key` + `domain1`，对每个域名调用一次 `ddns.sh`：
 
-| 记录 | 类型 | 橙云 |
-| --- | :-: | :-: |
-| `<prefix>.<domain1>` | A | `false` |
-| `<prefix>-v6.<domain1>` | AAAA | `false` |
-| `<prefix>.<domain2>`（仅 `domain2` 非空时） | A | `true` |
+| 记录                                        | 类型 |  橙云   |
+| ------------------------------------------- | :--: | :-----: |
+| `<prefix>.<domain1>`                        |  A   | `false` |
+| `<prefix>-v6.<domain1>`                     | AAAA | `false` |
+| `<prefix>.<domain2>`（仅 `domain2` 非空时） |  A   | `true`  |
 
 不给 `--prefix` 时按根域名处理并告警。
 
@@ -238,11 +239,11 @@ VPS_SSH_MAX_AUTH_TRIES  VPS_SSH_PUBKEY_AUTH  VPS_SSH_PUBKEY  VPS_SSH_CONFIG  VPS
 
 ### 2.8 退出码
 
-| 码 | 含义 |
-| :-: | --- |
-| `0` | 全部成功（**包含** `--force` 主动跳过的步骤） |
-| `1` | 有步骤失败（子脚本失败会如实上报，不会被吞掉） |
-| `2` | 选项或参数错误（未知选项、必填缺失、取值非法） |
+|  码  | 含义                                           |
+| :--: | ---------------------------------------------- |
+| `0`  | 全部成功（**包含** `--force` 主动跳过的步骤）  |
+| `1`  | 有步骤失败（子脚本失败会如实上报，不会被吞掉） |
+| `2`  | 选项或参数错误（未知选项、必填缺失、取值非法） |
 
 ---
 
@@ -260,16 +261,16 @@ VPS_SSH_MAX_AUTH_TRIES  VPS_SSH_PUBKEY_AUTH  VPS_SSH_PUBKEY  VPS_SSH_CONFIG  VPS
 
 ### 3.2 参数
 
-| 长选项 | 短选项 | 必填 | 说明 | 其它来源 |
-| --- | :-: | :-: | --- | --- |
-| `--key <token>` | `-k` | ✅ | Cloudflare **API Token**（Bearer 认证） | `VPS_CF_KEY` / env `cf_key` |
-| `--domain <域名>` | `-d` | ✅ | 主域名，如 `example.com` | `VPS_DDNS_DOMAIN` / env `domain` |
-| `--record <记录名>` | `-r` | ⬜ | 完整记录名，如 `home.example.com` | `VPS_DDNS_RECORD` / env `record` |
-| `--prefix <前缀>` | — | ⬜ | 前缀，与 `--domain` 组合 | `VPS_DDNS_PREFIX` / env `record_prefix` |
-| `--type <A\|AAAA>` | `-t` | ❌ | 记录类型（大写化处理） | `VPS_DDNS_TYPE` / env `type`，默认 `A` |
-| `--proxy <true\|false>` | `-p` | ❌ | 是否开 CF 橙云代理 | `VPS_DDNS_PROXY` / env `proxy`，默认 `false` |
-| `--email <邮箱>` | `-e` | ❌ | **兼容保留**，Token 模式不使用 | env `cf_email` |
-| `--mode <模式>` | — | ❌ | 输出模式 `color \| plain \| compact` | `VPS_DDNS_MODE` / env `mode`，默认自动（TTY→color） |
+| 长选项                  | 短选项 | 必填 | 说明                                    | 其它来源                                            |
+| ----------------------- | :----: | :--: | --------------------------------------- | --------------------------------------------------- |
+| `--key <token>`         |  `-k`  |  ✅   | Cloudflare **API Token**（Bearer 认证） | `VPS_CF_KEY` / env `cf_key`                         |
+| `--domain <域名>`       |  `-d`  |  ✅   | 主域名，如 `example.com`                | `VPS_DDNS_DOMAIN` / env `domain`                    |
+| `--record <记录名>`     |  `-r`  |  ⬜   | 完整记录名，如 `home.example.com`       | `VPS_DDNS_RECORD` / env `record`                    |
+| `--prefix <前缀>`       |   —    |  ⬜   | 前缀，与 `--domain` 组合                | `VPS_DDNS_PREFIX` / env `record_prefix`             |
+| `--type <A\|AAAA>`      |  `-t`  |  ❌   | 记录类型（大写化处理）                  | `VPS_DDNS_TYPE` / env `type`，默认 `A`              |
+| `--proxy <true\|false>` |  `-p`  |  ❌   | 是否开 CF 橙云代理                      | `VPS_DDNS_PROXY` / env `proxy`，默认 `false`        |
+| `--email <邮箱>`        |  `-e`  |  ❌   | **兼容保留**，Token 模式不使用          | env `cf_email`                                      |
+| `--mode <模式>`         |   —    |  ❌   | 输出模式 `color \| plain \| compact`    | `VPS_DDNS_MODE` / env `mode`，默认自动（TTY→color） |
 
 记录名推导优先级：`--record` > `--prefix` + `--domain` > `--domain`（根域名，会告警）。
 
@@ -314,18 +315,18 @@ VPS_SSH_MAX_AUTH_TRIES  VPS_SSH_PUBKEY_AUTH  VPS_SSH_PUBKEY  VPS_SSH_CONFIG  VPS
 
 ### 4.2 参数
 
-| 长选项 | 短选项 | 说明 | 默认 / 其它来源 |
-| --- | :-: | --- | --- |
-| `--token <token>` | `-t` | Service Account token（`ops_` 开头） | `VPS_OP_TOKEN` / `$OP_SERVICE_ACCOUNT_TOKEN` |
-| `--token-file <文件>` | `-T` | 从文件读 token（首行，自动去换行） | — |
-| `--ref <op://…>` | `-r` | 完整引用 `<库>/<条目>/<字段>` | `VPS_OP_REF` |
-| `--vault <库>` | `-v` | 保管库名（不给 `--ref` 时必填） | `VPS_OP_VAULT` |
-| `--item <条目>` | `-i` | 条目名（不给 `--ref` 时必填） | `VPS_OP_ITEM` |
-| `--field <字段>` | `-F` | 字段名，安全笔记正文 = `notesPlain` | `VPS_OP_FIELD`，默认 `notesPlain` |
-| `--out <文件>` | `-o` | 输出文件 | `VPS_OP_OUT`，默认 `vps.env` |
-| `--list-keys` | — | **只读**：列出已有 env 文件的 KEY 名，不拉取 | — |
-| `--no-install-op` | — | 不让脚本自动安装 `op`（缺失时只打印安装指引） | 关（即默认会自动装） |
-| `--op-arch <amd64\|arm64\|arm\|386>` | — | `op` 的目标架构 | 按 `uname -m` 自动识别 |
+| 长选项                               | 短选项 | 说明                                          | 默认 / 其它来源                              |
+| ------------------------------------ | :----: | --------------------------------------------- | -------------------------------------------- |
+| `--token <token>`                    |  `-t`  | Service Account token（`ops_` 开头）          | `VPS_OP_TOKEN` / `$OP_SERVICE_ACCOUNT_TOKEN` |
+| `--token-file <文件>`                |  `-T`  | 从文件读 token（首行，自动去换行）            | —                                            |
+| `--ref <op://…>`                     |  `-r`  | 完整引用 `<库>/<条目>/<字段>`                 | `VPS_OP_REF`                                 |
+| `--vault <库>`                       |  `-v`  | 保管库名（不给 `--ref` 时必填）               | `VPS_OP_VAULT`                               |
+| `--item <条目>`                      |  `-i`  | 条目名（不给 `--ref` 时必填）                 | `VPS_OP_ITEM`                                |
+| `--field <字段>`                     |  `-F`  | 字段名，安全笔记正文 = `notesPlain`           | `VPS_OP_FIELD`，默认 `notesPlain`            |
+| `--out <文件>`                       |  `-o`  | 输出文件                                      | `VPS_OP_OUT`，默认 `vps.env`                 |
+| `--list-keys`                        |   —    | **只读**：列出已有 env 文件的 KEY 名，不拉取  | —                                            |
+| `--no-install-op`                    |   —    | 不让脚本自动安装 `op`（缺失时只打印安装指引） | 关（即默认会自动装）                         |
+| `--op-arch <amd64\|arm64\|arm\|386>` |   —    | `op` 的目标架构                               | 按 `uname -m` 自动识别                       |
 
 token 优先级：`-t` > `--token-file` > `$OP_SERVICE_ACCOUNT_TOKEN`。
 
@@ -359,21 +360,21 @@ token 优先级：`-t` > `--token-file` > `$OP_SERVICE_ACCOUNT_TOKEN`。
 
 ### 5.2 参数
 
-| 长选项 | 短选项 | 说明 | 默认 |
-| --- | :-: | --- | --- |
-| `--env <文件\|URL>` | `-f` | env 文件路径或 URL | `ssh.env`（不存在不报错） |
-| `--port <端口>` | `-P` | `Port`（1-65535） | `22` |
-| `--root-login <yes\|no>` | `-R` | `PermitRootLogin` | `yes` |
-| `--password-auth <yes\|no>` | `-A` | `PasswordAuthentication` | `yes` |
-| `--empty-passwords <yes\|no>` | `-E` | `PermitEmptyPasswords` | `no` |
-| `--max-auth-tries <n>` | `-M` | `MaxAuthTries` | `3` |
-| `--pubkey-auth <yes\|no>` | `-U` | `PubkeyAuthentication` | `yes` |
-| `--pubkey <公钥整行>` | `-K` | 直接给公钥字符串 | — |
-| `--pubkey-file <文件>` | — | 从文件读公钥（取首行） | — |
-| `--pubkey-name <名字>` | `-N` | 从 env 读 `pubkey_<名字>` | — |
-| `--config <路径>` | — | `sshd_config` 路径 | `/etc/ssh/sshd_config` |
-| `--choice <0\|1\|2>` | `-C` | `1` 改全部并重启 / `2` 仅加公钥 / `0` 退出 | 交互 |
-| `--skip-restart` | — | 不重启 SSH 服务（配合 `--choice=1`） | 关 |
+| 长选项                        | 短选项 | 说明                                       | 默认                      |
+| ----------------------------- | :----: | ------------------------------------------ | ------------------------- |
+| `--env <文件\|URL>`           |  `-f`  | env 文件路径或 URL                         | `ssh.env`（不存在不报错） |
+| `--port <端口>`               |  `-P`  | `Port`（1-65535）                          | `22`                      |
+| `--root-login <yes\|no>`      |  `-R`  | `PermitRootLogin`                          | `yes`                     |
+| `--password-auth <yes\|no>`   |  `-A`  | `PasswordAuthentication`                   | `yes`                     |
+| `--empty-passwords <yes\|no>` |  `-E`  | `PermitEmptyPasswords`                     | `no`                      |
+| `--max-auth-tries <n>`        |  `-M`  | `MaxAuthTries`                             | `3`                       |
+| `--pubkey-auth <yes\|no>`     |  `-U`  | `PubkeyAuthentication`                     | `yes`                     |
+| `--pubkey <公钥整行>`         |  `-K`  | 直接给公钥字符串                           | —                         |
+| `--pubkey-file <文件>`        |   —    | 从文件读公钥（取首行）                     | —                         |
+| `--pubkey-name <名字>`        |  `-N`  | 从 env 读 `pubkey_<名字>`                  | —                         |
+| `--config <路径>`             |   —    | `sshd_config` 路径                         | `/etc/ssh/sshd_config`    |
+| `--choice <0\|1\|2>`          |  `-C`  | `1` 改全部并重启 / `2` 仅加公钥 / `0` 退出 | 交互                      |
+| `--skip-restart`              |   —    | 不重启 SSH 服务（配合 `--choice=1`）       | 关                        |
 
 env 文件键（默认 `ssh.env`）：`ssh_port` `ssh_permit_root_login` `ssh_password_auth` `ssh_permit_empty_passwords` `ssh_max_auth_tries` `ssh_pubkey_auth` `ssh_choice` `ssh_config` `pubkey_<名字>`。
 
@@ -386,7 +387,10 @@ env 文件键（默认 `ssh.env`）：`ssh_port` `ssh_permit_root_login` `ssh_pa
 - **改前自动备份**：首次修改时 `cp -a sshd_config sshd_config.bak.<时间戳>`。
 - **定向替换**：`sed` 删掉原有（含被注释的）同名项，新值追加到文件末尾 —— 与 sshd「最后一条生效」的解析规则一致。
 - **公钥去重**：`grep -qxF` 命中则跳过；确保 `/root/.ssh` 为 `700`、`authorized_keys` 为 `600` 且属 `root:root`。
-- **重启前先校验**：`sshd -t`，失败直接退出不重启；重启优先 `systemctl restart sshd`，退 `ssh`，再退 `service`。
+- **重启前先校验**：`sshd -t -f <本次改的那个文件>`，失败直接退出不重启；重启优先 `systemctl restart sshd`，退 `ssh`，再退 `service`。
+
+> [!IMPORTANT]
+> 校验必须带 `-f`：不带 `-f` 时 `sshd` 校验的是默认的 `/etc/ssh/sshd_config`，一旦用 `--config` 指向别的文件，校验就形同虚设 —— 会「校验通过但重启后 sshd 起不来」，有锁门风险。
 
 > [!CAUTION]
 > 默认值偏宽松（root 登录 + 密码认证全开），只适合一次性初始化。收紧示例：
@@ -410,17 +414,17 @@ env 文件键（默认 `ssh.env`）：`ssh_port` `ssh_permit_root_login` `ssh_pa
 
 ### 6.2 参数
 
-| 长选项 | 短选项 | 说明 | 默认 / 其它来源 |
-| --- | :-: | --- | --- |
-| `--action <install\|config\|both>` | `-a` | 只装 / 只配 / 装+配 | `both` |
-| `--soga-version <版本>` | `-s` | soga 版本（格式 `x.y.z`） | `VPS_SOGA_VERSION`，默认 `2.13.4` |
-| `--arch <amd64\|arm64\|arm>` | — | 目标架构 | 自动检测 |
-| `--ss-id <id>` | `-S` | Shadowsocks 节点 ID（config/both 必填） | `VPS_SS_ID` |
-| `--vmess-id <id>` | `-V` | Vmess 节点 ID（config/both 必填） | `VPS_VMESS_ID` |
-| `--webapi-url <url>` | — | v2board webapi 地址（config/both 必填） | `VPS_WEBAPI_URL` / env `v2board_webapi_url` |
-| `--webapi-key <key>` | — | v2board webapi key（config/both 必填） | `VPS_WEBAPI_KEY` / env `v2board_webapi_key` |
-| `--env <文件>` | `-f` | env 文件路径 | `vps.env`（存在才加载；指定了却不存在则报错） |
-| `--no-restart` | — | 配置写入后不启动 / 不启用实例 | 关 |
+| 长选项                             | 短选项 | 说明                                                         | 默认 / 其它来源                               |
+| ---------------------------------- | :----: | ------------------------------------------------------------ | --------------------------------------------- |
+| `--action <install\|config\|both>` |  `-a`  | 只装 / 只配 / 装+配                                          | `both`                                        |
+| `--soga-version <版本>`            |  `-s`  | soga 版本（格式 `x.y.z`）                                    | `VPS_SOGA_VERSION`，默认 `2.13.4`             |
+| `--arch <amd64\|arm64\|arm>`       |   —    | 目标架构                                                     | 自动检测                                      |
+| `--ss-id <id>`                     |  `-S`  | Shadowsocks 节点 ID（config/both 必填）                      | `VPS_SS_ID`                                   |
+| `--vmess-id <id>`                  |  `-V`  | Vmess 节点 ID（config/both 必填）                            | `VPS_VMESS_ID`                                |
+| `--webapi-url <url>`               |   —    | v2board webapi 地址（config/both 必填）                      | `VPS_WEBAPI_URL` / env `v2board_webapi_url`   |
+| `--webapi-key <key>`               |   —    | v2board webapi key（config/both 必填）                       | `VPS_WEBAPI_KEY` / env `v2board_webapi_key`   |
+| `--env <文件>`                     |  `-f`  | env 文件路径                                                 | `vps.env`（存在才加载；指定了却不存在则报错） |
+| `--no-restart`                     |   —    | 配置写入后**不重启**实例（⚠️ 新配置不会生效，脚本会明确提示） | 关                                            |
 
 ### 6.3 两条硬规则
 
@@ -430,9 +434,14 @@ env 文件键（默认 `ssh.env`）：`ssh_port` `ssh_permit_root_login` `ssh_pa
 ### 6.4 执行细节
 
 - **install**：下载 `vaxilu/soga-cmd` 最新 release 到 `/usr/bin/soga` → `soga update <版本>` → `soga new ss` / `soga new vmess`（实例已存在只告警）。
-- **config**：从仓库下载 `config/soga-ss.conf` / `config/soga-vmess.conf` → 覆盖到 `/etc/soga/{ss,vmess}/soga.conf` → `sed` 写入 `node_id` / `webapi_url` / `webapi_key` → `soga start` + `soga enable`（`--no-restart` 跳过）。
+- **config**：从仓库下载 `config/soga-ss.conf` / `config/soga-vmess.conf` → 覆盖到 `/etc/soga/{ss,vmess}/soga.conf` → `sed` 写入 `node_id` / `webapi_url` / `webapi_key` → **`soga restart`**（`restart` 失败再退 `soga start`）+ `soga enable`。
 - 架构自动识别：`x86_64 → amd64`、`aarch64 → arm64`、`armv7l → arm`，认不出按 `amd64` 处理并告警。
-- 非 root 且 `/usr/bin` 不可写时自动加 `sudo`。
+- 非 root 且 `/usr/bin` 不可写时自动加 `sudo`；找不到 `soga` 时直接报错并提示先跑 `--action=install`。
+
+> [!WARNING]
+> **改完配置必须 `restart`，不能只 `start`。** 官方语义：`soga start` 对**已在运行**的实例是空操作（只提示「已在运行，如需重启请选择重启」），它**不会重新读取 `soga.conf`** ⇒ 只写文件 + `soga start` 会让 `node_id` / `webapi_*` 的改动被静默忽略。`restart` 在 systemd 侧等价 `reload-or-restart`（单元没有 `ExecReload`，实际就是重启），对**未运行**的实例同样会把它拉起来，所以两种情况都覆盖。
+>
+> 两个实例都没能起来时 **`proxy.sh` 以 1 退出**（不再像 v2.1 那样吞掉），`start.sh` 会标记「有步骤失败」且不清明文 env。
 
 ---
 
@@ -450,14 +459,14 @@ env 文件键（默认 `ssh.env`）：`ssh_port` `ssh_permit_root_login` `ssh_pa
 
 ### 7.2 参数
 
-| 长选项 | 说明 | 默认 / 其它来源 |
-| --- | --- | --- |
-| `--nezha-ip <ip\|域名>` | 哪吒面板地址（**必填**） | `VPS_NEZHA_IP` / env `nezha_panel_ip` |
-| `--nezha-port <端口>` | 面板端口（**必填**，纯数字） | `VPS_NEZHA_PORT` / env `nezha_panel_port` |
-| `--nezha-key <secret>` | Agent Secret（**必填**） | `VPS_NEZHA_KEY` / env `nezha_agent_key` |
-| `--nezha-tls <true\|false>` | 面板是否 TLS | env `nezha_panel_tls`，默认 `false` |
-| `--nz-uuid <uuid>` | 固定 Agent UUID（不给由面板分配） | `VPS_NZ_UUID` |
-| `--env <文件>` | env 文件路径 | `vps.env`（存在才加载；指定了却不存在则报错） |
+| 长选项                      | 说明                              | 默认 / 其它来源                               |
+| --------------------------- | --------------------------------- | --------------------------------------------- |
+| `--nezha-ip <ip\|域名>`     | 哪吒面板地址（**必填**）          | `VPS_NEZHA_IP` / env `nezha_panel_ip`         |
+| `--nezha-port <端口>`       | 面板端口（**必填**，纯数字）      | `VPS_NEZHA_PORT` / env `nezha_panel_port`     |
+| `--nezha-key <secret>`      | Agent Secret（**必填**）          | `VPS_NEZHA_KEY` / env `nezha_agent_key`       |
+| `--nezha-tls <true\|false>` | 面板是否 TLS                      | env `nezha_panel_tls`，默认 `false`           |
+| `--nz-uuid <uuid>`          | 固定 Agent UUID（不给由面板分配） | `VPS_NZ_UUID`                                 |
+| `--env <文件>`              | env 文件路径                      | `vps.env`（存在才加载；指定了却不存在则报错） |
 
 三个必填项缺失时**一次性列全并 exit 2**。
 
@@ -473,21 +482,21 @@ env 文件键（默认 `ssh.env`）：`ssh_port` `ssh_permit_root_login` `ssh_pa
 
 六个脚本顶部有**完全相同**的「公共区段 v2.0」（从 `set -uo pipefail` 行到 `公共区段结束` 标记，共 409 行），包含：
 
-| 组件 | 作用 |
-| --- | --- |
-| `init_colors` / `log` `ok` `warn` `err` `step` `die` | 颜色与五级日志（`err` 走 stderr） |
-| `line` / `section` | 分隔线与分节标题 |
-| `disp_width` / `pad_disp` | **按显示列宽**补齐与截断（ASCII 1 列、`…` 1 列、CJK 2 列；不依赖 locale）—— `printf %-Ns` 是按**字节**补的，直接用会让含中文的值错位 |
-| `mask` / `kv` / `kv3` | 敏感值脱敏；`kv3` 额外显示**取值来源**（键列 18 列 / 值列 36 列，超长按字符边界截断加 `…`） |
-| `have_cmd` / `is_url` / `download` | 命令探测 / URL 判断 / `curl → wget` 下载 |
+| 组件                                                  | 作用                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------ |
+| `init_colors` / `log` `ok` `warn` `err` `step` `die`  | 颜色与五级日志（`err` 走 stderr）                            |
+| `line` / `section`                                    | 分隔线与分节标题                                             |
+| `disp_width` / `pad_disp`                             | **按显示列宽**补齐与截断（ASCII 1 列、`…` 1 列、CJK 2 列；不依赖 locale）—— `printf %-Ns` 是按**字节**补的，直接用会让含中文的值错位 |
+| `mask` / `kv` / `kv3`                                 | 敏感值脱敏；`kv3` 额外显示**取值来源**（键列 18 列 / 值列 36 列，超长按字符边界截断加 `…`） |
+| `have_cmd` / `is_url` / `download`                    | 命令探测 / URL 判断 / `curl → wget` 下载                     |
 | `detect_pkg_mgr` / `install_package` / `ensure_unzip` | 包管理器探测（apt/yum/dnf/pacman/apk/zypper）、装包、**unzip 保障**（`nezha.sh` 与 `env.sh` 共用）；顺带定义 `sudo_cmd` |
-| `def_opt` / `def_common_opts` / `usage` | 选项表注册与自动生成帮助 |
-| `normalize_args` + `apply_args` | **两段式解析**：先归一化 `--long=val` / `--long val` / `-x val` / `-xval`，再应用；未知短选项会给「跨脚本请用长选项」提示 |
-| `load_env_file` | env 文件解析（`KEY=VALUE`、跳整行注释、剥引号、**支持值后面的行内注释**） |
-| `cfg_get` / `cfg_src` | 四级取值与来源判定（`-` 占位符会归一成空串，避免间接展开取到垃圾值） |
-| `miss` / `check_missing` | 缺失参数一次性列全 |
-| `ask` / `confirm` | 交互询问（非 TTY 自动退化为非交互） |
-| `normalize_bool` / `normalize_yesno` | `1/true/yes/on` ↔ `0/false/no/off` 规范化 |
+| `def_opt` / `def_common_opts` / `usage`               | 选项表注册与自动生成帮助                                     |
+| `normalize_args` + `apply_args`                       | **两段式解析**：先归一化 `--long=val` / `--long val` / `-x val` / `-xval`，再应用；未知短选项会给「跨脚本请用长选项」提示 |
+| `load_env_file`                                       | env 文件解析（`KEY=VALUE`、跳整行注释、剥引号、**支持值后面的行内注释**） |
+| `cfg_get` / `cfg_src`                                 | 四级取值与来源判定（`-` 占位符会归一成空串，避免间接展开取到垃圾值） |
+| `miss` / `check_missing`                              | 缺失参数一次性列全                                           |
+| `ask` / `confirm`                                     | 交互询问（非 TTY 自动退化为非交互）                          |
+| `normalize_bool` / `normalize_yesno`                  | `1/true/yes/on` ↔ `0/false/no/off` 规范化                    |
 
 > [!IMPORTANT]
 > **修改公共区段必须同步六份。** 校验方法（排除各自不同的 `SCRIPT_VERSION` 行后，六份应当逐字节相同）：
@@ -502,27 +511,28 @@ done
 # 期望六行完全相同：8e2e9b3e0207667886b82efd1f1adc5e
 ```
 
-带 `SCRIPT_VERSION` 原样算时按版本分三组（差异只有这一行）：
+带 `SCRIPT_VERSION` 原样算时按版本分组（六份之间的差异只有这一行）：
 
-| 版本组 | 脚本 | raw md5 |
-| --- | --- | --- |
-| v2.0.0 | `ddns.sh` `ssh.sh` `env.sh` | `92265d2a1335d4e1e152fd68c0dabbd7` |
-| v2.1.0 | `proxy.sh` `nezha.sh` | `b94d7d6ffe82a3a399c90325b8162b79` |
-| v2.2.0 | `start.sh` | `8ec6975b9d2ae661166db827d664d712` |
+| 版本组 | 脚本                  | raw md5                            |
+| ------ | --------------------- | ---------------------------------- |
+| v2.0.0 | `ddns.sh` `env.sh`    | `92265d2a1335d4e1e152fd68c0dabbd7` |
+| v2.0.1 | `ssh.sh`              | `595842a085ad41aa7368ca68734ed307` |
+| v2.1.0 | `nezha.sh`            | `b94d7d6ffe82a3a399c90325b8162b79` |
+| v2.2.0 | `start.sh` `proxy.sh` | `8ec6975b9d2ae661166db827d664d712` |
 
 ---
 
 ## 9. 依赖与运行环境
 
-| 依赖 | 谁需要 | 说明 |
-| --- | --- | --- |
-| `bash` 4+ | 全部 | 用了关联数组 `declare -A` 与间接展开 `${!i}` |
-| `curl` | `ddns.sh`（**只用 curl**）、其余任一 | 其余脚本 `curl` / `wget` 任有其一即可 |
-| `jq` | `ddns.sh` | **可选**，缺失时回退 `grep -Po` 解析 JSON |
-| `op`（1Password CLI）≥ 2.18.0 | `env.sh` | **没装会自动装**（zip 直装到 `/usr/local/bin`，约 45 MiB；`--no-install-op` 可关） |
-| `openssh-server`（`sshd`） | `ssh.sh` | 需要 `sshd -t` 与 systemd / service |
-| `unzip` | `nezha.sh` | 缺失时按包管理器自动安装 |
-| root 或 `sudo` | `ssh.sh`（必须 root）/ `proxy.sh` / `nezha.sh` | 要写 `/usr/bin`、`/etc/soga`、`/root/.ssh` |
+| 依赖                          | 谁需要                                         | 说明                                                         |
+| ----------------------------- | ---------------------------------------------- | ------------------------------------------------------------ |
+| `bash` 4+                     | 全部                                           | 用了关联数组 `declare -A` 与间接展开 `${!i}`                 |
+| `curl`                        | `ddns.sh`（**只用 curl**）、其余任一           | 其余脚本 `curl` / `wget` 任有其一即可                        |
+| `jq`                          | `ddns.sh`                                      | **可选**，缺失时回退 `grep -Po` 解析 JSON                    |
+| `op`（1Password CLI）≥ 2.18.0 | `env.sh`                                       | **没装会自动装**（zip 直装到 `/usr/local/bin`，约 45 MiB；`--no-install-op` 可关） |
+| `openssh-server`（`sshd`）    | `ssh.sh`                                       | 需要 `sshd -t` 与 systemd / service                          |
+| `unzip`                       | `nezha.sh`                                     | 缺失时按包管理器自动安装                                     |
+| root 或 `sudo`                | `ssh.sh`（必须 root）/ `proxy.sh` / `nezha.sh` | 要写 `/usr/bin`、`/etc/soga`、`/root/.ssh`                   |
 
 ---
 
@@ -589,10 +599,11 @@ done
 6. **非交互环境缺参 = exit 2**：`start.sh` / `ssh.sh` 在无 TTY 时缺必填项不会询问，而是一次列全后退出。cron 场景要么给全参数，要么 `start.sh` 加 `--force`（跳过缺失步骤）、`ssh.sh` 显式给 `--choice`。
 7. **URL 形式的 env 会落到当前目录 `vps.env`**：等于在 CWD 留一份明文，注意工作目录权限（本地路径形式不会复制）。
 8. **凭据纪律**：一台机器一个 Token；只放本机 `600` 权限文件；**不要进仓库、不要放 gist** —— GitHub Secret Scanning 会扫 secret gist 并通知 Cloudflare **自动吊销** Token（2026-10-12 实际发生过一次）。
-9. **`soga update` / `soga start` 返回非零只告警不中断**（刻意设计：实例已存在等场景会返回非零）。
-10. **`env.sh` 的 `chmod 600` 在 Windows / 非 POSIX 文件系统上会失败**：只告警，不阻断。
-11. **从旧版单体脚本迁移**：v2 起**不再把 `cf_key` / `webapi_key` / `nezha_agent_key` 明文打屏**（全走 `mask()`）；代理与探针逻辑已拆到 `proxy.sh` / `nezha.sh`；本地 env 文件不再 `cp -f` 复制成 `vps.env`（少一份明文副本）。
+9. **改完配置必须重启才生效（`soga` 尤其）**：`soga start` 对已在运行的实例是空操作、不重读 `soga.conf`；`proxy.sh` 已改为 `soga restart`。同理 `sshd_config` 改动由 `ssh.sh` 校验后重启生效 —— **不要手动只改文件不重启**。
+10. **`soga update` 返回非零只告警不中断**（刻意设计：实例已存在等场景会返回非零）；但 **`soga restart` / `soga start` 双双失败会以 1 退出**，不再静默通过。
+11. **`env.sh` 的 `chmod 600` 在 Windows / 非 POSIX 文件系统上会失败**：只告警，不阻断。
+12. **从旧版单体脚本迁移**：v2 起**不再把 `cf_key` / `webapi_key` / `nezha_agent_key` 明文打屏**（全走 `mask()`）；代理与探针逻辑已拆到 `proxy.sh` / `nezha.sh`；本地 env 文件不再 `cp -f` 复制成 `vps.env`（少一份明文副本）。
 
 ---
 
-*最后更新：2026-10-15*
+*最后更新：2026-10-16*
