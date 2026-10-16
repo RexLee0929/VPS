@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 #  proxy.sh — soga 代理安装与配置修改（独立脚本）
-#  版本 : v2.1
+#  版本 : v2.2
 #  规范 : sh/UNIFIED v2（与 ddns.sh / ssh.sh / env.sh / start.sh / nezha.sh 共用）
 #
 #  由 start.sh v2.1 拆分而来：start.sh --choice=3/4/6 现在以长选项透传调用本脚本。
@@ -10,6 +10,11 @@
 #    1. soga 默认安装 2.13.4，可用 --soga-version 更换
 #    2. 配置文件修改（--action=config / both）的四个对接参数【必须显式传入】，
 #       空白（含纯空格）一律报错退出，绝不拿空值写配置
+#
+#  ⭐ 改完配置必须【重启】实例才会生效（v2.2 修正）：
+#     soga start 对「已在运行」的实例是空操作（官方语义：只提示"已在运行，如需重启请选择重启"），
+#     它不会重新读取 soga.conf。因此只写文件 + soga start 会让 node_id / webapi_url / webapi_key
+#     的改动被静默忽略。现在统一走 soga restart（对未运行的实例同样会把它拉起）。
 #
 #  示例:
 #    ./proxy.sh --action=install
@@ -33,7 +38,7 @@ set -uo pipefail
 IFS=$'\n\t'
 
 SCRIPT_NAME="$(basename "$0" .sh)"
-SCRIPT_VERSION="2.1.0"
+SCRIPT_VERSION="2.2.0"
 
 # ---------- 颜色 ----------
 USE_COLOR=1
@@ -469,7 +474,8 @@ env 文件:
 
 说明:
   · 配置模板从仓库 config/soga-ss.conf、config/soga-vmess.conf 下载后替换参数
-  · config 完成后自动 soga start + enable（--no-restart 可跳过）"
+  · config 写完后【重启实例】并 enable，让新配置立刻生效（--no-restart 可跳过）
+    —— soga start 对已在运行的实例是空操作、不会重读 soga.conf，所以这里用 restart"
 
 def_opt action       a 1 A_ACTION    "install | config | both（默认 both）"
 def_opt soga-version s 1 A_SOGAVER   "soga 版本号（默认 2.13.4）"
@@ -577,14 +583,44 @@ do_install() {
   ok "代理安装完成（soga ${soga_version}）"
 }
 
+# ---------- 让配置生效：重启实例 ----------
+# 为什么不是 soga start：
+#   官方语义 —— soga start 对【已在运行】的实例是空操作（只提示"已在运行，如需重启请选择重启"），
+#   它不会重新读取 soga.conf。只写文件 + soga start ⇒ node_id / webapi_* 的改动被静默忽略。
+#   正解是 restart：systemd 侧等价 reload-or-restart（单元无 ExecReload ⇒ 退化为 restart），
+#   对【未运行】的实例同样会把它拉起来，所以两种情况都能覆盖。
+apply_instance() {
+  local inst="$1"
+  if $sudo_cmd soga restart "$inst"; then
+    ok "soga 实例 ${inst} 已重启，新配置已加载"
+    return 0
+  fi
+  warn "soga restart ${inst} 未成功，回退到 soga start ${inst}"
+  if $sudo_cmd soga start "$inst"; then
+    ok "soga 实例 ${inst} 已启动"
+    return 0
+  fi
+  err "soga 实例 ${inst} 未能启动 —— 请执行 soga log ${inst} 查看日志"
+  return 1
+}
+
 # ---------- 动作：config ----------
 do_config() {
   step "修改 soga 配置文件..."
   if [ "$DRY_RUN" -eq 1 ]; then
     log "  [dry-run] 写入 /etc/soga/ss/soga.conf 与 /etc/soga/vmess/soga.conf"
     log "  [dry-run] node_id=${ss_node_id} / ${vmess_node_id}，webapi_url=${webapi_url}，webapi_key=$(mask "$webapi_key")"
-    [ "${OPT_SET[no-restart]:-0}" = "1" ] || log "  [dry-run] soga start ss / vmess 并 enable"
+    if [ "${OPT_SET[no-restart]:-0}" = "1" ]; then
+      log "  [dry-run] --no-restart：只写文件、不重启实例（新配置不会生效）"
+    else
+      log "  [dry-run] soga restart ss / vmess（重读新配置）并 enable"
+    fi
     return 0
+  fi
+  if ! have_cmd soga; then
+    err "未检测到 soga（/usr/bin/soga），无法重启实例使新配置生效"
+    err "请先安装：$SCRIPT_NAME --action=install"
+    return 1
   fi
   local t1 t2
   t1="$(mktemp)"; t2="$(mktemp)"
@@ -602,14 +638,18 @@ do_config() {
   $sudo_cmd sed -i "s|webapi_url=.*|webapi_url=${webapi_url}|g" /etc/soga/vmess/soga.conf
   $sudo_cmd sed -i "s/webapi_key=.*/webapi_key=${webapi_key}/g" /etc/soga/vmess/soga.conf
   if [ "${OPT_SET[no-restart]:-0}" = "1" ]; then
-    warn "已给 --no-restart，不启动 / 不启用实例"
+    warn "已给 --no-restart：配置已写入，但【尚未生效】"
+    warn "稍后手动执行使其生效：soga restart ss / soga restart vmess"
+    ok "配置已写入（未重启实例）"
   else
-    $sudo_cmd soga start ss    || warn "soga start ss 返回非零（可忽略）"
-    $sudo_cmd soga start vmess || warn "soga start vmess 返回非零（可忽略）"
+    local rc_apply=0
+    apply_instance ss    || rc_apply=1
+    apply_instance vmess || rc_apply=1
     $sudo_cmd soga enable ss    || true
     $sudo_cmd soga enable vmess || true
+    [ "$rc_apply" -eq 0 ] || { err "有实例未能启动，新配置可能未生效"; return 1; }
+    ok "配置已写入；实例已重启，新配置已生效"
   fi
-  ok "配置已写入"
 }
 
 # ---------- 执行 ----------
