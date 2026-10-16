@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>toolbox.sh 重构报告：3453 → 2132 行，修 17 个功能性 bug</title>
+<style>
+  :root{
+    --bg:#eef2f7; --card:#fff; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --pri:#1d4ed8; --priBg:#eef4ff; --code:#f1f5f9; --codeInk:#0f172a;
+    --okBg:#f0fdf4; --warnBg:#fffbeb; --badBg:#fef2f2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.7;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1010px;margin:0 auto;padding:30px 22px 70px}
+  h1{font-size:24px;margin:0 0 6px;color:#0f172a}
+  .sub{color:var(--muted);font-size:13.5px}
+  .lead{background:var(--priBg);border:1px solid #dbe6ff;border-left:4px solid var(--pri);
+    border-radius:12px;padding:16px 18px;margin:18px 0 24px;font-size:14.5px}
+  .lead b{color:var(--pri)}
+  section.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:20px 22px 22px;margin-bottom:18px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  h2{font-size:17.5px;margin:0 0 14px;display:flex;align-items:center;gap:10px;color:#0f172a}
+  h2 .n{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:var(--pri);color:#fff;
+    font-size:13.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  h3{font-size:15px;margin:18px 0 8px;color:#111827}
+  p{margin:9px 0}
+  ul,ol{margin:8px 0 8px 20px;padding:0} li{margin:5px 0}
+  code{background:var(--code);color:var(--codeInk);padding:1.5px 6px;border-radius:5px;
+    font-family:"Cascadia Code",Consolas,monospace;font-size:13px}
+  pre{background:var(--code);border:1px solid var(--line);border-left:3px solid var(--pri);
+    border-radius:10px;padding:14px 16px;overflow-x:auto;margin:10px 0;
+    font-family:"Cascadia Code",Consolas,monospace;font-size:12.8px;line-height:1.62;color:var(--codeInk)}
+  pre b{color:var(--pri)}
+  pre .c{color:#64748b}
+  pre .r{color:#b91c1c}
+  pre .g{color:#15803d}
+  .box{border-radius:10px;padding:12px 15px;margin:12px 0;font-size:14px}
+  .box.ok{background:var(--okBg);border-left:4px solid #22c55e;color:#14532d}
+  .box.warn{background:var(--warnBg);border-left:4px solid #f59e0b;color:#78350f}
+  .box.bad{background:var(--badBg);border-left:4px solid #ef4444;color:#7f1d1d}
+  .box .t{font-weight:700;display:block;margin-bottom:3px}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.4px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:#f8fafc;font-weight:600;color:#334155}
+  tr:nth-child(even) td{background:#fcfdfe}
+  .tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;margin-right:6px;vertical-align:2px;white-space:nowrap}
+  .tag.p0{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+  .tag.p1{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+  .tag.p2{background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe}
+  .tag.ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+  .num{display:inline-block;min-width:20px;height:20px;border-radius:6px;background:#eef2f7;
+    color:#475569;font-size:12px;font-weight:700;text-align:center;line-height:20px;margin-right:7px}
+  .mono{font-family:"Cascadia Code",Consolas,monospace;font-size:12.5px}
+  footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:26px;line-height:1.9}
+  a{color:var(--pri)}
+  .svgwrap{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:14px 10px;margin:14px 0}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:6px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>toolbox.sh 整套重构报告</h1>
+<div class="sub">对象：<span class="mono">github.com/RexLee0929/VPS → sh/toolbox.sh</span>（上游 3453 行） · 2026-10-16 · 交付：<span class="mono">toolbox-refactored-20261016.sh</span>（2132 行）</div>
+
+<div class="lead">
+  <b>一句话：</b>单文件形态与菜单编号<b>完全保留</b>（系统 1-9 / 软件 1-12 / 科学上网 1-4，肌肉记忆不受影响），
+  内部按「bash 守卫 → 基础设施 → 系统识别/包管理器 → 菜单引擎 → 功能层」重新分层；
+  修复 <b>17 个功能性 bug</b>（其中 5 个会让对应菜单项直接不可用或损坏系统配置），
+  新增 <span class="mono">--dry-run / --verbose / --no-color / --yes / --self-update</span> 与「改动前自动备份」，
+  代码量 <b>3453 → 2132 行（-38%）</b>，shellcheck（0.10.0，warning 级）零告警。
+</div>
+
+<!-- ============ 1. 数据对比 ============ -->
+<section class="card">
+  <h2><span class="n">1</span>重构前后数据对比</h2>
+  <table>
+    <tr><th style="width:22%">指标</th><th style="width:26%">上游版</th><th style="width:26%">重构版</th><th>说明</th></tr>
+    <tr><td>行数 / 字节</td><td class="mono">3453 行 / 118,681 B</td><td class="mono">2132 行 / 79,485 B</td><td>−38% 行数，功能零删减</td></tr>
+    <tr><td>md5</td><td class="mono">0918725551b186a3<br>2044422a13111b805</td><td class="mono">2fe6046e5dee241f<br>a0e2ffc16dc91657</td><td>替换仓库文件时按新值校验</td></tr>
+    <tr><td>函数数</td><td class="mono">39</td><td class="mono">179</td><td>大函数拆小，单一职责</td></tr>
+    <tr><td>系统检测重复块</td><td class="mono">24 处</td><td class="mono">1 处（detect_os）</td><td>包管理器抽象 apt/dnf/yum/pacman/apk/zypper/brew</td></tr>
+    <tr><td>压缩包菜单实现</td><td class="mono">3 份 × ~150 行</td><td class="mono">1 个驱动 + 命令模板表</td><td>unzip / 7zip / rar 收敛</td></tr>
+    <tr><td>菜单导航方式</td><td class="mono">函数递归（含双重递归）</td><td class="mono">while 循环 + 数据驱动</td><td>编号由数组唯一来源生成</td></tr>
+    <tr><td><span class="mono">sleep 2</span> / 按任意键</td><td class="mono">112 处 / 26 处</td><td class="mono">少量 / 仅交互 TTY</td><td>非交互（管道/日志）自动跳过</td></tr>
+  </table>
+
+  <div class="svgwrap">
+  <svg viewBox="0 0 680 150" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <text x="20" y="18" font-size="12" fill="#6b7280">代码量对比（行）</text>
+    <rect x="20" y="30" width="510" height="26" rx="6" fill="#fecaca" stroke="#fca5a5"/>
+    <text x="536" y="48" font-size="12.5" fill="#b91c1c" font-weight="700">上游 3453 行</text>
+    <rect x="20" y="70" width="315" height="26" rx="6" fill="#bbf7d0" stroke="#86efac"/>
+    <text x="341" y="88" font-size="12.5" fill="#15803d" font-weight="700">重构 2132 行（−38%）</text>
+    <text x="20" y="126" font-size="12" fill="#6b7280">重复模式清除：24 处系统检测 → 1 处 ｜ 3 份压缩包菜单 → 1 个驱动 ｜ 递归菜单 → 循环引擎</text>
+    <text x="20" y="143" font-size="12" fill="#6b7280">修复：17 个功能性 bug ｜ 新增：dry-run / 自动备份 / 自更新 / 退出码约定</text>
+  </svg>
+  </div>
+</section>
+
+<!-- ============ 2. P0 ============ -->
+<section class="card">
+  <h2><span class="n">2</span>P0 功能性 bug（17 个，全部修复）</h2>
+  <p style="font-size:13.5px;color:var(--muted)">「上游行号」按下载时的 3453 行版本定位；修复方式均可在重构版中对应到函数。</p>
+  <table>
+    <tr><th style="width:4%">#</th><th style="width:13%">位置（上游行号）</th><th style="width:47%">问题</th><th>修复方式</th></tr>
+    <tr><td><span class="num">1</span></td><td class="mono">L1467<br>unzip 选项6</td><td><span class="tag p0">P0</span><span class="mono">cmd= "for z in ..."</span> —— <b>= 后有空格</b>，bash 把 <span class="mono">cmd=</span> 赋空值、把整串当命令执行 → screen 批量解压完全不可用（command not found）</td><td>screen 批改改为「生成临时脚本（chmod 600）+ screen 执行」，彻底消除字符串拼接</td></tr>
+    <tr><td><span class="num">2</span></td><td class="mono">L2971-2974<br>rar 选项6</td><td><span class="tag p0">P0</span>双引号内 <span class="mono">\$unified_password</span> 变成字面量 → 密码错误；且 <span class="mono">rar x -d</span> 的 <span class="mono">-d</span> 不是合法参数（rar/unrar 均无此选项）</td><td>同上走临时脚本；解压命令改用 <span class="mono">unrar x -o+ -y 文件 目标/</span></td></tr>
+    <tr><td><span class="num">3</span></td><td class="mono">L2423-2426<br>aria2 选项3</td><td><span class="tag p0">P0</span><span class="mono">$target_config</span> 只在 if 分支内定义，else 分支（服务文件不存在）引用未定义变量 → <b>写入空文件</b>，aria2 服务被写坏</td><td>变量提升到函数级先定义；补 <span class="mono">daemon-reload</span>（上游也漏了）</td></tr>
+    <tr><td><span class="num">4</span></td><td class="mono">L1052 / L1245<br>screen 选项1/7</td><td><span class="tag p0">P0</span>「不支持的操作系统」分支复制粘贴错误，调用 <span class="mono">nano_management</span> → 报错后跳进 nano 菜单</td><td>包管理器统一抽象，此分支不复存在</td></tr>
+    <tr><td><span class="num">5</span></td><td class="mono">L2676<br>7zip 选项6</td><td><span class="tag p0">P0</span>无密码时仍拼 <span class="mono">-p''</span>，与前台分支行为不一致；统一密码分支同样依赖脆弱字符串拼接</td><td>命令由模板函数生成，有无密码走同一条代码路径</td></tr>
+    <tr><td><span class="num">6</span></td><td class="mono">L1<br>全文</td><td><span class="tag p0">P0</span><b>无 shebang</b>。用 <span class="mono">sh toolbox.sh</span> 执行时（Debian/Ubuntu 默认 sh=dash）：<span class="mono">declare -A</span>、<span class="mono">[[ ]]</span>、<span class="mono">BASH_REMATCH</span>、<span class="mono">bash &lt;(curl)</span> 全部语法错误/静默失效</td><td><span class="mono">#!/usr/bin/env bash</span> + 版本守卫（≥4.3）+ 非 bash 自动 re-exec</td></tr>
+    <tr><td><span class="num">7</span></td><td class="mono">L231<br>swap 删除</td><td><span class="tag p0">P0</span><span class="mono">sed -i '/swapfile/d' /etc/fstab</span> 删掉<b>所有含 swapfile 的行</b>（注释、其他挂载点一并遭殃）；<span class="mono">swapoff -a</span> 会连带关闭 zram/其他 swap</td><td>精确匹配 <span class="mono">^/swapfile</span> 条目；只 <span class="mono">swapoff /swapfile</span></td></tr>
+    <tr><td><span class="num">8</span></td><td class="mono">L215<br>swap 创建</td><td><span class="tag p0">P0</span>fstab 条目写 <span class="mono">defaults</span>，<b>缺 sw 选项</b> → 重启后 swap 不生效（当前会话正常，最不易察觉的一种坏）</td><td>改为 <span class="mono">/swapfile none swap sw 0 0</span></td></tr>
+    <tr><td><span class="num">9</span></td><td class="mono">L211/L254<br>swap 创建</td><td><span class="tag p0">P0</span><span class="mono">fallocate</span> 在 btrfs/xfs 部分场景失败且无回退；<span class="mono">add_swap $custom_swap_size</span> 未校验数字、未加引号（单词分割）</td><td>dd 回退 + <span class="mono">^[0-9]+$</span> 校验 + 引号</td></tr>
+    <tr><td><span class="num">10</span></td><td class="mono">L2062-2074<br>Caddy 列表</td><td><span class="tag p0">P0</span>行号写 <span class="mono">/tmp/lineNumbers.tmp</span> 再 <span class="mono">eval</span> 读回 —— 注入面 + 多实例竞态；<span class="mono">/}/</span> 匹配任何行首 <span class="mono">}</span></td><td>awk 直接输出结构化记录（<span class="mono">idx|start|end|site|addr|port|tls</span>），bash 侧读数组，无 eval</td></tr>
+    <tr><td><span class="num">11</span></td><td class="mono">L1946<br>Caddy 删除</td><td><span class="tag p0">P0</span><span class="mono">awk 'NR &lt; start || NR &gt; end + 1'</span> off-by-one，<b>多删一行</b>——若下一行是另一站点块首行，直接损坏 Caddyfile；无备份、无 validate</td><td><span class="mono">sed -i "${start},${end}d"</span> 精确范围 + 备份 + <span class="mono">caddy validate</span> 校验</td></tr>
+    <tr><td><span class="num">12</span></td><td class="mono">L2301-2309<br>哪吒 选项10</td><td><span class="tag p0">P0</span>删除前不校验序号：<span class="mono">${services[$index]}</span> 为空 → <span class="mono">systemctl stop ""</span> 报错、<span class="mono">rm -f "/etc/systemd/system/.service"</span></td><td>统一 <span class="mono">nezha_pick</span> 序号校验 + 确认 + 备份 + daemon-reload</td></tr>
+    <tr><td><span class="num">13</span></td><td class="mono">L1876-1886<br>Caddy 安装</td><td><span class="tag p0">P0</span>centos/redhat 且 <span class="mono">VERSION_ID=9</span>（或 10）时 if/elif <b>无 else</b> → 静默什么都不做，用户以为装好了</td><td>7 系走 yum-copr、其余走 dnf-copr，都不匹配明确报错；补 arch/alpine</td></tr>
+    <tr><td><span class="num">14</span></td><td class="mono">L462-464<br>FinalShell</td><td><span class="tag p0">P0</span><span class="mono">wget -O /usr/local/bin/df</span> 无失败检查：网络失败即留下坏文件<b>替换系统 df</b>，且无备份、无恢复手段</td><td>下载到临时目录 → 校验 shebang → 打标记 → 备份原文件后才安装；恢复优先还原备份</td></tr>
+    <tr><td><span class="num">15</span></td><td class="mono">L723-729<br>wget/curl/git</td><td><span class="tag p1">P1</span>卸载检查 <span class="mono">! a || ! b || ! c</span> 与提示语矛盾（任一缺失就整体拒绝卸载），逻辑与文案对不上</td><td>三个独立卸载项 + 组合项各自判断，文案与实际一致</td></tr>
+    <tr><td><span class="num">16</span></td><td class="mono">全文<br>所有菜单</td><td><span class="tag p0">P0</span><b>菜单全靠递归实现</b>：无效输入时「sleep 2 + 自调用」，执行完又「按任意键 + 自调用」→ 一次误输入<b>双重递归</b>；长时间使用调用栈只增不减</td><td>数据驱动 + while 循环；编号由数组唯一来源生成，杜绝文字与 case 漂移</td></tr>
+    <tr><td><span class="num">17</span></td><td class="mono">L3441<br>主菜单</td><td><span class="tag p0">P0</span>正常退出用 <span class="mono">exit 1</span> → 退出码非零，破坏 <span class="mono">&amp;&amp;</span> 链与脚本化判断</td><td>退出码约定：0 正常（含主动跳过）/ 1 运行错误 / 2 参数错误</td></tr>
+  </table>
+</section>
+
+<!-- ============ 3. P1 ============ -->
+<section class="card">
+  <h2><span class="n">3</span>P1 健壮性与安全隐患（全部处理）</h2>
+  <table>
+    <tr><th style="width:34%">问题</th><th>处理</th></tr>
+    <tr><td>aapanel 安装器用<b>明文 HTTP</b> 下载（可被中间人注入）</td><td>实测 <span class="mono">https://www.aapanel.com/script/...</span> 返回 200，已改 HTTPS</td></tr>
+    <tr><td>rarlab 下载带 <span class="mono">--no-check-certificate</span></td><td>实测 HTTPS 证书正常，去掉该 flag；版本号提为常量 <span class="mono">RAR_VERSION</span>（升级改一行）</td></tr>
+    <tr><td>所有第三方脚本<b>下载到当前目录</b>（tcp.sh/ecs.sh/nezha.sh/aria2.sh/install.sh 污染 CWD；CWD 不可写时静默失败后 <span class="mono">./tcp.sh</span> 报错）</td><td>统一 <span class="mono">mktemp -d</span> 临时目录 + <span class="mono">curl -fsSL --retry</span> + 空文件校验 + EXIT trap 清理</td></tr>
+    <tr><td><span class="mono">curl -L -s ... | bash</span> 无校验直接执行；<span class="mono">-L</span> 无 <span class="mono">-f</span>（404 也会跑）</td><td>「先下载校验、再执行」的 <span class="mono">run_remote</span> 模式，一处实现覆盖全部 9 个第三方脚本</td></tr>
+    <tr><td>压缩密码走命令行（<span class="mono">zip -P</span> / <span class="mono">7z -p</span> / <span class="mono">rar -p</span> / <span class="mono">bash -c "$cmd"</span>），<span class="mono">ps</span> 可见</td><td>screen 批处理改临时脚本（600，退出即毁）；单文件操作属 CLI 固有形态，报告中明示</td></tr>
+    <tr><td><span class="mono">black()</span> = 黑字，深色终端下「卸载」选项<b>不可见</b></td><td>改灰色；支持 <span class="mono">--no-color</span> / <span class="mono">NO_COLOR</span> / 非 TTY 自动无色</td></tr>
+    <tr><td><span class="mono">uname -s</span> 回退值（Linux/Darwin）与 case 里的发行版 ID <b>永不匹配</b>；缺 rocky/alma/rhel/fedora/apk/zypper</td><td>包管理器探测替代发行版枚举；按包管理器分派，天然覆盖所有发行版</td></tr>
+    <tr><td><span class="mono">/etc/gai.conf</span> 可能不存在；sed 模式对空白变体敏感</td><td>缺失则创建；正则改 <span class="mono">[[:space:]]+</span>，容错空白差异</td></tr>
+    <tr><td>无 <span class="mono">set -uo pipefail</span>、无错误处理约定</td><td>启用（不用 -e，菜单/read 场景显式判错）；诊断一律 stderr</td></tr>
+    <tr><td>改 fstab / gai.conf / Caddyfile / 服务文件<b>从不备份</b></td><td><span class="mono">backup_file</span>：时间戳 .bak，同一次运行只备一次，dry-run 可见备份动作</td></tr>
+    <tr><td>哪吒 Key 在列表中<b>明文展示</b></td><td>脱敏显示 <span class="mono">abcd****7890</span>（完整值仍在服务文件）</td></tr>
+    <tr><td>26 行 Tab/空格混用；函数命名大小口不一（<span class="mono">Timezone_management</span> vs <span class="mono">system_menu</span>）</td><td>统一小写 snake_case + 4 空格缩进，shellcheck 零告警</td></tr>
+  </table>
+</section>
+
+<!-- ============ 4. 架构 ============ -->
+<section class="card">
+  <h2><span class="n">4</span>重构架构（单文件，七层）</h2>
+  <p>保持「一个文件、一行命令部署」的消费方式不变，内部按依赖方向分层，上层只调下层：</p>
+  <div class="svgwrap">
+  <svg viewBox="0 0 680 430" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+      </marker>
+    </defs>
+    <!-- L0 -->
+    <rect x="150" y="8" width="380" height="40" rx="9" fill="#eef4ff" stroke="#93c5fd"/>
+    <text x="340" y="33" font-size="13" fill="#1d4ed8" font-weight="700" text-anchor="middle">L0 bash 守卫 · shebang · re-exec · 版本≥4.3</text>
+    <!-- L1 -->
+    <rect x="150" y="60" width="380" height="40" rx="9" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="340" y="85" font-size="13" fill="#334155" font-weight="700" text-anchor="middle">L1 选项解析 · 颜色(NO_COLOR) · 退出码 0/1/2</text>
+    <!-- L2 -->
+    <rect x="150" y="112" width="380" height="52" rx="9" fill="#f0fdf4" stroke="#86efac"/>
+    <text x="340" y="133" font-size="13" fill="#15803d" font-weight="700" text-anchor="middle">L2 通用基础设施</text>
+    <text x="340" y="152" font-size="11.5" fill="#166534" text-anchor="middle">run(dry-run) · fetch/run_remote · backup_file · write_file_root · sudo_run · need_root · confirm/ask/pause · disp_width/pad_disp(CJK)</text>
+    <!-- L3 -->
+    <rect x="150" y="180" width="380" height="52" rx="9" fill="#f0fdf4" stroke="#86efac"/>
+    <text x="340" y="201" font-size="13" fill="#15803d" font-weight="700" text-anchor="middle">L3 系统识别与包管理器</text>
+    <text x="340" y="220" font-size="11.5" fill="#166534" text-anchor="middle">detect_os · pkg_detect/install/remove · TOOL_TABLE 注册表 · tool_install/remove · svc(systemctl)</text>
+    <!-- L4 -->
+    <rect x="150" y="248" width="380" height="44" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+    <text x="340" y="270" font-size="13" fill="#92400e" font-weight="700" text-anchor="middle">L4 菜单引擎（数据驱动 + while 循环）</text>
+    <text x="340" y="284" font-size="11.5" fill="#78350f" text-anchor="middle">menu_loop &lt;标题&gt; &lt;项目数组&gt; &lt;动作数组&gt; · 动作函数收到所选项下标</text>
+    <!-- L5 -->
+    <rect x="80" y="308" width="230" height="76" rx="9" fill="#eef4ff" stroke="#93c5fd"/>
+    <text x="195" y="328" font-size="12.5" fill="#1d4ed8" font-weight="700" text-anchor="middle">L5a 系统设置</text>
+    <text x="195" y="345" font-size="11" fill="#1e40af" text-anchor="middle">BBR/时区/swap/gai/IPv6/ECS</text>
+    <text x="195" y="360" font-size="11" fill="#1e40af" text-anchor="middle">FinalShell/流媒体/游戏延迟</text>
+    <text x="195" y="375" font-size="11" fill="#1e40af" text-anchor="middle">→ 全部经 L2/L3，无裸命令</text>
+    <rect x="330" y="308" width="270" height="76" rx="9" fill="#eef4ff" stroke="#93c5fd"/>
+    <text x="465" y="328" font-size="12.5" fill="#1d4ed8" font-weight="700" text-anchor="middle">L5b 软件 / 压缩包驱动</text>
+    <text x="465" y="345" font-size="11" fill="#1e40af" text-anchor="middle">wcg/nano/screen/ca/speedtest/caddy</text>
+    <text x="465" y="360" font-size="11" fill="#1e40af" text-anchor="middle">aapanel/nezha/aria2 + unzip/7z/rar</text>
+    <text x="465" y="375" font-size="11" fill="#1e40af" text-anchor="middle">压缩三合一：arch_menu + 命令模板</text>
+    <!-- L6 -->
+    <rect x="150" y="400" width="380" height="22" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="340" y="415" font-size="11.5" fill="#475569" text-anchor="middle">L6 菜单层：start(3) → system(9) / app(12) / vpn(4) → L7 入口 main → exit 0</text>
+    <!-- arrows -->
+    <line x1="340" y1="48" x2="340" y2="58" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="340" y1="100" x2="340" y2="110" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="340" y1="164" x2="340" y2="178" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="340" y1="232" x2="340" y2="246" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="250" y1="292" x2="195" y2="306" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="430" y1="292" x2="465" y2="306" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="195" y1="384" x2="300" y2="398" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="465" y1="384" x2="380" y2="398" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  </svg>
+  </div>
+  <div class="legend">
+    <span><span class="sw" style="background:#eef4ff;border:1px solid #93c5fd"></span>入口/功能层</span>
+    <span><span class="sw" style="background:#f0fdf4;border:1px solid #86efac"></span>基础设施（可单测）</span>
+    <span><span class="sw" style="background:#fffbeb;border:1px solid #fcd34d"></span>菜单引擎</span>
+    <span><span class="sw" style="background:#f8fafc;border:1px solid #cbd5e1"></span>其他</span>
+  </div>
+</section>
+
+<!-- ============ 5. 兼容性 ============ -->
+<section class="card">
+  <h2><span class="n">5</span>菜单编号兼容性（与上游逐一核对）</h2>
+  <table>
+    <tr><th style="width:16%">菜单</th><th style="width:42%">编号</th><th>核对结果</th></tr>
+    <tr><td>主菜单</td><td class="mono">1 系统 / 2 软件 / 3 科学上网 / 0 退出</td><td><span class="tag ok">一致</span>退出码 1 → 0</td></tr>
+    <tr><td>系统菜单</td><td class="mono">1 BBR · 2 时区 · 3 swap · 4 IPv4/v6优先级 · 5 IPv6 · 6 ECS · 7 FinalShell · 8 流媒体 · 9 游戏延迟</td><td><span class="tag ok">一致</span>游戏延迟由 2 击变 1 击（上游多一层单选项菜单）</td></tr>
+    <tr><td>软件菜单</td><td class="mono">1 wget,curl,git · 2 nano · 3 screen · 4 unzip · 5 ca-certificates · 6 SpeedTest · 7 Caddy · 8 aapanel · 9 Nezha · 10 Aria2 · 11 7zip · 12 rar</td><td><span class="tag ok">编号一致</span>仅项 9 文案 Panel → Agent（更准确）</td></tr>
+    <tr><td>科学上网</td><td class="mono">1 soga · 2 XrayR · 3 ss-go · 4 极光面板</td><td><span class="tag ok">一致</span></td></tr>
+    <tr><td>子菜单</td><td class="mono">wcg 1-8 · nano 1-3 · screen 1-7 · unzip/7z/rar 1-8 · ca 1-2 · speedtest 1-4 · caddy 1-12 · nezha 1-10 · aria2 1-9 · soga 1-2 · xrayr 1-2 · ecs 1-3 · finalshell 1-2 · 流媒体 1-3 · gai 1-4 · 时区 1-6 · swap 1-5</td><td><span class="tag ok">逐项一致</span>（测试 T3 已自动化断言 25 项）</td></tr>
+  </table>
+</section>
+
+<!-- ============ 6. 验证 ============ -->
+<section class="card">
+  <h2><span class="n">6</span>验证结果</h2>
+  <table>
+    <tr><th style="width:30%">项目</th><th style="width:14%">结果</th><th>说明</th></tr>
+    <tr><td><span class="mono">bash -n</span> 语法检查</td><td><span class="tag ok">通过</span></td><td>bash 5.3.15（Git Bash）</td></tr>
+    <tr><td>shellcheck 0.10.0（warning 级）</td><td><span class="tag ok">0 告警</span></td><td>过程中它抓到一个真 bug：<span class="mono">local a=$1 b=${ARR[$a]}</span> 同句引用不生效（详见下）</td></tr>
+    <tr><td>菜单走查测试（管道喂输入）</td><td><span class="tag ok">42/42</span></td><td>选项解析/三菜单编号/无效输入/dry-run 五项变更/降级路径</td></tr>
+    <tr><td>直测（source 方式）</td><td><span class="tag ok">17/17</span></td><td>CJK 列宽、Caddy 解析+范围删除+重解析、哪吒解析+脱敏</td></tr>
+    <tr><td>unzip 真跑全链路</td><td><span class="tag ok">通过</span></td><td>构造真实 zip，经菜单 软件→unzip→解压，落盘内容校验正确</td></tr>
+    <tr><td>降级路径</td><td><span class="tag ok">通过</span></td><td>无 timedatectl / 无 systemd / 无 screen / 无 Caddyfile / 无哪吒服务 / 非 root 均明确提示不崩溃</td></tr>
+  </table>
+
+  <div class="box bad"><span class="t">测试过程中抓到的真 bug（已修）</span>
+  ShellCheck SC2318：<span class="mono">local s="$1" ... n=${#s}</span> 与 <span class="mono">local i=$1 zone=${TZ_ZONES[$i]}</span> 这类<b>同一条 local 里互相引用</b>的写法，
+  bash 会先展开所有参数再执行 local —— 后者拿到的是外层作用域的值（未定义→空）。
+  后果：<span class="mono">disp_width</span> 把所有 CJK 宽度算错（表格全歪）、<span class="mono">tz_set</span> 时区永远取不到、<span class="mono">caddy_del</span> 删错行。
+  拆成多条 local 语句后复测通过。</div>
+
+  <div class="box warn"><span class="t">未覆盖的部分（如实说明）</span>
+  本机是 Windows，以下路径只能静态保证 + 降级路径验证，<b>未经真机执行</b>：root 权限下的 swap/fstab/gai.conf 变更、systemctl 服务管理、
+  caddy validate、各包管理器安装（apt/dnf/pacman/apk）、第三方安装脚本（tcp.sh/ecs.sh/nezha/soga/XrayR…）。
+  建议：拿一台测试 VPS 用 <span class="mono">--dry-run</span> 全菜单走一遍，确认预览命令符合预期后再实跑。</div>
+</section>
+
+<!-- ============ 7. 使用 ============ -->
+<section class="card">
+  <h2><span class="n">7</span>使用方式</h2>
+  <h3>一行部署（推荐先落盘再跑，可 review）</h3>
+<pre>curl -fsSL -o toolbox.sh https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/toolbox.sh &amp;&amp; bash toolbox.sh</pre>
+  <h3>或者一行直接跑</h3>
+<pre>bash &lt;(curl -fsSL https://raw.githubusercontent.com/RexLee0929/VPS/main/sh/toolbox.sh)</pre>
+  <h3>替换仓库中的旧版</h3>
+<pre><span class="c"># 用交付文件覆盖 sh/toolbox.sh 后按新 md5 校验</span>
+md5sum toolbox.sh   <span class="c"># 期望 2fe6046e5dee241fa0e2ffc16dc91657</span></pre>
+  <h3>新增通用开关（与六脚本套件约定一致）</h3>
+  <table>
+    <tr><th style="width:20%">开关</th><th>作用</th></tr>
+    <tr><td class="mono">--dry-run</td><td>演练模式：所有变更只打印将执行的命令/文件写入，不动系统。搭配 <span class="mono">--yes</span> 可全自动预览</td></tr>
+    <tr><td class="mono">--verbose</td><td>打印实际执行的每条命令（<span class="mono">+ cmd</span> 形式）</td></tr>
+    <tr><td class="mono">--yes</td><td>所有确认项自动回答「是」</td></tr>
+    <tr><td class="mono">--no-color</td><td>禁用颜色（亦支持 NO_COLOR 环境变量；输出非 TTY 时自动禁用）</td></tr>
+    <tr><td class="mono">--self-update</td><td>从 GitHub 拉最新版，bash -n 校验通过后替换自身并重启</td></tr>
+    <tr><td class="mono">-h / -V</td><td>帮助 / 版本</td></tr>
+  </table>
+</section>
+
+<!-- ============ 8. 边界 ============ -->
+<section class="card">
+  <h2><span class="n">8</span>有意保留与已知边界</h2>
+  <ul>
+    <li><b>配置 IPv6 菜单</b>：上游两个选项都是「暂时搁置」，重构版不提供半成品，明确标注「计划中」并给出各发行版正确做法指引。</li>
+    <li><b>ECS 历史结果</b>：上游是空桩。改为扫描 <span class="mono">$HOME</span>、<span class="mono">/root</span>、当前目录下的 <span class="mono">*ecs*</span> 文件列出；ecs.sh 本身不落盘，建议 screen 方式运行自行保存。</li>
+    <li><b>rar 版本</b>：rarlinux tarball 版本号提为常量 <span class="mono">RAR_VERSION="623"</span>，升级只改一行；x64/arm64 按 <span class="mono">uname -m</span> 自动选择。</li>
+    <li><b>单文件压缩密码</b>：<span class="mono">zip -P</span> / <span class="mono">7z -p</span> / <span class="mono">rar -p</span> 的密码必然经命令行参数（CLI 固有形态，与上游相同）；screen 批量已改为临时脚本（600）不在 ps 暴露。</li>
+    <li><b>哪吒 Key</b>：创建服务时写入 unit 文件（nezha-agent CLI 只支持 <span class="mono">-p</span> 传参，与上游相同）；列表展示已脱敏。</li>
+    <li><b>与六脚本套件的关系</b>：本文件独立于 <span class="mono">ddns/ssh/env/start/proxy/nezha</span> 的 UNIFIED v2 公共区段，未做任何耦合；若将来想让 toolbox 也共用公共区段，需另行评估（会把「单文件」变成「多文件+加载器」）。</li>
+  </ul>
+</section>
+
+<footer>
+  toolbox.sh 重构报告 · 2026-10-16<br>
+  交付文件：toolbox-refactored-20261016.sh（md5 2fe6046e5dee241fa0e2ffc16dc91657）· 测试：tb-test-suite.sh / tb-test-direct.sh · 上游留存：toolbox-upstream.sh（md5 0918725551b186a3204442a13111b805）
+</footer>
+
+</div>
+</body>
+</html>
