@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 #  ssh.sh — SSH 配置与公钥管理脚本
-#  版本 : v2.0
+#  版本 : v2.0.1
 #  规范 : sh/UNIFIED v2（与 ddns.sh / env.sh / start.sh 共用同一套写法）
 #
 #  这次重构要解决的事：
@@ -31,7 +31,7 @@ set -uo pipefail
 IFS=$'\n\t'
 
 SCRIPT_NAME="$(basename "$0" .sh)"
-SCRIPT_VERSION="2.0.0"
+SCRIPT_VERSION="2.0.1"
 
 # ---------- 颜色 ----------
 USE_COLOR=1
@@ -620,7 +620,9 @@ restart_ssh() {
   fi
   step "校验 SSH 配置..."
   if have_cmd sshd; then
-    sshd -t 2>/dev/null || die "sshd 配置校验失败，未重启。请检查 $ssh_config（备份在同目录 .bak.*）"
+    # 必须带 -f 指向本次实际改的文件：不带 -f 时 sshd 校验的是默认的 /etc/ssh/sshd_config，
+    # 一旦用 --config 指定了别的文件，校验就形同虚设 ⇒ 校验通过但重启后 sshd 起不来（有锁门风险）
+    sshd -t -f "$ssh_config" 2>/dev/null || die "sshd 配置校验失败，未重启。请检查 $ssh_config（备份在同目录 .bak.*）"
     ok "配置校验通过"
   else
     warn "找不到 sshd 命令，跳过语法校验"
